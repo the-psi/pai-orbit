@@ -43,6 +43,45 @@ Planning and maintenance
 /suggest-skills  → discover recurring patterns worth encoding as project skills
 ```
 
+## Mode flow
+
+```mermaid
+flowchart TD
+    subgraph BACKLOG["Backlog"]
+        arch["/arch\nArchitecture declaration"]
+        domain["/domain\nDomain knowledge"]
+        ux["/ux\nUX design"]
+        plan["/plan\nPrioritisation"]
+    end
+
+    subgraph SPRINT["Sprint"]
+        groom["/groom\nRequirements"]
+        design["/design\nTechnical design"]
+        build["/build\nImplementation"]
+        test["/test\nQA"]
+        review["/review\nCode review"]
+    end
+
+    subgraph RELEASE["Release"]
+        deploy["/deploy\nDeployment"]
+    end
+
+    incident["/incident\nProduction fast-path"]
+
+    arch & domain & ux --> groom
+    plan -.->|sequence| groom
+    groom --> design
+    design --> build
+    build --> test
+    test -- fail --> build
+    test -- pass --> review
+    review --> deploy
+    incident --> build
+    incident --> deploy
+```
+
+Workflow skills (`/git`, `/board`, `/analysis`, `/data-model`, `/security-review`, `/simplify`) can be invoked from any phase.
+
 ## Install
 
 ```bash
