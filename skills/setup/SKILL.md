@@ -31,7 +31,8 @@ Ask all unresolved questions in a single block — do not ask one at a time. Cov
 5. **Deployment**: cloud provider + target (Cloud Run, Vercel, Railway, AWS ECS, bare VPS, etc.)? One command or per-service?
 6. **Docs home**: in-repo `docs/` / dedicated docs repo (provide path) / Confluence (provide space URL) / Notion (provide workspace)?
 7. **Multi-repo project?**: Does this service repo belong to a larger multi-repo project with a separate repo for system-level docs (cross-cutting ADRs, epics spanning services, system-wide domain knowledge)? If yes, what is the path or git URL to that system docs repo?
-7. **Team**: names, roles, and handles (GitHub username / Linear ID / Jira user ID as relevant). Who is the default assignee for code issues? Who owns domain/expert decisions?
+8. **Architecture (optional — can be done later with `/arch init`):** What services exist and how do they communicate? Any hard constraints — things that must never happen across the codebase? (e.g., "services must not share DBs", "frontend talks only to api-gateway")
+9. **Team**: names, roles, and handles (GitHub username / Linear ID / Jira user ID as relevant). Who is the default assignee for code issues? Who owns domain/expert decisions?
 
 ## Step 3 — Generate
 
@@ -86,7 +87,8 @@ Update `.claude/settings.json` to wire the hooks:
     "PostToolUse": [
       { "matcher": "Edit|Write", "hooks": [
         { "type": "command", "command": ".claude/hooks/lint-python.sh", "timeout": 30, "async": true },
-        { "type": "command", "command": ".claude/hooks/lint-ts.sh", "timeout": 60, "async": true }
+        { "type": "command", "command": ".claude/hooks/lint-ts.sh", "timeout": 60, "async": true },
+        { "type": "command", "command": ".claude/hooks/arch-drift-guard.sh", "timeout": 5, "async": true }
       ]}
     ]
   }
@@ -94,6 +96,7 @@ Update `.claude/settings.json` to wire the hooks:
 ```
 
 Copy `.claude-plugin/hooks/bash-guard.sh` to `.claude/hooks/bash-guard.sh`.
+Copy `.claude-plugin/hooks/arch-drift-guard.sh` to `.claude/hooks/arch-drift-guard.sh`.
 
 ### Docs scaffold
 
@@ -101,10 +104,25 @@ If `docs/` does not exist, copy the scaffold from `templates/docs/` to the confi
 If a dedicated docs repo path was given, create the scaffold there.
 If Confluence or Notion: skip the scaffold, note the MCP setup required (see Getting Started).
 
+### Architecture scaffold
+
+Copy `templates/docs/architecture/system.md`, `constraints.md`, and `stack.md` to `docs/architecture/` (replacing `{{PROJECT_NAME}}` and `{{DATE}}`).
+
+Populate `stack.md` from the language and framework info discovered in Step 1.
+
+If the user answered the architecture question (Step 2, item 8), pre-populate the service table in `system.md` and the rules in `constraints.md` from those answers. Otherwise leave as stubs.
+
+Tell the user: "Run `/arch init` to complete your architecture declaration. Once declared, `/build` and `/review` will read `constraints.md` to enforce architectural rules automatically."
+
 ## Step 4 — Report
 
 List every file created. For each:
 - ✅ Complete — no action needed
 - ⚠️ Stub — what the human needs to fill in
+
+Architecture files:
+- ⚠️ Stub — `docs/architecture/system.md` — run `/arch init` to complete
+- ⚠️ Stub — `docs/architecture/constraints.md` — run `/arch init` to define rules
+- ✅ Generated — `docs/architecture/stack.md` (populated from detected stack)
 
 End with: "Run `/suggest-skills` after a few sessions to discover operational skills worth adding."

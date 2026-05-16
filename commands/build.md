@@ -25,6 +25,7 @@ Before starting:
   - If `system_docs_repo` is a git URL: check whether a local clone exists at a resolvable path. If yes, add it. If no, warn once and proceed.
   - Read docs from all resolved paths before starting the session.
 - Read `CLAUDE.md` — it contains the project's architecture, stack, conventions, and key file locations
+- If `docs/architecture/constraints.md` exists, read it before generating any code — treat violations of declared constraints as blocking; do not produce code that crosses a constraint boundary without flagging it explicitly and switching to `/arch` to ratify the change
 - Read relevant `docs/features/<feature>/` and `docs/decisions/` before starting significant work
 - Check the task board (see `/agile-board` for board details): find the relevant issue and confirm it is in the right in-progress state
 
@@ -37,6 +38,7 @@ During build:
 
 ## After shipping
 
+- If the change added a service, modified inter-service communication, crossed a service boundary, or introduced a new external integration: run `/arch validate` or prompt the user to do so before closing out
 - Close the task board item; use `/agile-board` to handle the closure and any follow-up items
 - If new tasks were discovered during build, create board items rather than noting them inline
 - Update `docs/domain/product-capabilities.md` with what was added or changed

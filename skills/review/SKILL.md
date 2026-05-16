@@ -9,6 +9,8 @@ Structured code review against the project's documented architecture and convent
 
 Reads from:
 - `CLAUDE.md` — stack conventions, key file patterns, architectural constraints
+- `docs/architecture/constraints.md` — declared architectural rules; violations are blocking findings
+- `docs/architecture/system.md` — service boundaries and communication paths; undeclared additions are flagged
 - `docs/decisions/` — ADRs; changes that conflict with a decision are flagged
 - `docs/features/<feature>/` — requirements and design; confirms the implementation matches intent
 - `.claude/pai-orbit-config.md` — branching model and PR conventions
@@ -31,6 +33,8 @@ Run: `git diff main...<branch>` (or the equivalent for the configured branching 
 
 Before writing a single comment:
 - Read `CLAUDE.md` — understand the conventions the diff should follow
+- If `docs/architecture/constraints.md` exists, read it. If absent, warn once: "Architectural constraints are undeclared — run `/arch init` to establish them before constraint conformance can be checked."
+- If `docs/architecture/system.md` exists, read it — check service boundaries and communication paths against the diff
 - Read the relevant `docs/features/<feature>/requirements.md` and `design.md` if they exist
 - Read any ADRs in `docs/decisions/` that relate to the changed areas
 
@@ -39,6 +43,9 @@ Before writing a single comment:
 Check each changed file against:
 
 **Architecture conformance**
+- Does the change violate any rule in `docs/architecture/constraints.md`? (blocking if yes)
+- Does it introduce a direct DB connection across service boundaries? (check `constraints.md` Trust Boundaries)
+- Does the change add a new service or communication path not declared in `docs/architecture/system.md`? (advisory)
 - Does the change stay within the layer boundaries described in CLAUDE.md? (e.g., router calls service, service calls data layer — not the other way)
 - Does it introduce a new dependency that wasn't discussed in design?
 - Does it conflict with any ADR in `docs/decisions/`? Name the ADR.
@@ -85,6 +92,9 @@ What was done particularly well — worth naming so it repeats.
 - ...
 
 ## Architecture conformance
+- [ ] No violations of rules in docs/architecture/constraints.md
+- [ ] No undeclared service or communication path added (docs/architecture/system.md)
+- [ ] No cross-service DB connection introduced in violation of trust boundaries
 - [ ] Stays within layer boundaries defined in CLAUDE.md
 - [ ] No conflicts with ADRs in docs/decisions/
 - [ ] No undiscussed dependencies introduced

@@ -19,6 +19,8 @@ Switch out when:
   - If `system_docs_repo` is a git URL: check whether a local clone exists at a resolvable path. If yes, add it. If no, warn once and proceed.
   - Read docs from all resolved paths before starting the session.
 - Read `CLAUDE.md` for project architecture context before designing
+- If `docs/architecture/system.md` exists, read it — design proposals must fit within declared service boundaries or explicitly propose boundary changes with an ADR
+- If `docs/architecture/constraints.md` exists, read it — design options that violate a constraint must flag this explicitly; violating a constraint requires `/arch update` to ratify the change before implementation
 - Read relevant existing docs before making recommendations
 - Present 2–3 options with explicit tradeoffs before recommending — the user decides
 - Flag irreversible decisions explicitly — they warrant extra scrutiny and an ADR
@@ -28,6 +30,7 @@ Switch out when:
 ## Session close
 
 Every design session should end by:
-- Saving output to `docs/features/<feature>/design.md` or `docs/decisions/<slug>.md`
+- Saving output to `docs/features/<feature>/design.md` or `docs/decisions/YYYY-MM-DD-<slug>.md`
 - Listing open questions explicitly — who owns each, what is blocked on it
 - Creating a task board item for the build phase via `/agile-board` if the design is approved
+- If the design touches system-level concerns (new service, new cross-service protocol, new external integration): prompt the user to run `/arch update` to keep the architecture declaration current

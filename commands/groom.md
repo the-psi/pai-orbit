@@ -14,6 +14,7 @@ Switch out when:
   - If `system_docs_repo` is a git URL: check whether a local clone exists at a resolvable path. If yes, add it. If no, warn once and proceed.
   - Read docs from all resolved paths before starting the session.
 - Read `CLAUDE.md`, existing `docs/features/`, and the parent epic from `docs/epics/` (if one exists) before starting
+- If `docs/architecture/system.md` exists, read it — reference service ownership to assign features to the right service and flag requirements that would cross declared boundaries
 - Lead with functional and user-facing questions before going technical
 - Flag ambiguity rather than assuming — requirements with hidden assumptions create build debt
 - Capture open questions explicitly with an owner (person or role)

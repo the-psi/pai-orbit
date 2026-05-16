@@ -10,6 +10,8 @@ Targeted security pass on changed code before it merges.
 Reads from:
 - Branch diff or specified files
 - `CLAUDE.md` — auth model, system boundaries, and known security constraints
+- `docs/architecture/system.md` — trust boundaries and attack surface (if it exists)
+- `docs/architecture/constraints.md` — declared constraints around auth, input, and external APIs (if it exists)
 - `docs/decisions/` — security-relevant ADRs
 
 ---
@@ -20,6 +22,8 @@ Ask (or infer):
 - What branch or files are in scope?
 - Is this a focused review (e.g., auth changes only) or a full pass?
 - Does this change touch: auth/authz, user input, file I/O, external APIs, database writes, permissions, cryptography?
+
+If `docs/architecture/system.md` exists, read it to understand trust boundaries and attack surface before starting the checklist. If `docs/architecture/constraints.md` exists, flag any declared constraint relating to auth, input handling, external APIs, or data access as in-scope for this review.
 
 ---
 

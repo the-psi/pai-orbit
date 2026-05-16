@@ -20,6 +20,7 @@ The core problem it solves: knowledge lives only in chat conversations and disap
 pai-orbit/
 ├── .claude-plugin/          Plugin metadata (plugin.json, marketplace.json)
 ├── commands/                Slash command definitions (one .md per mode)
+│   ├── arch.md              /arch — system architecture declaration and validation
 │   ├── build.md             /build — implementation
 │   ├── design.md            /design — technical decisions
 │   ├── domain.md            /domain — expert knowledge capture
@@ -47,6 +48,8 @@ pai-orbit/
 ├── templates/               Scaffolding output of /setup
 │   ├── agents/              Stack-specific builder agents (7 templates)
 │   ├── docs/                Documentation folder scaffold
+│   │   ├── architecture/    Architecture declaration stubs (system.md, constraints.md, stack.md)
+│   │   └── decisions/       ADR template (ADR.md)
 │   ├── skills/              Domain-operational skill template
 │   ├── CLAUDE.md.template   Project spec stub
 │   ├── pai-orbit-config.md.template
@@ -54,7 +57,8 @@ pai-orbit/
 ├── hooks/                   Shell hooks wired to Claude Code tool events
 │   ├── bash-guard.sh        PreToolUse — blocks force-push, bulk staging
 │   ├── lint-python.sh       PostToolUse — ruff
-│   └── lint-ts.sh           PostToolUse — eslint
+│   ├── lint-ts.sh           PostToolUse — eslint
+│   └── arch-drift-guard.sh  PostToolUse — advisory nudge on structural file edits
 └── docs/                    Framework documentation
     ├── capabilities.md      Reference: all modes, skills, agents, hooks
     ├── process-and-practices.md  Methodology philosophy and session flow
@@ -71,10 +75,11 @@ Each `/command` locks Claude into a distinct headspace. Modes do not bleed into 
 
 | Mode | Purpose | Primary Output |
 |------|---------|----------------|
+| `/arch` | Declare and maintain system architecture | `docs/architecture/`, `docs/decisions/YYYY-MM-DD-*.md` |
 | `/domain` | Capture expert domain knowledge | `docs/domain/*.md` |
 | `/ux` | Define user flows and interface behavior | `docs/features/*/ux.md` |
 | `/groom` | Formalize acceptance criteria | `docs/features/*/requirements.md` |
-| `/design` | Architect technical solutions, record trade-offs | `docs/features/*/design.md`, `docs/decisions/*.md` |
+| `/design` | Architect technical solutions, record trade-offs | `docs/features/*/design.md`, `docs/decisions/YYYY-MM-DD-*.md` |
 | `/build` | Implement features and fixes | Code + updated docs |
 | `/test` | Write test plans, run QA | `docs/features/*/test-plan.md` |
 | `/plan` | Prioritize and sequence work | `docs/plans/*.md` |
@@ -97,11 +102,12 @@ Named sub-agents spawned for parallel or specialized work:
 Every mode declares what it reads and what it writes. This is the discipline that prevents context loss:
 
 ```
+/arch   → produces docs/architecture/ (system.md, constraints.md, stack.md) + ADRs
 /domain → produces docs/domain/*.md
 /ux     → consumes domain docs → produces docs/features/*/ux.md
-/groom  → consumes ux + domain → produces requirements.md
-/design → consumes requirements + domain → produces design.md + ADRs
-/build  → consumes all docs + board → produces code + updated docs
+/groom  → consumes ux + domain + architecture → produces requirements.md
+/design → consumes requirements + domain + architecture → produces design.md + ADRs
+/build  → consumes all docs + constraints.md + board → produces code + updated docs
 /test   → consumes requirements → produces test-plan.md
 ```
 
@@ -129,6 +135,7 @@ Hooks are shell scripts wired to Claude Code tool use events. They run outside C
 - **`bash-guard.sh`** (PreToolUse) — blocks `git push --force`, `git add .`, `git add -A`, and `rm -rf` with unsafe patterns
 - **`lint-python.sh`** (PostToolUse) — runs `ruff check` after file edits in Python projects
 - **`lint-ts.sh`** (PostToolUse) — runs `eslint` after file edits in TypeScript/JavaScript projects
+- **`arch-drift-guard.sh`** (PostToolUse, advisory) — prints a one-line nudge when structural files are edited (docker-compose, package.json, go.mod, etc.); never blocks
 
 ---
 

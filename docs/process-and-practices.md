@@ -20,6 +20,7 @@ BACKLOG                          SPRINT                                    RELEA
 │ /domain      │    │ /groom → /design → /build → /test ─────────→ /review │    │ /deploy  │
 │ /ux          │ →  │                               └─ fail → /build        │ →  │          │
 │ /plan        │    │                                                        │    │          │
+│ /arch        │    │                                                        │    │          │
 └──────────────┘    └─────────────────────────────────────────────────────┘    └──────────┘
 
 Production fast-path:  /incident ──────────────────→ /build → /review → /deploy
@@ -27,6 +28,8 @@ Production fast-path:  /incident ───────────────�
 
 **Workflow skills** (used across all phases):
 `/git` · `/board` · `/analysis` · `/data-model` · `/security-review` · `/simplify`
+
+`/arch validate` is used after build sessions that touch service structure.
 
 ---
 
@@ -38,11 +41,12 @@ Every mode either produces or consumes:
 |------|----------|----------|
 | `/domain` | `docs/domain/` | — |
 | `/ux` | `docs/features/*/ux.md` | `docs/domain/`, user research |
-| `/groom` | `docs/features/*/requirements.md` | `docs/domain/`, `docs/features/*/ux.md` |
-| `/design` | `docs/features/*/design.md`, `docs/decisions/` | `docs/features/*/requirements.md`, `docs/domain/` |
-| `/build` | Code, `docs/domain/product-capabilities.md` | All docs, task board |
+| `/groom` | `docs/features/*/requirements.md` | `docs/domain/`, `docs/features/*/ux.md`, `docs/architecture/system.md` |
+| `/arch` | `docs/architecture/system.md`, `docs/architecture/constraints.md`, `docs/architecture/stack.md`, `docs/decisions/YYYY-MM-DD-*.md`, `docs/wip/arch-validate-*.md` | CLAUDE.md, existing `docs/architecture/`, `docs/decisions/`, git log |
+| `/design` | `docs/features/*/design.md`, `docs/decisions/YYYY-MM-DD-*.md` | `docs/features/*/requirements.md`, `docs/domain/`, `docs/architecture/` |
+| `/build` | Code, `docs/domain/product-capabilities.md` | All docs, task board, `docs/architecture/constraints.md` |
 | `/test` | `docs/features/*/test-plan.md` | `docs/features/*/requirements.md` |
-| `/review` | `docs/wip/review-*.md` | Diff, CLAUDE.md, docs/decisions/ |
+| `/review` | `docs/wip/review-*.md` | Diff, CLAUDE.md, `docs/architecture/`, `docs/decisions/` |
 | `/plan` | `docs/plans/`, board card moves | All docs, task board state |
 | `/data` | `docs/reports/` | Database, `docs/domain/` |
 | `/incident` | Tracking issue, `docs/wip/postmortem-*.md` | Error logs, recent deploys |
@@ -127,6 +131,7 @@ These skills cross-cut the sprint phases — they can be invoked from any point 
 | `/data-model` | Before writing a query against an unfamiliar table; proposing a schema change |
 | `/security-review` | Before merging anything that touches auth, input, secrets, or IAM |
 | `/simplify` | After a build session when the implementation feels overbuilt; on periodic cleanup passes |
+| `/arch validate` | After a build session that added a service, changed inter-service communication, or crossed a boundary |
 
 ---
 
@@ -134,21 +139,51 @@ These skills cross-cut the sprint phases — they can be invoked from any point 
 
 ```
 docs/
+├── architecture/  Declared system architecture — system.md (structure), constraints.md (rules), stack.md (tech)
 ├── domain/        Expert knowledge — the science or logic behind the product
 ├── features/      One folder per feature: ux.md, requirements.md, design.md, test-plan.md
-├── decisions/     Architecture Decision Records (ADRs)
+├── decisions/     Architecture Decision Records (ADRs) — named YYYY-MM-DD-<slug>.md
 ├── plans/         Planning and prioritisation notes
 ├── reports/       Data analysis findings
 ├── ops/           Human-owned operational files — Claude does not modify these unless asked
 ├── backlog/       Feature parking lot — promoted to task board by human decision only
-└── wip/           Ephemeral session captures, review reports, post-mortems — not a task board
+└── wip/           Ephemeral session captures, review reports, arch-validate reports, post-mortems
 ```
+
+**`docs/architecture/constraints.md` is the enforcement contract.** Every code-generating command (`/build`) and every code-reviewing command (`/review`) reads it and treats violations as blocking. Declare it once with `/arch init`; update it with `/arch update` when the rules evolve.
 
 **`docs/ops/` is human-owned.** Files here (field actions, pending decisions, operational runbooks) are written and maintained by people, not by Claude. Claude reads them for context but does not modify them without explicit instruction.
 
 **`docs/backlog/feature-ideas.md` is a parking lot**, not a task board. Ideas here are promoted to the task board by a human. Claude does not move entries autonomously.
 
 **`docs/wip/` is ephemeral.** Session captures, review reports, test failure notes, and post-mortems live here. They are working documents, not permanent records. Promote findings to the appropriate permanent location (decisions/, domain/, features/) when they stabilise.
+
+---
+
+## Multi-Repo Documentation Convention
+
+In microservices projects where each service lives in its own repo, documentation falls into two categories with different homes.
+
+**Service repo (`./docs/`)** — docs that are co-located with the code they describe:
+- Feature requirements, designs, and test plans for features owned by this service
+- Service-level ADRs (decisions that affect only this service's internals)
+- Domain knowledge specific to this service's bounded context
+- The service's own `docs/domain/`, `docs/features/`, and `docs/decisions/` trees
+
+**System repo (`system_docs_repo`)** — docs that describe the whole system or cross service boundaries:
+- System-level ADRs (API contracts, auth patterns, shared protocols, inter-service agreements)
+- Epics that span multiple services
+- Domain knowledge shared across the whole product (shared data models, business-wide rules)
+- Roadmaps and plans that sequence work across services
+- Cross-cutting features (e.g., SSO, rate limiting, observability)
+
+**The deciding question:** "Would an engineer working in a different service need this doc?" If yes, it belongs in the system repo.
+
+**Architecture docs follow the same split:** `docs/architecture/` in a service repo describes that service's internals (its components, its data stores, its service-level constraints). The system-wide architecture declaration — all services, inter-service communication, and system-wide invariants — lives in `<system_docs_repo>/docs/architecture/`. When running `/arch init`, you are asked which scope to declare; write to the appropriate location. Cross-cutting ADRs (API contracts, shared auth patterns, inter-service agreements) always go to `<system_docs_repo>/docs/decisions/`.
+
+**How to configure:** Add a `## System Docs` section to `.claude/pai-orbit-config.md` in each service repo with a `system_docs_repo` pointer (relative path or git URL). Commands resolve this at session start and read from both locations automatically.
+
+**Discipline:** Do not put service-specific docs in the system repo to avoid the "arbitrary home" problem that the hybrid model is designed to prevent. Cross-cutting means the doc is relevant to at least two services.
 
 ---
 

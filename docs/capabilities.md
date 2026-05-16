@@ -41,14 +41,31 @@ Leads with functional questions, not technical ones. Scopes to minimal deliverab
 
 ---
 
+### `/arch` — Architecture Mode
+
+**Headspace:** System-wide structure — services, boundaries, data flow, constraints  
+**Reads:** CLAUDE.md, docs/architecture/, docs/decisions/, system_docs_repo (if configured)  
+**Writes:** docs/architecture/system.md, docs/architecture/constraints.md, docs/architecture/stack.md, docs/decisions/YYYY-MM-DD-*.md, docs/wip/arch-validate-*.md, CLAUDE.md → ## Architecture  
+**Switch to:** `/design` for feature-level technical decisions, `/build` when ready to implement
+
+Four sub-modes:
+- `/arch init` — guided interview to declare services, communication, data stores, constraints, and trust boundaries for the first time
+- `/arch view` — render a summary of the current declaration (no writes)
+- `/arch update` — amend the declaration when structure changes; creates an ADR for irreversible decisions
+- `/arch validate` — compare recent code changes against the declaration; classifies findings as constraint violations (blocking), ADR conflicts (blocking), or unrecorded evolution (advisory); writes `docs/wip/arch-validate-<date>.md`
+
+`constraints.md` is the enforcement contract — `/build` reads it before generating code; `/review` checks every diff against it.
+
+---
+
 ### `/design` — Design Mode
 
 **Headspace:** Technical trade-offs  
-**Reads:** CLAUDE.md, docs/features/, docs/decisions/, docs/domain/  
-**Writes:** docs/features/*/design.md, docs/decisions/*.md  
-**Switch to:** `/groom` for unclear requirements, `/build` when ready to implement
+**Reads:** CLAUDE.md, docs/architecture/, docs/features/, docs/decisions/, docs/domain/  
+**Writes:** docs/features/*/design.md, docs/decisions/YYYY-MM-DD-*.md  
+**Switch to:** `/groom` for unclear requirements, `/arch` for system-level boundary changes, `/build` when ready to implement
 
-No implementation. Presents 2–3 options with tradeoffs. Flags irreversible decisions. Uses Mermaid diagrams. Ends every session by listing open questions with owners.
+No implementation. Presents 2–3 options with tradeoffs. Flags irreversible decisions. Reads `docs/architecture/constraints.md` — design options that violate a constraint are flagged explicitly. Uses Mermaid diagrams. Ends every session by listing open questions with owners.
 
 ---
 
@@ -205,6 +222,12 @@ Available templates: FastAPI, Next.js, Django, Express/Node, React/Vite, Infrast
 ## Hooks
 
 Hooks run automatically on tool events.
+
+### `arch-drift-guard.sh` (PostToolUse, async)
+
+Fires after Edit/Write on structural files (`docker-compose.yml`, `package.json`, `go.mod`, `requirements.txt`, `pyproject.toml`, `Cargo.toml`, `fly.toml`, `main.py`, `index.ts`, etc.). Prints a one-line advisory: "Consider running `/arch validate` after this session to check architecture alignment." Never blocks.
+
+---
 
 ### `bash-guard.sh` (PreToolUse)
 

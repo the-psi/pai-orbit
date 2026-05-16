@@ -19,16 +19,17 @@ Sub-projects:
 
 ## Architecture
 
-<!-- TODO: Fill in by hand. Describe: -->
-<!-- - Data flow (use a Mermaid flowchart) -->
-<!-- - Key architectural decisions and why they were made -->
-<!-- - System boundaries and integrations -->
-<!-- - Any non-obvious invariants or constraints -->
+<!-- Run /arch init to complete this section with a guided interview. -->
+<!-- Full declaration lives in docs/architecture/ (system.md, constraints.md, stack.md) -->
 
 ```mermaid
 flowchart LR
     A[TODO] --> B[TODO]
 ```
+
+**Constraints:** (run `/arch init` to populate — enforced by `/build` and `/review`)
+
+**Full declaration:** [docs/architecture/system.md](docs/architecture/system.md)
 
 ---
 
