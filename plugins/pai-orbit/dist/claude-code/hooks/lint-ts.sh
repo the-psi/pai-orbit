@@ -38,7 +38,7 @@ else
 fi
 
 cd "$repo" || exit 0
-output=$("$eslint_bin" --max-warnings 0 "$file" 2>&1)
+output=$("$eslint_bin" --max-warnings 0 -- "$file" 2>&1)
 status=$?
 if [ $status -ne 0 ]; then
   echo "[lint-ts] $file" >&2
