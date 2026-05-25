@@ -158,6 +158,12 @@ For each service, pick the closest agent template from `templates/agents/`:
 
 Write the generated agent to `.claude/agents/<service>-builder.md`. Replace all `{{PLACEHOLDER}}` markers with actual values.
 
+### Project rules
+
+Copy `templates/rules/decisions.md` to `.claude/rules/decisions.md`.
+
+This file defines when an ADR is required and how to create one. It is read by every session via the rules directory so the obligation applies regardless of which skill or agent is active.
+
 ### Lint hooks
 
 For each language detected:
@@ -211,5 +217,8 @@ Architecture files:
 - ⚠️ Stub — `docs/architecture/system.md` — run `/arch init` to complete
 - ⚠️ Stub — `docs/architecture/constraints.md` — run `/arch init` to define rules
 - ✅ Generated — `docs/architecture/stack.md` (populated from detected stack)
+
+Rules:
+- ✅ Generated — `.claude/rules/decisions.md` — ADR obligation rules (when to write one, how)
 
 End with: "Run `/suggest-skills` after a few sessions to discover operational skills worth adding."
