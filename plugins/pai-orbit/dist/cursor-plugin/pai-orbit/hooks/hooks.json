@@ -1,0 +1,20 @@
+{
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": "./scripts/bash-guard.sh"
+      }
+    ],
+    "afterFileEdit": [
+      {
+        "command": "./scripts/lint-python.sh"
+      },
+      {
+        "command": "./scripts/lint-ts.sh"
+      },
+      {
+        "command": "./scripts/arch-drift-guard.sh"
+      }
+    ]
+  }
+}

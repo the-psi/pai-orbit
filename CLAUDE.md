@@ -21,7 +21,9 @@ This repo is a **Claude Code marketplace**. The pai-orbit plugin lives under `pl
 ```
 pai-orbit/                          # repo = marketplace
 ├── .claude-plugin/
-│   └── marketplace.json            # marketplace listing; points at dist/claude-code/
+│   └── marketplace.json            # Claude Code marketplace → dist/claude-code/
+├── .cursor-plugin/
+│   └── marketplace.json            # Cursor marketplace → dist/cursor-plugin/pai-orbit/
 ├── plugins/
 │   └── pai-orbit/
 │       ├── core/                   # tool-agnostic source of truth
@@ -34,7 +36,8 @@ pai-orbit/                          # repo = marketplace
 │       │   └── templates/          # /setup scaffolds (agents, docs, ADR, CLAUDE.md template, …)
 │       ├── adapters/
 │       │   ├── claude-code/        # full fidelity
-│       │   ├── cursor/             # lossy; .cursor/rules/*.mdc
+│       │   ├── cursor-plugin/      # Cursor plugin (rules, skills, commands, agents, hooks)
+│       │   ├── cursor/             # lossy legacy; .cursor/rules/*.mdc
 │       │   ├── copilot/            # lossy; .github/copilot-instructions.md
 │       │   └── codex/              # experimental; AGENTS.md
 │       ├── dist/                   # COMMITTED build outputs (one subdir per adapter)

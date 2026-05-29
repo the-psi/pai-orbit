@@ -13,11 +13,13 @@ plugins/pai-orbit/
 │   └── templates/              # scaffolds emitted by /setup
 ├── adapters/
 │   ├── claude-code/build.sh    # full-fidelity; emits Claude Code plugin layout
-│   ├── cursor/build.sh         # lossy; emits .cursor/rules/*.mdc
+│   ├── cursor-plugin/build.sh  # Cursor plugin; emits dist/cursor-plugin/pai-orbit/
+│   ├── cursor/build.sh         # lossy legacy; emits .cursor/rules/*.mdc
 │   ├── copilot/build.sh        # lossy; emits .github/copilot-instructions.md
 │   └── codex/build.sh          # experimental; emits AGENTS.md
 ├── dist/                       # built outputs (committed)
 │   ├── claude-code/
+│   ├── cursor-plugin/
 │   ├── cursor/
 │   ├── copilot/
 │   └── codex/
@@ -37,7 +39,8 @@ Each adapter clears its own `dist/<adapter>/` subdir and rebuilds from `core/`. 
 | Adapter | Modes | Skills | Agents | Hooks | Templates |
 |---------|-------|--------|--------|-------|-----------|
 | claude-code | ✅ as `/commands/` | ✅ | ✅ | ✅ | ✅ |
-| cursor      | ⚠️ as rules (`.cursor/rules/*.mdc`) | ⚠️ as one rule | ❌ | ❌ | ✅ (verbatim) |
+| cursor-plugin | ✅ rules + commands | ✅ | ✅ | ⚠️ mapped | ✅ |
+| cursor (legacy) | ⚠️ as rules (`.cursor/rules/*.mdc`) | ⚠️ as one rule | ❌ | ❌ | ✅ (verbatim) |
 | copilot     | ⚠️ as instructions | ⚠️ as appendix | ❌ | ❌ | ❌ |
 | codex       | ⚠️ as instructions | ⚠️ as appendix | ❌ | ❌ | ❌ |
 

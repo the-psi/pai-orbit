@@ -37,11 +37,16 @@ bash plugins/pai-orbit/build.sh
 /reload-plugins
 ```
 
+### Cursor (plugin)
+
+Full Cursor plugin at `plugins/pai-orbit/dist/cursor-plugin/pai-orbit/` — install from the **repo root** via `.cursor-plugin/marketplace.json`, symlink to `~/.cursor/plugins/local/pai-orbit`, or use Team Marketplace. See [`docs/cursor-plugin-install-and-usage.md`](cursor-plugin-install-and-usage.md).
+
+Legacy copy-rules install (lossy): `plugins/pai-orbit/dist/cursor/` — use only if you cannot install the plugin.
+
 ### Other coding assistants (lossy)
 
-The same plugin is also built for Cursor, GitHub Copilot, and OpenAI Codex CLI. These bundles are intentionally lossy — no command system, no skills, no agents, no hooks — so they are reference rules/instructions only. Install instructions live alongside each bundle:
+GitHub Copilot and OpenAI Codex CLI bundles are reference instructions only:
 
-- Cursor: `plugins/pai-orbit/dist/cursor/`
 - GitHub Copilot: `plugins/pai-orbit/dist/copilot/`
 - OpenAI Codex CLI (experimental): `plugins/pai-orbit/dist/codex/`
 

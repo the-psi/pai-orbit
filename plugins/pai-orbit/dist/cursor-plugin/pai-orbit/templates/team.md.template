@@ -1,0 +1,20 @@
+# Team
+
+Used by `/agile-board` for default assignees and handoffs.
+Update when team members join, leave, or change roles.
+
+| Name | Role | GitHub | Linear | Jira | Notes |
+|------|------|--------|--------|------|-------|
+| {{NAME_1}} | {{ROLE_1}} | {{GITHUB_1}} | {{LINEAR_1}} | {{JIRA_1}} | {{NOTES_1}} |
+<!-- Add one row per team member. Leave unused platform columns blank. -->
+
+## Role reference
+
+Roles used by `/agile-board` for default assignments:
+
+| Role | Assigned to | Used for |
+|------|-------------|----------|
+| Engineering lead | {{ENG_LEAD}} | Code issues, tech debt, bugs |
+| Product / domain expert | {{DOMAIN_EXPERT}} | Domain decisions, requirements sign-off |
+| Ops | {{OPS_LEAD}} | Field actions, data fixes, deployments |
+<!-- Add rows for any role the board skill needs to reference -->

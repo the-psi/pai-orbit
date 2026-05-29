@@ -135,13 +135,26 @@ git clone https://github.com/the-psi/pai-orbit
 /plugin install pai-orbit@the-psi
 ```
 
+### Cursor (plugin — recommended)
+
+Install as a **user-level or team marketplace** plugin (rules, skills, commands, agents, hooks):
+
+| Path | How to install |
+|------|----------------|
+| Repo root (`.cursor-plugin/marketplace.json`) | Paste `https://github.com/the-psi/pai-orbit` in Cursor — installs `dist/cursor-plugin/pai-orbit/` |
+| [`plugins/pai-orbit/dist/cursor-plugin/pai-orbit/`](plugins/pai-orbit/dist/cursor-plugin/pai-orbit/) | Symlink or copy to `~/.cursor/plugins/local/pai-orbit` |
+
+See [`docs/cursor-plugin-install-and-usage.md`](docs/cursor-plugin-install-and-usage.md) and [`plugins/pai-orbit/dist/cursor-plugin/README.md`](plugins/pai-orbit/dist/cursor-plugin/README.md).
+
+**Do not** use the legacy copy-rules install and the plugin together — duplicate mode rules will conflict.
+
 ### Other coding assistants (lossy)
 
-The same plugin source is compiled to per-tool bundles under `plugins/pai-orbit/dist/`. These bundles are **lossy** — modes become always-on rule documents, and there is no command, skill, agent, or hook system in these tools.
+The same plugin source is compiled to per-tool bundles under `plugins/pai-orbit/dist/`. Copilot and Codex bundles are **lossy** reference instructions only.
 
 | Tool | Path | How to install |
 |------|------|----------------|
-| Cursor | [`plugins/pai-orbit/dist/cursor/`](plugins/pai-orbit/dist/cursor/) | Copy `.cursor/` into your project root |
+| Cursor (legacy) | [`plugins/pai-orbit/dist/cursor/`](plugins/pai-orbit/dist/cursor/) | Copy `.cursor/` into your project root — use only if you cannot install the plugin |
 | GitHub Copilot | [`plugins/pai-orbit/dist/copilot/`](plugins/pai-orbit/dist/copilot/) | Copy `.github/copilot-instructions.md` into your project |
 | OpenAI Codex CLI (experimental) | [`plugins/pai-orbit/dist/codex/`](plugins/pai-orbit/dist/codex/) | Copy `AGENTS.md` to your project root |
 

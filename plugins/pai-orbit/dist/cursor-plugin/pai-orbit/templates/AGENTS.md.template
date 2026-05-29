@@ -1,0 +1,109 @@
+# AGENTS.md
+
+<!-- Generated stub from pai-orbit /setup (Cursor). Fill in sections marked TODO. -->
+<!-- This file is the project guide Cursor agents read for stack, conventions, and commands. -->
+<!-- Keep it current — stale AGENTS.md leads to wrong architectural assumptions. -->
+
+## Project Overview
+
+**{{PROJECT_NAME}}** — {{PROJECT_DESCRIPTION}}
+<!-- One sentence: what it does, who it serves, what problem it solves. -->
+
+Sub-projects:
+| Name | Path | Stack | Purpose |
+|------|------|-------|---------|
+| {{SERVICE_1}} | `{{SERVICE_1_PATH}}/` | {{SERVICE_1_STACK}} | {{SERVICE_1_PURPOSE}} |
+<!-- Add one row per service/sub-repo. -->
+
+---
+
+## Architecture
+
+<!-- Run /arch init to complete this section with a guided interview. -->
+<!-- Full declaration lives in docs/architecture/ (system.md, constraints.md, stack.md) -->
+
+```mermaid
+flowchart LR
+    A[TODO] --> B[TODO]
+```
+
+**Constraints:** (run `/arch init` to populate — enforced by `/build` and `/review`)
+
+**Full declaration:** [docs/architecture/system.md](docs/architecture/system.md)
+
+---
+
+## Key Files and Patterns
+
+<!-- TODO: List the most important files an engineer would want to know about. -->
+<!-- Examples: main entry points, service layer, data access layer, auth middleware. -->
+
+---
+
+## Data Model
+
+<!-- TODO: Describe primary data stores, key tables/collections, and their relationships. -->
+<!-- Include natural keys, notable columns, and any gotchas (e.g., STRUCT fields as dicts). -->
+
+---
+
+## Authentication
+
+<!-- TODO: How does auth work? IAP, JWT, OAuth? What headers carry identity? -->
+<!-- How to test locally without the auth layer? -->
+
+---
+
+## Commands
+
+<!-- TODO: Fill in for each service. -->
+
+### {{SERVICE_1}}
+```bash
+# Install dependencies
+{{INSTALL_CMD}}
+
+# Dev server
+{{DEV_CMD}}
+
+# Run tests
+{{TEST_CMD}}
+
+# Build
+{{BUILD_CMD}}
+
+# Lint
+{{LINT_CMD}}
+```
+
+---
+
+## Environment Variables
+
+| Variable | Used by | Notes |
+|----------|---------|-------|
+| `{{VAR_1}}` | {{SERVICE}} | {{DESCRIPTION}} |
+<!-- Add one row per env var. Note which are required vs optional. -->
+
+Copy `.env.example` → `.env` before running locally.
+
+---
+
+## Deployment
+
+<!-- TODO: Cloud provider, region, services deployed. -->
+<!-- Reference .cursor/pai-orbit-config.md for deploy commands. -->
+<!-- Note any environment-specific config (staging vs prod). -->
+
+---
+
+## GCP / Cloud Project Boundaries
+
+<!-- TODO: If the project spans multiple cloud projects or accounts, document the boundaries. -->
+<!-- Which project is "home"? What is off-limits from this workspace? -->
+
+---
+
+## Diagrams
+
+Use **Mermaid** throughout — fenced ` ```mermaid ` blocks.

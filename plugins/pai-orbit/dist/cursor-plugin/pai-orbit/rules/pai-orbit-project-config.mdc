@@ -1,0 +1,8 @@
+---
+description: Read per-project pai-orbit config for board, git, deploy, and docs settings
+alwaysApply: true
+---
+
+When working in a repository that contains `.cursor/pai-orbit-config.md`, read it before board, deploy, git workflow, or epic work. Use it for board URLs, branching model, deployment targets, docs home, and team roster (`.cursor/team.md`). Also read `AGENTS.md` for stack and project conventions.
+
+If only legacy `.claude/pai-orbit-config.md` or `CLAUDE.md` exist (pre-migration repo), read those as fallback — but prefer `.cursor/pai-orbit-config.md` and `AGENTS.md`. Do not warn that Claude paths are "missing" when Cursor-native paths are the expected contract.

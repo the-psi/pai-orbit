@@ -1,0 +1,22 @@
+{
+  "name": "the-psi",
+  "description": "Pratham Software (PSI) Cursor plugin marketplace",
+  "owner": {
+    "name": "Pratham Software (PSI)",
+    "email": "pai-orbit@thepsi.com"
+  },
+  "metadata": {
+    "description": "pai-orbit methodology harness for Cursor (modes, skills, commands, agents, hooks)"
+  },
+  "plugins": [
+    {
+      "name": "pai-orbit",
+      "description": "Structured developer methodology harness — working modes, team practices, and project workflow for any software team",
+      "author": {
+        "name": "Pratham Software (PSI)"
+      },
+      "source": "./plugins/pai-orbit/dist/cursor-plugin/pai-orbit",
+      "homepage": "https://github.com/the-psi/pai-orbit"
+    }
+  ]
+}
