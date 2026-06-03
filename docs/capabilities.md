@@ -37,7 +37,12 @@ Leads with the user's goal and context before discussing interface. Describes fl
 **Writes:** docs/features/*/requirements.md  
 **Switch to:** `/domain` for unresolved expert knowledge, `/design` when ready, `/plan` for priority decisions
 
-Leads with functional questions, not technical ones. Scopes to minimal deliverable. Captures open questions with owners. Does not design solutions.
+Three-phase structured approach:
+1. **Establish purpose** — What problem does this solve? For whom? What outcome?
+2. **Define scenarios** — List and confirm all situations/use cases to be covered
+3. **Analyze requirements** — Only after purpose and scenarios are confirmed, read context docs and derive functional requirements
+
+Leads with functional questions, not technical ones. Scopes to minimal deliverable. Captures open questions with owners. Does not design solutions. Before marking ready for `/design`, runs readiness gate to ensure all functional gaps are resolved while deferring design questions.
 
 ---
 
