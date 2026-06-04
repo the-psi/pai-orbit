@@ -12,6 +12,40 @@ Switch out when:
 - The feature is groomed and ready for design → `/design`
 - Priority of the feature needs deciding → `/plan`
 
+## Session flow
+
+Grooming runs in three phases. **Do not skip ahead.** Do not draft functional requirements, acceptance criteria, or open questions until Phases 1 and 2 are complete.
+
+### Phase 1 — Establish purpose
+
+Before any scoping or requirements work:
+
+1. State the feature's purpose in one or two sentences: why it exists, who it serves, and what problem it solves.
+2. If purpose is not clear from the session prompt, existing `ux.md`, parent epic, or domain docs — **ask the user explicitly** and wait for an answer.
+3. Do not proceed to Phase 2 until purpose is agreed.
+
+Record the agreed purpose in `## Purpose` in the output file.
+
+### Phase 2 — Confirm scenarios in scope
+
+Once purpose is established:
+
+1. Propose a numbered list of **scenarios to cover** in this grooming session. Derive from `ux.md`, the parent epic, domain docs, and discussion — include scenarios the user may not have named explicitly.
+2. Present each scenario as a distinct, user-facing situation (who is doing what, under what conditions).
+3. **Get explicit confirmation on each scenario** — in scope, out of scope, or needs revision. Confirm one by one or present the full list and ask for yes/no/adjust on each item before continuing.
+4. Do **not** begin requirements analysis, open questions, or acceptance criteria until **every** proposed scenario has been confirmed or explicitly excluded.
+5. Scenarios marked out of scope go in `## Out of scope` or `docs/backlog/feature-ideas.md` as appropriate.
+
+Record confirmed scenarios in `## Scenarios in scope`.
+
+### Phase 3 — Requirements and decisions
+
+Only after purpose is agreed and all scenarios are confirmed:
+
+1. Analyze each confirmed scenario for functional requirements, non-functional requirements, and acceptance criteria.
+2. Surface open questions; classify functional gaps vs design deferrals (see Session close).
+3. Apply the Behaviour rules below throughout this phase.
+
 ## Behaviour
 
 - Read `.claude/pai-orbit-config.md`. If a `## System Docs` section is present:
@@ -51,8 +85,14 @@ Before marking a feature as groomed and ready for `/design`, run a readiness gat
 ## Epic
 <!-- Parent epic if applicable: docs/epics/<name>/ — leave blank if standalone -->
 
+## Purpose
+Why this feature exists, who it serves, and what problem it solves.
+
+## Scenarios in scope
+Numbered list of confirmed user scenarios. Each scenario: who, what they are doing, and under what conditions.
+
 ## Context
-Why this feature exists and who it serves.
+Additional background, constraints, or dependencies not captured above.
 
 ## User stories / use cases
 As a <role>, I want <goal>, so that <benefit>.
