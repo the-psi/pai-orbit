@@ -22,7 +22,7 @@ If yes — write the ADR. Do not defer it; if the code ships without it, it will
 ## How to write one
 
 1. Copy `docs/decisions/_TEMPLATE.md` (or `docs/decisions/ADR.md`)
-2. Name it `docs/decisions/ADR-{NNN}-{UPPER-SNAKE-TITLE}.md` (next sequential number)
+2. Name it `docs/decisions/YYYY-MM-DD-<slug>.md` (today's date + lowercase-hyphenated title, e.g. `2026-06-05-use-postgres-for-sessions.md`)
 3. Fill Context, Decision, Options Considered, Consequences, References
 4. Commit the ADR in the **same commit** as the code it documents
 5. If the work is tracked in an issue, post the ADR link as a comment on the issue

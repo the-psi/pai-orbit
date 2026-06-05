@@ -16,6 +16,11 @@ if [ ! -d "$CORE_DIR" ]; then
   exit 1
 fi
 
+case "$DIST_ROOT" in
+  "$PLUGIN_DIR"/dist/*) ;;
+  *) echo "cursor-plugin adapter: DIST_ROOT '$DIST_ROOT' is outside PLUGIN_DIR — refusing rm -rf" >&2; exit 1 ;;
+esac
+
 # First non-empty line of a mode file → human-readable description for frontmatter.
 mode_description() {
   local file="$1"
@@ -144,6 +149,19 @@ When working in a repository that contains `.cursor/pai-orbit-config.md`, read i
 
 If only legacy `.claude/pai-orbit-config.md` or `CLAUDE.md` exist (pre-migration repo), read those as fallback — but prefer `.cursor/pai-orbit-config.md` and `AGENTS.md`. Do not warn that Claude paths are "missing" when Cursor-native paths are the expected contract.
 EOF
+
+# Always-on ADR obligation rule — emitted from core template with alwaysApply: true
+DECISIONS_TPL="$CORE_DIR/templates/rules/decisions.md"
+if [ -f "$DECISIONS_TPL" ]; then
+  {
+    echo "---"
+    echo "description: ADR obligation — when and how to write Architecture Decision Records"
+    echo "alwaysApply: true"
+    echo "---"
+    echo ""
+    cat "$DECISIONS_TPL"
+  } > "$DIST_DIR/rules/decisions.mdc"
+fi
 
 # Append Cursor-specific /arch output contract (exact warning wording for /arch view)
 for arch_file in "$DIST_DIR/commands/arch.md" "$DIST_DIR/rules/arch.mdc"; do

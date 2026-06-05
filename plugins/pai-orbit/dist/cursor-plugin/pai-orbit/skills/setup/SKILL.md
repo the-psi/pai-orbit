@@ -78,6 +78,10 @@ Use the template at `templates/AGENTS.md.template`. Fill in:
 
 For each service, you may generate `.cursor/agents/<service>-builder.md` from `templates/agents/` if the team wants project-scoped builder agents. The pai-orbit plugin already ships generic agents; skip this unless the user asks for stack-specific builders.
 
+### `docs/decisions/_TEMPLATE.md`
+
+Copy `templates/docs/decisions/ADR.md` to `docs/decisions/_TEMPLATE.md`. This gives teams a local ADR template to copy-paste. The ADR obligation itself is enforced by the plugin's always-on `decisions.mdc` rule — no project file needed for that.
+
 ### Do NOT generate
 
 - `CLAUDE.md`

@@ -1,3 +1,8 @@
+---
+description: ADR obligation — when and how to write Architecture Decision Records
+alwaysApply: true
+---
+
 # Architectural Decision Records
 
 ## When an ADR is required

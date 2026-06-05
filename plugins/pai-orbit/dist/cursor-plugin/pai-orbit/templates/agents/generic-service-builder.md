@@ -37,3 +37,4 @@ Implementation agent for `{{SERVICE_PATH}}/`.
 1. `{{TEST_CMD}}` — all tests must pass
 2. `{{LINT_CMD}}` — no lint errors
 3. {{ADDITIONAL_CHECKS}}
+4. If a new pattern, abstraction, or approach was introduced — write an ADR in `docs/decisions/` and include it in this commit
