@@ -1,8 +1,3 @@
----
-name: groom
-description: You are now in GROOM MODE.
----
-
 You are now in GROOM MODE.
 
 This is a feature requirements session that runs in three gated phases — purpose, scenarios, then requirements. Do not analyze requirements until phases 1 and 2 are confirmed. Output saved to `docs/features/<feature>/requirements.md`.
@@ -23,6 +18,7 @@ Before any scoping or requirements work:
 1. State the feature's purpose in one or two sentences: why it exists, who it serves, and what problem it solves.
 2. Sources to draw purpose from, in order of precedence: parent epic's `## Summary` (or `## Purpose` if present), existing `ux.md`, domain docs. If purpose can be drafted from these, propose it and confirm with the user (don't silently adopt). If nothing is available — **ask the user explicitly** and wait for an answer.
 3. Do not proceed to Phase 2 until purpose is agreed.
+4. **Phase 1 Complete**: Announce "✅ Purpose established. Moving to Phase 2: Scenario Confirmation" and update output file with confirmed purpose before proceeding.
 
 Record the agreed purpose in `## Purpose` in the output file.
 
@@ -32,11 +28,22 @@ Once purpose is established:
 
 1. Propose a numbered list of **scenarios to cover** in this grooming session. Derive from `ux.md`, the parent epic, domain docs, and discussion — include scenarios the user may not have named explicitly.
 2. Present each scenario as a distinct, user-facing situation (who is doing what, under what conditions). **Granularity test:** two situations are distinct scenarios if their acceptance criteria would differ — not just their inputs.
-3. **Get explicit confirmation on each scenario** — in scope, out of scope, or needs revision. Confirm one by one or present the full list and ask for yes/no/adjust on each item before continuing.
+   
+   **Examples:**
+   - ✅ **Distinct scenarios**: "User logs in successfully" vs "User login fails" (different acceptance criteria: success flow vs error handling)
+   - ❌ **Same scenario**: "User logs in from Chrome" vs "User logs in from Firefox" (same acceptance criteria, just different inputs)
+
+3. **Get explicit confirmation on each scenario using this format:**
+   - Present scenario: "Scenario N: [description]"
+   - Ask: "Confirm this scenario: [In Scope] / [Out of Scope] / [Needs Revision]?"  
+   - Wait for explicit response before proceeding to next scenario
+   - **Do not assume silence means agreement**
+
 4. Do **not** begin requirements analysis, open questions, or acceptance criteria until **every** proposed scenario has been confirmed or explicitly excluded.
 5. Scenarios marked out of scope:
    - Same product surface, intentionally excluded from *this* feature → `## Out of scope`
    - Different feature idea that surfaced during discussion → `docs/backlog/feature-ideas.md`
+6. **Phase 2 Complete**: Announce "✅ All scenarios confirmed. Moving to Phase 3: Requirements Analysis" before proceeding.
 
 Record confirmed scenarios in `## Scenarios in scope`.
 
@@ -44,18 +51,22 @@ Record confirmed scenarios in `## Scenarios in scope`.
 
 Only after purpose is agreed and all scenarios are confirmed:
 
-1. Lead with functional and user-facing questions before going technical. Analyze each confirmed scenario for functional requirements, non-functional requirements, and acceptance criteria.
-2. Surface open questions; classify functional gaps vs design deferrals (see Session close).
-3. If a previously unconsidered scenario surfaces during analysis, **stop and return to Phase 2** to confirm it before writing any requirements for it. Do not silently expand scope.
-4. Apply the Behaviour rules below throughout this phase.
+1. **For each confirmed scenario**, derive specific requirements with traceability:
+   - Label requirements with scenario reference: "REQ-1 (Scenario 1): User must..."
+   - Ensure every scenario has at least one requirement
+   - Flag any requirements not tied to confirmed scenarios
+2. Lead with functional and user-facing questions before going technical. Analyze each confirmed scenario for functional requirements, non-functional requirements, and acceptance criteria.
+3. Surface open questions; classify functional gaps vs design deferrals (see Session close).
+4. If a previously unconsidered scenario surfaces during analysis, **stop and return to Phase 2** to confirm it before writing any requirements for it. Do not silently expand scope.
+5. Apply the Behaviour rules below throughout this phase.
 
 ## Behaviour
 
-- Read `.cursor/pai-orbit-config.md`. If a `## System Docs` section is present:
+- Read `.claude/pai-orbit-config.md`. If a `## System Docs` section is present:
   - If `system_docs_repo` is a relative path: check whether the directory exists. If yes, add `<system_docs_repo>/<system_docs_path>` to the doc read set. If no, warn once ("System docs path unreachable — continuing with local docs only") and proceed.
   - If `system_docs_repo` is a git URL: check whether a local clone exists at a resolvable path. If yes, add it. If no, warn once and proceed.
   - Read docs from all resolved paths before starting the session.
-- Read `AGENTS.md`, existing `docs/features/`, and the parent epic from `docs/epics/` (if one exists) before starting
+- Read `CLAUDE.md`, existing `docs/features/`, and the parent epic from `docs/epics/` (if one exists) before starting
 - If `docs/architecture/system.md` exists, read it — reference service ownership to assign features to the right service and flag requirements that would cross declared boundaries
 - Flag ambiguity rather than assuming — requirements with hidden assumptions create build debt
 - Capture open questions explicitly with an owner (person or role)
@@ -67,8 +78,8 @@ Only after purpose is agreed and all scenarios are confirmed:
 Before marking a feature as groomed and ready for `/design`, run a readiness gate:
 
 0. **Pre-flight phase audit.** Before classifying open questions:
-   - `## Purpose` must be non-empty and reflect agreed wording (no placeholders or TBD).
-   - Every entry in `## Scenarios in scope` must have been explicitly confirmed in Phase 2. No scenario may sit unclassified or pending.
+   - `## Purpose` must be non-empty and reflect agreed wording (no placeholders or TBD). If incomplete: "❌ Returning to Phase 1. Current purpose: '[current text]'. Please clarify: [specific issue]"
+   - Every entry in `## Scenarios in scope` must have been explicitly confirmed in Phase 2. No scenario may sit unclassified or pending. If scenarios unconfirmed: "❌ Returning to Phase 2. These scenarios need explicit confirmation: [list]. Please confirm each as In/Out/Revise."
    - If either fails, return to the relevant phase — do NOT mark the feature as groomed or suggest switching to `/design`.
 
 1. **Audit open questions.** For each item in the `## Open questions` list, classify it:
@@ -93,22 +104,27 @@ Before marking a feature as groomed and ready for `/design`, run a readiness gat
 <!-- Parent epic if applicable: docs/epics/<name>/ — leave blank if standalone -->
 
 ## Purpose
-Why this feature exists, who it serves, and what problem it solves.
+[Phase 1 Result] Why this feature exists, who it serves, and what problem it solves.
 
-## Scenarios in scope
-Numbered list of confirmed user scenarios. Each scenario: who, what they are doing, and under what conditions.
-
-## Context
-Additional background, constraints, or dependencies not captured above.
+## Scenarios in scope  
+[Phase 2 Results] Confirmed scenarios this feature must handle:
+1. [Scenario 1: User X wants to do Y under condition Z]
+2. [Scenario 2: System encounters situation A and must B]
 
 ## User stories / use cases
 As a <role>, I want <goal>, so that <benefit>.
 
 ## Functional requirements
-Numbered list of what the system must do.
+[Phase 3 Results] What the system must do (mapped to scenarios):
+1. REQ-1 (Scenario 1): [Requirement text]
+2. REQ-2 (Scenario 1): [Requirement text] 
+3. REQ-3 (Scenario 2): [Requirement text]
 
 ## Non-functional requirements
 Performance, security, compatibility constraints.
+
+## Context
+Additional background, constraints, or dependencies not captured above.
 
 ## Out of scope
 Explicit list of what this feature does NOT include.
@@ -116,6 +132,8 @@ Explicit list of what this feature does NOT include.
 ## Open questions
 - [ ] Question — owner: <name>
 
-## Acceptance criteria
-Testable conditions that define done.
+## Acceptance criteria  
+Testable conditions that define done (must cover all confirmed scenarios):
+- AC-1 (Scenario 1): [Test condition]
+- AC-2 (Scenario 2): [Test condition]
 ```
