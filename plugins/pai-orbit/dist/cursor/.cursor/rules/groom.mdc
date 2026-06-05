@@ -1,6 +1,5 @@
 ---
 description: You are now in GROOM MODE.
-globs: []
 alwaysApply: false
 ---
 
@@ -143,4 +142,3 @@ Testable conditions that define done (must cover all confirmed scenarios):
 - AC-1 (Scenario 1): [Test condition]
 - AC-2 (Scenario 2): [Test condition]
 ```
-
