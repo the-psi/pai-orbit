@@ -3,16 +3,14 @@
 # Fires after Edit/Write on files that commonly signal architectural change.
 # Never blocks. Prints a one-line advisory to stdout only.
 
-set -euo pipefail
+set +e
 
-TOOL_INPUT="${TOOL_INPUT:-}"
-
-# Extract file path from tool input (Claude Code passes JSON)
-FILE_PATH=$(echo "$TOOL_INPUT" | python3 -c "
+input=$(cat)
+FILE_PATH=$(printf '%s' "$input" | python3 -c "
 import json, sys
 try:
     d = json.load(sys.stdin)
-    print(d.get('file_path', d.get('path', '')))
+    print(d.get('tool_input', {}).get('file_path') or d.get('tool_input', {}).get('path') or '')
 except Exception:
     print('')
 " 2>/dev/null || echo "")

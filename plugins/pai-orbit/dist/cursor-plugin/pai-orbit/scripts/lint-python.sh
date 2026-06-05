@@ -40,7 +40,7 @@ else
 fi
 
 cd "$repo" || exit 0
-output=$("$ruff_bin" check "$file" 2>&1)
+output=$("$ruff_bin" check -- "$file" 2>&1)
 status=$?
 if [ $status -ne 0 ]; then
   echo "[lint-python] $file" >&2

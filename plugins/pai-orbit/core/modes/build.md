@@ -42,5 +42,5 @@ During build:
 - Close the task board item; use `/agile-board` to handle the closure and any follow-up items
 - If new tasks were discovered during build, create board items rather than noting them inline
 - Update `docs/domain/product-capabilities.md` with what was added or changed
-- Record any non-obvious design choices as ADRs in `docs/decisions/`
+- **ADR obligation:** if you introduced a new pattern, abstraction, naming convention, or chose between two viable approaches — write an ADR in `docs/decisions/` and include it in the same commit as the code. The signal: "would a future developer need to know why this was done this way?" If yes, it needs an ADR. Do not defer this to a follow-up — if the code ships without the ADR it will never be written.
 - Use `/git` to commit and push

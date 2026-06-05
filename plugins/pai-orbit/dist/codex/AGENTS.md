@@ -228,7 +228,7 @@ During build:
 - Close the task board item; use `/agile-board` to handle the closure and any follow-up items
 - If new tasks were discovered during build, create board items rather than noting them inline
 - Update `docs/domain/product-capabilities.md` with what was added or changed
-- Record any non-obvious design choices as ADRs in `docs/decisions/`
+- **ADR obligation:** if you introduced a new pattern, abstraction, naming convention, or chose between two viable approaches — write an ADR in `docs/decisions/` and include it in the same commit as the code. The signal: "would a future developer need to know why this was done this way?" If yes, it needs an ADR. Do not defer this to a follow-up — if the code ships without the ADR it will never be written.
 - Use `/git` to commit and push
 
 
@@ -1555,6 +1555,12 @@ For each service, pick the closest agent template from `templates/agents/`:
 
 Write the generated agent to `.claude/agents/<service>-builder.md`. Replace all `{{PLACEHOLDER}}` markers with actual values.
 
+### Project rules
+
+Copy `templates/rules/decisions.md` to `.claude/rules/decisions.md`.
+
+This file defines when an ADR is required and how to create one. It is read by every session via the rules directory so the obligation applies regardless of which skill or agent is active.
+
 ### Lint hooks
 
 For each language detected:
@@ -1608,6 +1614,9 @@ Architecture files:
 - ⚠️ Stub — `docs/architecture/system.md` — run `/arch init` to complete
 - ⚠️ Stub — `docs/architecture/constraints.md` — run `/arch init` to define rules
 - ✅ Generated — `docs/architecture/stack.md` (populated from detected stack)
+
+Rules:
+- ✅ Generated — `.claude/rules/decisions.md` — ADR obligation rules (when to write one, how)
 
 End with: "Run `/suggest-skills` after a few sessions to discover operational skills worth adding."
 

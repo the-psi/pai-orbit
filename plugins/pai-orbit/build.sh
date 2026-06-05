@@ -21,7 +21,8 @@ for adapter_script in "${adapters[@]}"; do
   adapter_name="$(basename "$(dirname "$adapter_script")")"
   echo "build: running $adapter_name adapter..."
   # Invoke via bash so we don't depend on the exec bit being set in the working copy.
-  bash "$adapter_script"
+  # Unset CORE_DIR/DIST_DIR so a caller's exported values don't silently override adapter defaults.
+  env -u CORE_DIR -u DIST_DIR bash "$adapter_script"
 done
 
 echo "build: all adapters complete"

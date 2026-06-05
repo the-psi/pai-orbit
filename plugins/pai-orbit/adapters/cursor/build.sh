@@ -16,6 +16,11 @@ if [ ! -d "$CORE_DIR" ]; then
   exit 1
 fi
 
+case "$DIST_DIR" in
+  "$PLUGIN_DIR"/*) ;;
+  *) echo "cursor adapter: DIST_DIR '$DIST_DIR' is outside PLUGIN_DIR — refusing rm -rf" >&2; exit 1 ;;
+esac
+
 rm -rf "$DIST_DIR"
 mkdir -p "$DIST_DIR/.cursor/rules"
 
