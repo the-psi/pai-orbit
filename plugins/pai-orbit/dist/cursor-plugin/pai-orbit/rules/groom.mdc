@@ -38,10 +38,10 @@ Once purpose is established:
    - ✅ **Distinct scenarios**: "User logs in successfully" vs "User login fails" (different acceptance criteria: success flow vs error handling)
    - ❌ **Same scenario**: "User logs in from Chrome" vs "User logs in from Firefox" (same acceptance criteria, just different inputs)
 
-3. **Get explicit confirmation on each scenario using this format:**
+3. **Get explicit confirmation on each scenario one at a time** (to prevent silent bulk-approval):
    - Present scenario: "Scenario N: [description]"
-   - Ask: "Confirm this scenario: [In Scope] / [Out of Scope] / [Needs Revision]?"  
-   - Wait for explicit response before proceeding to next scenario
+   - Ask: "Confirm this scenario: [In Scope] / [Out of Scope] / [Needs Revision]?"
+   - Wait for explicit response before presenting the next scenario
    - **Do not assume silence means agreement**
 
 4. Do **not** begin requirements analysis, open questions, or acceptance criteria until **every** proposed scenario has been confirmed or explicitly excluded.
@@ -131,7 +131,7 @@ Before marking a feature as groomed and ready for `/design`, run a readiness gat
 Performance, security, compatibility constraints.
 
 ## Context
-Additional background, constraints, or dependencies not captured above.
+External constraints, dependencies, and assumptions that scope or shape requirements but are not captured elsewhere.
 
 ## Out of scope
 Explicit list of what this feature does NOT include.
