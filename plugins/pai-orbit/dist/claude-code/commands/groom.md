@@ -18,9 +18,9 @@ Before any scoping or requirements work:
 1. State the feature's purpose in one or two sentences: why it exists, who it serves, and what problem it solves.
 2. Sources to draw purpose from, in order of precedence: parent epic's `## Summary` (or `## Purpose` if present), existing `ux.md`, domain docs. If purpose can be drafted from these, propose it and confirm with the user (don't silently adopt). If nothing is available — **ask the user explicitly** and wait for an answer.
 3. Do not proceed to Phase 2 until purpose is agreed.
-4. **Phase 1 Complete**: Announce "✅ Purpose established. Moving to Phase 2: Scenario Confirmation" and update output file with confirmed purpose before proceeding.
+4. **Phase 1 Complete**: Announce "✅ Purpose established. Moving to Phase 2: Scenario Confirmation" and proceed. Do not write to the output file mid-session — all file writes happen at session close once all phases are complete.
 
-Record the agreed purpose in `## Purpose` in the output file.
+Hold the agreed purpose in conversation context; it will be written to `## Purpose` at session close.
 
 ### Phase 2 — Confirm scenarios in scope
 
@@ -43,9 +43,10 @@ Once purpose is established:
 5. Scenarios marked out of scope:
    - Same product surface, intentionally excluded from *this* feature → `## Out of scope`
    - Different feature idea that surfaced during discussion → `docs/backlog/feature-ideas.md`
-6. **Phase 2 Complete**: Announce "✅ All scenarios confirmed. Moving to Phase 3: Requirements Analysis" before proceeding.
+6. If all proposed scenarios are excluded, return to Phase 1 to revisit feature scope — do not proceed to Phase 3 with nothing confirmed.
+7. **Phase 2 Complete**: Announce "✅ All scenarios confirmed. Moving to Phase 3: Requirements Analysis" before proceeding.
 
-Record confirmed scenarios in `## Scenarios in scope`.
+Hold confirmed scenarios in conversation context; they will be written to `## Scenarios in scope` at session close.
 
 ### Phase 3 — Requirements and decisions
 
@@ -55,7 +56,7 @@ Only after purpose is agreed and all scenarios are confirmed:
    - Label requirements with scenario reference: "REQ-1 (Scenario 1): User must..."
    - Ensure every scenario has at least one requirement
    - Flag any requirements not tied to confirmed scenarios
-2. Lead with functional and user-facing questions before going technical. Analyze each confirmed scenario for functional requirements, non-functional requirements, and acceptance criteria.
+2. Lead with functional and user-facing questions before going technical. Analyze each confirmed scenario for functional requirements, non-functional requirements, and acceptance criteria. Use `AC-N (Scenario N)` labels for acceptance criteria (matching the REQ-N convention). Derive at least one user story per confirmed scenario and record in `## User stories / use cases`.
 3. Surface open questions; classify functional gaps vs design deferrals (see Session close).
 4. If a previously unconsidered scenario surfaces during analysis, **stop and return to Phase 2** to confirm it before writing any requirements for it. Do not silently expand scope.
 5. Apply the Behaviour rules below throughout this phase.
@@ -77,9 +78,9 @@ Only after purpose is agreed and all scenarios are confirmed:
 
 Before marking a feature as groomed and ready for `/design`, run a readiness gate:
 
-0. **Pre-flight phase audit.** Before classifying open questions:
-   - `## Purpose` must be non-empty and reflect agreed wording (no placeholders or TBD). If incomplete: "❌ Returning to Phase 1. Current purpose: '[current text]'. Please clarify: [specific issue]"
-   - Every entry in `## Scenarios in scope` must have been explicitly confirmed in Phase 2. No scenario may sit unclassified or pending. If scenarios unconfirmed: "❌ Returning to Phase 2. These scenarios need explicit confirmation: [list]. Please confirm each as In/Out/Revise."
+0. **Pre-flight phase audit.** Before classifying open questions, write the output file from conversation context (purpose, scenarios, requirements derived so far), then verify:
+   - `## Purpose` must match the wording agreed in Phase 1 — non-empty, no placeholders or TBD, and consistent with the last confirmed statement in conversation. If inconsistent or incomplete: "❌ Returning to Phase 1. File says: '[file text]'. Agreed wording was: '[conversation wording]'. Please re-confirm."
+   - Every entry in `## Scenarios in scope` must match what was explicitly confirmed in Phase 2. No scenario may sit unclassified or pending. If inconsistent: "❌ Returning to Phase 2. These scenarios need explicit confirmation: [list]. Please confirm each as In/Out/Revise."
    - If either fails, return to the relevant phase — do NOT mark the feature as groomed or suggest switching to `/design`.
 
 1. **Audit open questions.** For each item in the `## Open questions` list, classify it:
@@ -112,7 +113,8 @@ Before marking a feature as groomed and ready for `/design`, run a readiness gat
 2. [Scenario 2: System encounters situation A and must B]
 
 ## User stories / use cases
-As a <role>, I want <goal>, so that <benefit>.
+[Phase 3 Results] At least one per confirmed scenario:
+- As a <role>, I want <goal>, so that <benefit>.
 
 ## Functional requirements
 [Phase 3 Results] What the system must do (mapped to scenarios):
