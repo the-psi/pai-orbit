@@ -49,7 +49,11 @@ mkdir -p "$DIST_DIR/.cursor-plugin" \
          "$DIST_DIR/scripts"
 
 # plugin.json — derived from core/plugin.json with Cursor-specific keywords
-core_version="$(python3 -c "import json; print(json.load(open('$CORE_DIR/plugin.json'))['version'])" 2>/dev/null || echo "1.1.0")"
+core_version="$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$CORE_DIR/plugin.json" | head -1)"
+if [ -z "$core_version" ]; then
+  echo "cursor-plugin adapter: could not extract version from $CORE_DIR/plugin.json" >&2
+  exit 1
+fi
 cat > "$DIST_DIR/.cursor-plugin/plugin.json" <<EOF
 {
   "name": "pai-orbit",

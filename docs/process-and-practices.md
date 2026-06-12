@@ -85,7 +85,7 @@ The discipline: **switch modes when the headspace or output destination changes.
 
 **Phase 1 — Define**
 
-1. `/groom` — formalise requirements and acceptance criteria; output to `docs/features/<feature>/requirements.md`
+1. `/groom` — establishes purpose and scenarios before drafting requirements and acceptance criteria; output to `docs/features/<feature>/requirements.md`
 2. `/test` (write) — draft test cases from the requirements before any code is written; output to `docs/features/<feature>/test-plan.md`
 3. `/design` — design the technical solution; output to `docs/features/<feature>/design.md` and/or `docs/decisions/`
 

@@ -17,7 +17,7 @@ Backlog
 /ux              → user flow and layout design — produces docs/features/*/ux.md
 
 Sprint — recommended order for a new feature
-/groom           → feature requirements — produces docs/features/*/requirements.md; readiness gate blocks /design until functional gaps are closed
+/groom           → feature requirements — produces docs/features/*/requirements.md; runs purpose → scenario confirmation → requirements; readiness gate blocks /design until functional gaps are closed
 /test (write)    → draft test cases from requirements before any code is written — produces docs/features/*/test-plan.md
 /design          → technical trade-offs — produces docs/decisions/ and docs/features/*/design.md
 /build           → implementation — reads docs and constraints, checks task board, ships

@@ -37,7 +37,7 @@ Leads with the user's goal and context before discussing interface. Describes fl
 **Writes:** docs/features/*/requirements.md  
 **Switch to:** `/domain` for unresolved expert knowledge, `/design` when ready, `/plan` for priority decisions
 
-Leads with functional questions, not technical ones. Scopes to minimal deliverable. Captures open questions with owners. Does not design solutions.
+Runs in three gated phases with explicit transitions: establish purpose (propose from epic/ux/domain or ask), confirm each scenario in scope with examples (granularity: distinct if acceptance criteria differ), then analyze requirements with traceability mapping. Enhanced pre-flight audit provides actionable error messages. Session-close pre-flight blocks groomed status if purpose or scenarios are incomplete; new scenarios in Phase 3 return to Phase 2. Scopes to minimal deliverable. Captures open questions with owners. Does not design solutions.
 
 ---
 
