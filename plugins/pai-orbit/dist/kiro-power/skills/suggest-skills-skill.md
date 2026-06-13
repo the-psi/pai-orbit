@@ -1,15 +1,11 @@
 ---
 name: suggest-skills-skill  
-description: pai-orbit suggest-skills skill - Suggest Skills
+description: pai-orbit suggest-skills skill - Observe this project's working patterns and suggest operational skills worth adding as .claude/skills/. TRIGGER when the user asks what skills to add, wants to improve their harness, or after several sessions of work. SKIP if the project is brand new with no history.
 inclusion: manual
 ---
 
 # pai-orbit suggest-skills Skill
 
----
-name: suggest-skills
-description: Observe this project's working patterns and suggest operational skills worth adding as .claude/skills/. TRIGGER when the user asks what skills to add, wants to improve their harness, or after several sessions of work. SKIP if the project is brand new with no history.
----
 
 # Suggest Skills
 
@@ -59,7 +55,6 @@ Rank by value: highest-impact suggestions first.
 ## After presenting suggestions
 
 Ask: "Want me to scaffold any of these?" If yes, create the skill file at `.claude/skills/<name>/SKILL.md` using `templates/skills/domain-operational.template.md` as the base pattern. Fill in what can be inferred; leave clear `<!-- TODO -->` markers for what the team needs to add.
-
 
 ## Usage in Kiro
 Activate this skill by using `#suggest-skills-skill` in your conversation or by requesting "suggest-skills" operations.

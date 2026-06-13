@@ -153,7 +153,32 @@ for skill_dir in "$CORE_DIR/skills"/*/; do
     skill_name="$(basename "$skill_dir")"
     echo "kiro-power: processing skill $skill_name"
     
-    description="$(grep -m1 "^# " "$skill_dir/SKILL.md" | sed 's/^# //' || echo "pai-orbit operational skill")"
+    # Extract description from frontmatter if present, otherwise from first header
+    if grep -q "^---" "$skill_dir/SKILL.md"; then
+      # Has frontmatter - extract multiline description using awk
+      description="$(awk '
+        /^---$/ { if(++dash_count == 2) exit }
+        dash_count == 1 && /^description:/ { 
+          desc = substr($0, 13); 
+          while(getline && !/^[a-zA-Z_-]+:/ && !/^---$/) {
+            desc = desc " " $0
+          }
+          if(!/^---$/) ungetline = $0
+          print desc
+          exit
+        }
+        END { if(ungetline) print ungetline | "cat >&2" }
+      ' "$skill_dir/SKILL.md" | sed 's/^ *//' | sed 's/ *$//')"
+      if [ -z "$description" ]; then
+        description="pai-orbit operational skill"
+      fi
+      # Extract content after the frontmatter block (everything after second ---)
+      skill_body="$(awk '/^---$/{if(++c==2){f=1;next}} f' "$skill_dir/SKILL.md")"
+    else
+      # No frontmatter - extract from first header and use full content  
+      description="$(grep -m1 "^# " "$skill_dir/SKILL.md" | sed 's/^# //' || echo "pai-orbit operational skill")"
+      skill_body="$(cat "$skill_dir/SKILL.md")"
+    fi
     
     cat > "$DIST_DIR/skills/${skill_name}-skill.md" << EOF
 ---
@@ -164,7 +189,7 @@ inclusion: manual
 
 # pai-orbit ${skill_name} Skill
 
-$(cat "$skill_dir/SKILL.md")
+${skill_body}
 
 ## Usage in Kiro
 Activate this skill by using \`#${skill_name}-skill\` in your conversation or by requesting "${skill_name}" operations.

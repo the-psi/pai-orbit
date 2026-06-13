@@ -1,15 +1,11 @@
 ---
 name: simplify-skill  
-description: pai-orbit simplify skill - Simplify
+description: pai-orbit simplify skill - Code simplification pass — review recently changed or new code for over-engineering, dead code, unnecessary abstractions, and duplication; then fix what's found. TRIGGER after a build session when the implementation feels overbuilt, when a PR review flags complexity, or on a periodic cleanup pass. SKIP full architectural refactors (use /design first) and test-only changes (use /build directly).
 inclusion: manual
 ---
 
 # pai-orbit simplify Skill
 
----
-name: simplify
-description: Code simplification pass — review recently changed or new code for over-engineering, dead code, unnecessary abstractions, and duplication; then fix what's found. TRIGGER after a build session when the implementation feels overbuilt, when a PR review flags complexity, or on a periodic cleanup pass. SKIP full architectural refactors (use /design first) and test-only changes (use /build directly).
----
 
 # Simplify
 
@@ -90,7 +86,6 @@ No behaviour changes. Tests still pass.
 ```
 
 Run the test suite after simplification: `<test command from CLAUDE.md>`. If tests fail, the simplification changed behaviour — revert the specific change and investigate.
-
 
 ## Usage in Kiro
 Activate this skill by using `#simplify-skill` in your conversation or by requesting "simplify" operations.

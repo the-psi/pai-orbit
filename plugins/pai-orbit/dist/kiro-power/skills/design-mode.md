@@ -1,6 +1,6 @@
 ---
 name: design-mode
-description: pai-orbit design mode - a technical design and trade-offs session. No implementation.
+description: pai-orbit design mode - a technical design and trade-offs session No implementation.
 inclusion: manual
 ---
 
@@ -42,7 +42,6 @@ Every design session should end by:
 - Listing open questions explicitly — who owns each, what is blocked on it
 - Creating a task board item for the build phase via `/agile-board` if the design is approved
 - If the design touches system-level concerns (new service, new cross-service protocol, new external integration): prompt the user to run `/arch update` to keep the architecture declaration current
-
 
 ## Usage in Kiro
 Activate this mode by using `#design-mode` in your conversation or by typing "enter design mode".

@@ -1,15 +1,11 @@
 ---
 name: deploy-skill  
-description: pai-orbit deploy skill - Deploy
+description: pai-orbit deploy skill - Guided deployment with preflight checks and post-deploy verification. Reads deployment targets and commands from .claude/pai-orbit-config.md. TRIGGER when the user asks to deploy, ship, or release any service. SKIP read-only service inspection (describe, status, logs) and local dev server starts.
 inclusion: manual
 ---
 
 # pai-orbit deploy Skill
 
----
-name: deploy
-description: Guided deployment with preflight checks and post-deploy verification. Reads deployment targets and commands from .claude/pai-orbit-config.md. TRIGGER when the user asks to deploy, ship, or release any service. SKIP read-only service inspection (describe, status, logs) and local dev server starts.
----
 
 # Deploy
 
@@ -56,7 +52,6 @@ List every service deployed with:
 - Never deploy with active failing tests unless the user explicitly overrides
 - Never skip auth checks — a deployment to the wrong project is hard to undo
 - If a deploy command would be destructive (drop tables, delete storage), state it explicitly and require confirmation
-
 
 ## Usage in Kiro
 Activate this skill by using `#deploy-skill` in your conversation or by requesting "deploy" operations.

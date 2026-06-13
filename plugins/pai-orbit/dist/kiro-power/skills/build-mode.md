@@ -1,6 +1,6 @@
 ---
 name: build-mode
-description: pai-orbit build mode - an implementation session. Stay in this mode until the user switches.
+description: pai-orbit build mode - an implementation session Stay in this mode until the user switches.
 inclusion: manual
 ---
 
@@ -52,7 +52,6 @@ During build:
 - Update `docs/domain/product-capabilities.md` with what was added or changed
 - Record any non-obvious design choices as ADRs in `docs/decisions/`
 - Use `/git` to commit and push
-
 
 ## Usage in Kiro
 Activate this mode by using `#build-mode` in your conversation or by typing "enter build mode".

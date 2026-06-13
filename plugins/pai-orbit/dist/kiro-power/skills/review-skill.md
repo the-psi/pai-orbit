@@ -1,15 +1,11 @@
 ---
 name: review-skill  
-description: pai-orbit review skill - Review
+description: pai-orbit review skill - Structured code review — checks a branch diff against CLAUDE.md conventions, documented architecture decisions, and team patterns. Produces a review report the architect or tech lead can sign off on. TRIGGER when a PR or branch is ready for review, when the architect wants to verify architectural conformance, or before merging a significant change. SKIP read-only git inspection (git log, git diff without review intent) and automated test runs (handled by CI).
 inclusion: manual
 ---
 
 # pai-orbit review Skill
 
----
-name: review
-description: Structured code review — checks a branch diff against CLAUDE.md conventions, documented architecture decisions, and team patterns. Produces a review report the architect or tech lead can sign off on. TRIGGER when a PR or branch is ready for review, when the architect wants to verify architectural conformance, or before merging a significant change. SKIP read-only git inspection (git log, git diff without review intent) and automated test runs (handled by CI).
----
 
 # Review
 
@@ -121,7 +117,6 @@ What was done particularly well — worth naming so it repeats.
 - If blocking findings exist: do not close the issue; note what needs fixing
 - If approved: the review doc serves as the approval record; link it in the PR description
 - If changes are needed and you're in a build session: use `/build` to implement fixes, then re-run `/review`
-
 
 ## Usage in Kiro
 Activate this skill by using `#review-skill` in your conversation or by requesting "review" operations.

@@ -1,15 +1,11 @@
 ---
 name: incident-skill  
-description: pai-orbit incident skill - Incident
+description: pai-orbit incident skill - Production incident response — triage scope and severity, open a tracking issue, coordinate the BUILD → REVIEW → DEPLOY fast-path, and produce a post-mortem. TRIGGER when a production issue is reported, when something is broken for real users right now, or when an on-call alert fires. SKIP planned fixes and non-urgent bugs (use /board to file and /build to fix in the normal sprint flow).
 inclusion: manual
 ---
 
 # pai-orbit incident Skill
 
----
-name: incident
-description: Production incident response — triage scope and severity, open a tracking issue, coordinate the BUILD → REVIEW → DEPLOY fast-path, and produce a post-mortem. TRIGGER when a production issue is reported, when something is broken for real users right now, or when an on-call alert fires. SKIP planned fixes and non-urgent bugs (use /board to file and /build to fix in the normal sprint flow).
----
 
 # Incident
 
@@ -110,7 +106,6 @@ Process or tooling gaps this incident exposed.
 ```
 
 File follow-up items on the board via `/board` before closing the incident issue.
-
 
 ## Usage in Kiro
 Activate this skill by using `#incident-skill` in your conversation or by requesting "incident" operations.

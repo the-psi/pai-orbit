@@ -1,6 +1,6 @@
 ---
 name: plan-mode
-description: pai-orbit plan mode - a roadmap, prioritisation, and sprint scoping session.
+description: pai-orbit plan mode - a roadmap, prioritisation, and sprint scoping session
 inclusion: manual
 ---
 
@@ -39,7 +39,6 @@ Switch out when:
 - Save non-trivial planning notes to `docs/plans/<topic>-<date>.md`
 - Move board cards via `/agile-board` when priorities change
 - Use Mermaid for sequencing and dependency diagrams when the order is non-obvious
-
 
 ## Usage in Kiro
 Activate this mode by using `#plan-mode` in your conversation or by typing "enter plan mode".

@@ -1,15 +1,11 @@
 ---
 name: epic-skill  
-description: pai-orbit epic skill - Epic Skill
+description: pai-orbit epic skill - Epic lifecycle management — create, load, update, and list epics in docs/epics/. TRIGGER when creating a new epic, loading epic context before planning, updating an epic after a session, or listing all epics. SKIP individual feature requirements (use /groom) and roadmap sequencing (use /plan).
 inclusion: manual
 ---
 
 # pai-orbit epic Skill
 
----
-name: epic
-description: Epic lifecycle management — create, load, update, and list epics in docs/epics/. TRIGGER when creating a new epic, loading epic context before planning, updating an epic after a session, or listing all epics. SKIP individual feature requirements (use /groom) and roadmap sequencing (use /plan).
----
 
 # Epic Skill
 
@@ -61,7 +57,6 @@ Usage: `/epic list`
 - Always set `Last Updated` to today's date when writing
 - After `/epic create`, always open a board item via `/board` — this is not optional
 - Do not create epics in subdirectories — only `docs/epics/<name>/EPIC.md`
-
 
 ## Usage in Kiro
 Activate this skill by using `#epic-skill` in your conversation or by requesting "epic" operations.

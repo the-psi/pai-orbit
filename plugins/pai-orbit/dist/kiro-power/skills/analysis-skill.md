@@ -1,15 +1,11 @@
 ---
 name: analysis-skill  
-description: pai-orbit analysis skill - Analysis
+description: pai-orbit analysis skill - Change impact and dependency analysis — assess the blast radius of a proposed change before building, or evaluate the effect of a shipped change after the fact. TRIGGER before refactoring a shared interface, when removing or renaming a public API, when changing a data model used by multiple services, or when asked "what breaks if we change X". SKIP pure data exploration with no change involved (use /data) and full architectural design (use /design).
 inclusion: manual
 ---
 
 # pai-orbit analysis Skill
 
----
-name: analysis
-description: Change impact and dependency analysis — assess the blast radius of a proposed change before building, or evaluate the effect of a shipped change after the fact. TRIGGER before refactoring a shared interface, when removing or renaming a public API, when changing a data model used by multiple services, or when asked "what breaks if we change X". SKIP pure data exploration with no change involved (use /data) and full architectural design (use /design).
----
 
 # Analysis
 
@@ -100,7 +96,6 @@ Proceed / Proceed with migration plan / Do not proceed — explain why.
 - If safe to proceed: switch to `/build` with the impact report as context
 - If a migration plan is needed: switch to `/design` to design the migration
 - If the blast radius is larger than expected: switch to `/plan` to rescope
-
 
 ## Usage in Kiro
 Activate this skill by using `#analysis-skill` in your conversation or by requesting "analysis" operations.
