@@ -1,15 +1,11 @@
 ---
 name: test-skill  
-description: pai-orbit test skill - QA
+description: pai-orbit test skill - Test session — review requirements for testability, produce a test plan with acceptance criteria and edge cases, track manual vs automated coverage, run a release readiness check. TRIGGER when a feature is ready for QA review, when writing acceptance criteria, when planning a test pass before release, or when a test run fails and the issue needs scoping before returning to /build. SKIP unit test implementation (use /build) and exploratory data validation (use /data).
 inclusion: manual
 ---
 
 # pai-orbit test Skill
 
----
-name: test
-description: Test session — review requirements for testability, produce a test plan with acceptance criteria and edge cases, track manual vs automated coverage, run a release readiness check. TRIGGER when a feature is ready for QA review, when writing acceptance criteria, when planning a test pass before release, or when a test run fails and the issue needs scoping before returning to /build. SKIP unit test implementation (use /build) and exploratory data validation (use /data).
----
 
 # QA
 
@@ -132,7 +128,6 @@ When the user asks if a feature is ready to release:
 3. Check every manual checklist item has been run
 4. Flag any TC marked "Not covered"
 5. Report: ✅ Ready / ⚠️ Gaps — list what's missing
-
 
 ## Usage in Kiro
 Activate this skill by using `#test-skill` in your conversation or by requesting "test" operations.

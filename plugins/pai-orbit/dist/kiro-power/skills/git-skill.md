@@ -1,15 +1,11 @@
 ---
 name: git-skill  
-description: pai-orbit git skill - Git
+description: pai-orbit git skill - Git operations — commit, branch, PR, push — following the project's configured branching model and conventions. TRIGGER when committing, creating a branch, opening a PR, or managing git state. SKIP read-only git inspection (git log, git diff, git status) — those don't need a skill.
 inclusion: manual
 ---
 
 # pai-orbit git Skill
 
----
-name: git
-description: Git operations — commit, branch, PR, push — following the project's configured branching model and conventions. TRIGGER when committing, creating a branch, opening a PR, or managing git state. SKIP read-only git inspection (git log, git diff, git status) — those don't need a skill.
----
 
 # Git
 
@@ -74,7 +70,6 @@ Read PR conventions from `.claude/pai-orbit-config.md`. Defaults:
 - If a hook fails, fix the underlying issue — do not bypass
 - Confirm with the user before pushing to any remote
 - If destructive git state is needed (reset --hard, branch -D), state what will be lost and ask first
-
 
 ## Usage in Kiro
 Activate this skill by using `#git-skill` in your conversation or by requesting "git" operations.

@@ -1,15 +1,11 @@
 ---
 name: setup-skill  
-description: pai-orbit setup skill - Setup
+description: pai-orbit setup skill - First-time project setup for pai-orbit — interrogates repo structure and tech stack, asks short questions about task management, branching, deployment, docs, and team, then generates .claude/pai-orbit-config.md, .claude/team.md, a CLAUDE.md stub, stack-specific agents, and a docs/ scaffold. TRIGGER when starting a new project with pai-orbit, when the stack changes significantly, or when the user asks to configure or reconfigure the harness. SKIP if config files already exist and are current — offer to update specific sections instead.
 inclusion: manual
 ---
 
 # pai-orbit setup Skill
 
----
-name: setup
-description: First-time project setup for pai-orbit — interrogates repo structure and tech stack, asks short questions about task management, branching, deployment, docs, and team, then generates .claude/pai-orbit-config.md, .claude/team.md, a CLAUDE.md stub, stack-specific agents, and a docs/ scaffold. TRIGGER when starting a new project with pai-orbit, when the stack changes significantly, or when the user asks to configure or reconfigure the harness. SKIP if config files already exist and are current — offer to update specific sections instead.
----
 
 # Setup
 
@@ -221,7 +217,6 @@ Architecture files:
 - ✅ Generated — `docs/architecture/stack.md` (populated from detected stack)
 
 End with: "Run `/suggest-skills` after a few sessions to discover operational skills worth adding."
-
 
 ## Usage in Kiro
 Activate this skill by using `#setup-skill` in your conversation or by requesting "setup" operations.

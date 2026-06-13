@@ -1,6 +1,6 @@
 ---
 name: domain-mode
-description: pai-orbit domain mode - a domain knowledge production session. Output saved to `docs/domain/`.
+description: pai-orbit domain mode - a domain knowledge production session Output saved to `docs/domain/`.
 inclusion: manual
 ---
 
@@ -38,7 +38,6 @@ Switch out when:
 ## What this mode is not
 
 Domain mode is not a build session and not a design session. If the session drifts into "how do we implement this," stop and switch to `/design` or `/build`.
-
 
 ## Usage in Kiro
 Activate this mode by using `#domain-mode` in your conversation or by typing "enter domain mode".

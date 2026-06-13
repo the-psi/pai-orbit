@@ -1,6 +1,6 @@
-# pai-orbit with Kiro: Complete Step-by-Step Guide
+# pai-orbit for Kiro - Installation & Usage Guide
 
-This guide walks you through setting up and using pai-orbit methodology in any project with Kiro.
+pai-orbit brings structured development methodology to Kiro through powers, skills, and steering files. This guide covers installation and complete usage workflows.
 
 ## Prerequisites
 
@@ -8,44 +8,39 @@ This guide walks you through setting up and using pai-orbit methodology in any p
 - Basic understanding of your project structure
 - Git repository initialized
 
----
+## Installation
 
-## Step 1: Install pai-orbit Power
+### Kiro Power (Automatic Installation)
 
-### Method A: Via Kiro Powers (Recommended)
+Install directly via Kiro's power system:
 
-1. **Open Kiro Powers configuration**:
-   ```bash
-   # In your project directory, invoke Kiro's power system
-   kiroPowers configure
-   ```
+```bash
+# Open Kiro's power configuration
+kiroPowers configure
 
-2. **Add pai-orbit power**:
-   - In the powers UI, add this GitHub URL: `https://github.com/the-psi/pai-orbit`
-   - Or if command-line install is available:
-     ```bash
-     kiro power install https://github.com/the-psi/pai-orbit
-     ```
+# Add pai-orbit power from GitHub URL:
+# https://github.com/the-psi/pai-orbit
 
-3. **Verify installation**:
-   - The power should appear in your powers list
-   - Auto-loading steering will activate methodology guidance
+# Or via command line (if supported):
+# kiro power install https://github.com/the-psi/pai-orbit
+```
 
-### Method B: Manual Installation (If Powers Don't Work)
+This automatically installs all skills, steering files, and methodology guidance.
 
-1. **Download and copy files**:
-   ```bash
-   # Clone or download pai-orbit repo
-   git clone https://github.com/the-psi/pai-orbit
-   
-   # Copy to your Kiro directory
-   cp -r pai-orbit/plugins/pai-orbit/dist/kiro/skills/ .kiro/skills/
-   cp -r pai-orbit/plugins/pai-orbit/dist/kiro/steering/ .kiro/steering/
-   ```
+### Verify Installation
+
+The steering files will auto-load and provide methodology guidance. Skills are available for manual activation:
+
+```
+Available skills: groom-mode, design-mode, build-mode, arch-mode, plan-mode, ux-mode, data-mode
+Available operational skills: git-skill, deploy-skill, review-skill, test-skill, analysis-skill
+```
 
 ---
 
-## Step 2: First Setup
+## Initial Project Setup
+
+### First-Time Configuration
 
 1. **Start Kiro in your project**:
    ```bash
@@ -74,7 +69,46 @@ This guide walks you through setting up and using pai-orbit methodology in any p
 
 ---
 
-## Step 3: Your First Feature with pai-orbit
+## Usage
+
+### Activating Modes
+
+Use the `#skill-name` syntax to activate specific modes:
+
+- `#groom-mode` - Feature requirements with 3-phase approach
+- `#design-mode` - Technical decisions and architecture  
+- `#build-mode` - Implementation session
+- `#arch-mode` - System architecture declarations
+- `#plan-mode` - Roadmap and prioritization decisions
+- `#domain-mode` - Domain knowledge capture
+- `#ux-mode` - User experience design
+- `#data-mode` - Data exploration and analysis
+
+### Activating Skills
+
+Operational skills for specific procedures:
+
+- `#git-skill` - Git operations following project conventions
+- `#deploy-skill` - Guided deployment with safety checks
+- `#review-skill` - Structured code review process
+- `#test-skill` - Test planning and execution
+- `#analysis-skill` - Change impact analysis
+- `#security-review-skill` - OWASP-based security analysis
+- `#epic-skill` - Epic lifecycle management
+- `#setup-skill` - Project configuration
+
+### Automatic Guidance
+
+The methodology steering files (`pai-orbit-methodology.md`, `mode-switching-guide.md`) auto-load and will:
+
+- Guide conversation toward appropriate modes
+- Suggest mode switches when detecting workflow changes
+- Enforce mode discipline and documentation practices
+- Provide context about the pai-orbit structured approach
+
+---
+
+## Complete Feature Development Workflow
 
 Let's walk through adding a complete feature using pai-orbit methodology.
 
@@ -153,7 +187,28 @@ Let's walk through adding a complete feature using pai-orbit methodology.
 
 ---
 
-## Step 4: Ongoing Usage Patterns
+## Example Session
+
+```
+User: I want to add a new user authentication feature
+
+Kiro: I detect you're starting work on a new feature. Let me activate groom-mode to establish the requirements properly.
+
+#groom-mode
+
+Now I'm in GROOM MODE following the 3-phase approach:
+
+Phase 1: Establish Purpose
+- What problem does user authentication solve?
+- Who is this for (specific user types)?
+- What outcome should they achieve?
+
+[Continues with structured grooming...]
+```
+
+---
+
+## Ongoing Usage Patterns
 
 ### Starting Work on Existing Issues
 
@@ -198,37 +253,29 @@ Reading your authentication design docs and architectural constraints...
 
 ---
 
-## Step 5: Understanding the Documentation Structure
+## What Gets Created
 
-pai-orbit creates a standard documentation structure:
+pai-orbit maintains the same documentation structure regardless of tool:
 
 ```
-your-project/
-├── docs/
-│   ├── features/               # Feature-specific docs
-│   │   └── password-reset/
-│   │       ├── requirements.md # From #groom-mode  
-│   │       ├── design.md       # From #design-mode
-│   │       └── test-plan.md    # From #test-skill
-│   ├── architecture/           # System-level docs
-│   │   ├── system.md          # From #arch-mode
-│   │   ├── constraints.md     # Enforcement rules
-│   │   └── stack.md           # Technology choices
-│   ├── decisions/             # Architecture Decision Records
-│   │   └── 2024-01-15-session-storage.md
-│   ├── domain/                # Business knowledge
-│   │   └── user-auth-rules.md
-│   └── plans/                 # Planning docs
-│       └── q1-2024-roadmap.md
-├── .kiro/
-│   ├── skills/                # pai-orbit skills (installed)
-│   └── steering/              # Auto-loading guidance (installed)
-└── [your code files]
+docs/
+├── features/
+│   └── user-auth/
+│       ├── requirements.md    # from #groom-mode
+│       ├── design.md          # from #design-mode  
+│       └── test-plan.md       # from #test-skill
+├── architecture/
+│   ├── system.md              # from #arch-mode
+│   └── constraints.md         # Enforcement rules
+├── decisions/                 # ADRs from design/arch modes
+│   └── YYYY-MM-DD-auth-approach.md
+└── domain/                    # Expert knowledge
+    └── user-auth-rules.md
 ```
 
 ---
 
-## Step 6: Advanced Workflows
+## Advanced Workflows
 
 ### Architecture Declaration
 
@@ -264,7 +311,7 @@ your-project/
 
 ---
 
-## Step 7: Team Collaboration
+## Team Collaboration
 
 ### Consistent Methodology
 
@@ -284,16 +331,34 @@ Kiro: Let me create a proper handoff document with all the context.
 #review-skill
 
 # Creates comprehensive handoff with:
-# - Current status
-# - What's been done
-# - What's remaining  
+# - Current status and next steps
 # - Key decisions made
-# - Next steps
+# - Remaining work
 ```
 
 ---
 
-## Step 8: Troubleshooting
+## Benefits in Kiro
+
+- **Consistent methodology** across team members using different AI tools
+- **Structured workflows** that prevent context loss
+- **Local-first documentation** that gets committed with code  
+- **Mode discipline** that keeps conversations focused
+- **3-phase grooming** for better feature definition
+
+## Tool Compatibility
+
+The same methodology works with:
+- **Claude Code** (full plugin with slash commands)
+- **Cursor** (plugin with rules and agents)
+- **Kiro** (skills and steering) ← You are here
+- **GitHub Copilot** (instruction files)
+
+Your team can mix tools while maintaining consistent workflow and documentation.
+
+---
+
+## Troubleshooting
 
 ### If Skills Don't Activate
 
@@ -325,7 +390,7 @@ Kiro: Let me create a proper handoff document with all the context.
 
 ---
 
-## Step 9: Tips for Success
+## Tips for Success
 
 ### 1. Always Start with Groom Mode
 ```
@@ -350,7 +415,7 @@ The generated docs aren't just artifacts - they're working documents that inform
 
 ---
 
-## Step 10: Getting Help
+## Command Reference
 
 ### Available Guidance
 
@@ -359,16 +424,14 @@ The generated docs aren't just artifacts - they're working documents that inform
 #pai-orbit-usage-guide   # Quick reference commands
 ```
 
-### Command Reference
-
-**Modes (Major workflows):**
+### Modes (Major Workflows)
 - `#groom-mode` - Feature requirements (3-phase)
 - `#design-mode` - Technical decisions
 - `#build-mode` - Implementation  
 - `#arch-mode` - Architecture
 - `#plan-mode` - Prioritization
 
-**Skills (Operations):**
+### Skills (Operations)
 - `#git-skill` - Git operations
 - `#deploy-skill` - Deployment
 - `#review-skill` - Code review

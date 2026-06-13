@@ -162,17 +162,7 @@ kiroPowers configure
 # kiro power install https://github.com/the-psi/pai-orbit
 ```
 
-**Option 2: Manual files**
-
-Install by copying skills and steering files:
-
-```bash
-# Copy from distribution  
-cp -r plugins/pai-orbit/dist/kiro/skills/ .kiro/skills/
-cp -r plugins/pai-orbit/dist/kiro/steering/ .kiro/steering/
-```
-
-**Usage (both options):**
+**Usage:**
 ```bash
 #groom-mode     # Feature requirements (3-phase approach)
 #build-mode     # Implementation session
@@ -180,7 +170,7 @@ cp -r plugins/pai-orbit/dist/kiro/steering/ .kiro/steering/
 #deploy-skill   # Deployment procedures
 ```
 
-See [`plugins/pai-orbit/dist/kiro-power/POWER.md`](plugins/pai-orbit/dist/kiro-power/POWER.md), [`docs/kiro-install-and-usage.md`](docs/kiro-install-and-usage.md), and **[`docs/kiro-step-by-step-guide.md`](docs/kiro-step-by-step-guide.md)** for complete setup and usage guides.
+See [`plugins/pai-orbit/dist/kiro-power/POWER.md`](plugins/pai-orbit/dist/kiro-power/POWER.md) and **[`docs/kiro-plugin-install-and-usage.md`](docs/kiro-plugin-install-and-usage.md)** for complete setup and usage guides.
 
 ### Other coding assistants (lossy)
 
@@ -189,7 +179,6 @@ The same plugin source is compiled to per-tool bundles under `plugins/pai-orbit/
 | Tool | Path | How to install |
 |------|------|----------------|
 | Kiro (Power) | [`plugins/pai-orbit/dist/kiro-power/`](plugins/pai-orbit/dist/kiro-power/) | Install via Kiro powers: `https://github.com/the-psi/pai-orbit` |
-| Kiro (Manual) | [`plugins/pai-orbit/dist/kiro/`](plugins/pai-orbit/dist/kiro/) | Copy `skills/` to `.kiro/skills/` and `steering/` to `.kiro/steering/` |
 | Cursor (legacy) | [`plugins/pai-orbit/dist/cursor/`](plugins/pai-orbit/dist/cursor/) | Copy `.cursor/` into your project root — use only if you cannot install the plugin |
 | GitHub Copilot | [`plugins/pai-orbit/dist/copilot/`](plugins/pai-orbit/dist/copilot/) | Copy `.github/copilot-instructions.md` into your project |
 | OpenAI Codex CLI (experimental) | [`plugins/pai-orbit/dist/codex/`](plugins/pai-orbit/dist/codex/) | Copy `AGENTS.md` to your project root |
@@ -239,7 +228,7 @@ Four shell hooks are included. Wire them in Claude Code's settings or copy them 
 
 ## Docs
 
-- **[Kiro Step-by-Step Guide](docs/kiro-step-by-step-guide.md)** — complete walkthrough for using pai-orbit with Kiro
+- **[Kiro Plugin Install & Usage Guide](docs/kiro-plugin-install-and-usage.md)** — complete installation and usage guide for Kiro
 - [Process & Practices](docs/process-and-practices.md) — the methodology: why modes, working style, how sessions should flow
 - [Capabilities](docs/capabilities.md) — reference for every mode, skill, and agent
 - [Getting Started](docs/getting-started.md) — installation, first `/setup` walkthrough, first session

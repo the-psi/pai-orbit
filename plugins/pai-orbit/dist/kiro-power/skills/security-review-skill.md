@@ -1,15 +1,11 @@
 ---
 name: security-review-skill  
-description: pai-orbit security-review skill - Security Review
+description: pai-orbit security-review skill - Security-focused review of changed code — checks for OWASP Top 10 vulnerabilities, auth/authz gaps, secret management issues, and input validation at system boundaries. TRIGGER before merging a change that touches auth, input handling, external APIs, file I/O, database writes, or permissions. SKIP full architecture reviews (use /review) and ongoing implementation (use /build).
 inclusion: manual
 ---
 
 # pai-orbit security-review Skill
 
----
-name: security-review
-description: Security-focused review of changed code — checks for OWASP Top 10 vulnerabilities, auth/authz gaps, secret management issues, and input validation at system boundaries. TRIGGER before merging a change that touches auth, input handling, external APIs, file I/O, database writes, or permissions. SKIP full architecture reviews (use /review) and ongoing implementation (use /build).
----
 
 # Security Review
 
@@ -125,7 +121,6 @@ What was checked and found acceptable (briefly — gives confidence to the reade
 ```
 
 **Critical or High findings block merge.** Do not approve and "fix later" — fix before merging. Switch to `/build` with the finding as context, then re-run `/security-review` on the fix.
-
 
 ## Usage in Kiro
 Activate this skill by using `#security-review-skill` in your conversation or by requesting "security-review" operations.

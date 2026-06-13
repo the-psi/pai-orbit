@@ -1,6 +1,6 @@
 ---
 name: arch-mode
-description: pai-orbit arch mode - a system-wide structure session — services, boundaries, data flow, and hard constraints. No implementation. No feature design.
+description: pai-orbit arch mode - a system-wide structure session — services, boundaries, data flow, and hard constraints No implementation. No feature design.
 inclusion: manual
 ---
 
@@ -175,7 +175,6 @@ After presenting the report:
 | `docs/decisions/YYYY-MM-DD-<slug>.md` | update | ADR for irreversible decisions |
 | `docs/wip/arch-validate-<date>.md` | validate | Drift report |
 | `CLAUDE.md → ## Architecture` | init, update | Summary + Mermaid + pointer to system.md |
-
 
 ## Usage in Kiro
 Activate this mode by using `#arch-mode` in your conversation or by typing "enter arch mode".

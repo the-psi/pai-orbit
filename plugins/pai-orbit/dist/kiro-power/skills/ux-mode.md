@@ -1,6 +1,6 @@
 ---
 name: ux-mode
-description: pai-orbit ux mode - a UX and user-flow design session. Output saved to `docs/features/<feature>/ux.md`.
+description: pai-orbit ux mode - a UX and user-flow design session Output saved to `docs/features/<feature>/ux.md`.
 inclusion: manual
 ---
 
@@ -77,7 +77,6 @@ flowchart LR
     B -->|add observation| D[Observation form]
     D -->|submit| B
 ```
-
 
 ## Usage in Kiro
 Activate this mode by using `#ux-mode` in your conversation or by typing "enter ux mode".

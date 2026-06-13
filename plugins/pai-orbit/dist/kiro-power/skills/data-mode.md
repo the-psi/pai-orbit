@@ -1,6 +1,6 @@
 ---
 name: data-mode
-description: pai-orbit data mode - a data exploration and analysis session. Output saved to `docs/reports/<topic>-<date>.md`.
+description: pai-orbit data mode - a data exploration and analysis session Output saved to `docs/reports/<topic>-<date>.md`.
 inclusion: manual
 ---
 
@@ -44,7 +44,6 @@ Any gaps, anomalies, or confidence caveats.
 ## Open questions
 Follow-up investigations or interpretations that need domain input.
 ```
-
 
 ## Usage in Kiro
 Activate this mode by using `#data-mode` in your conversation or by typing "enter data mode".

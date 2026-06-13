@@ -1,15 +1,11 @@
 ---
 name: data-model-skill  
-description: pai-orbit data-model skill - Data Model
+description: pai-orbit data-model skill - Data model reference and schema change management — document the current schema, propose and validate schema changes, plan migrations. TRIGGER when designing a new table or field, when modifying an existing schema, when asked about what a table contains or how tables join, or before writing a query against an unfamiliar table. SKIP pure query exploration with no schema change (use /data) and high-level data architecture decisions (use /design).
 inclusion: manual
 ---
 
 # pai-orbit data-model Skill
 
----
-name: data-model
-description: Data model reference and schema change management — document the current schema, propose and validate schema changes, plan migrations. TRIGGER when designing a new table or field, when modifying an existing schema, when asked about what a table contains or how tables join, or before writing a query against an unfamiliar table. SKIP pure query exploration with no schema change (use /data) and high-level data architecture decisions (use /design).
----
 
 # Data Model
 
@@ -115,7 +111,6 @@ If it's a significant schema decision, record an ADR in `docs/decisions/`.
 - **Test migrations on a copy of production data** before running on prod, for any table with > 100k rows
 - **BigQuery:** table schema changes are limited (cannot rename columns, cannot change types); plan accordingly
 - **Never modify a migration file that has already been applied** — write a new one instead
-
 
 ## Usage in Kiro
 Activate this skill by using `#data-model-skill` in your conversation or by requesting "data-model" operations.
