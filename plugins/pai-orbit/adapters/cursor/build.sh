@@ -77,6 +77,12 @@ for f in "$DIST_DIR"/.cursor/rules/*.mdc; do
   rule_files+=(".cursor/rules/$(basename "$f")")
 done
 
+# Abort early if no rule files were produced (partial build, wrong DIST_DIR, etc.)
+if [ ${#rule_files[@]} -eq 0 ]; then
+  echo "ERROR: cursor build produced no .mdc rule files in $DIST_DIR/.cursor/rules/ — aborting install.sh generation" >&2
+  exit 1
+fi
+
 # Build the RULES array literal for injection
 rules_literal=""
 for rf in "${rule_files[@]}"; do
