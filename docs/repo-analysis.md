@@ -1,0 +1,202 @@
+# pai-orbit Repository Analysis
+
+**Date:** 2026-06-17 | **Version analysed:** 1.2.1
+
+---
+
+## Overview
+
+pai-orbit is a Claude Code plugin that imposes a mode-driven development methodology. Its core problem: knowledge lives in chat and disappears — pai-orbit forces every meaningful output into versioned markdown files in the repo.
+
+**Author:** Pratham Software (PSI) | **License:** MIT | **Contact:** pai-orbit@thepsi.com
+
+---
+
+## Repository Architecture
+
+The repo is a **Claude Code marketplace** containing a single plugin:
+
+```
+pai-orbit/
+├── .claude-plugin/marketplace.json    → points to dist/claude-code/
+├── .cursor-plugin/marketplace.json    → points to dist/cursor-plugin/
+├── plugins/pai-orbit/
+│   ├── core/                          → tool-agnostic source of truth
+│   ├── adapters/                      → per-tool compilation scripts
+│   └── dist/                          → COMMITTED build outputs (never hand-edit)
+└── docs/                              → framework documentation
+```
+
+Build is deterministic: edit `core/`, run `bash plugins/pai-orbit/build.sh`, commit `dist/`.
+
+---
+
+## Core Contents
+
+### Modes (8)
+
+Each `/command` locks Claude into one headspace with strict input/output contracts. Modes never bleed into each other.
+
+| Mode | Purpose | Output |
+|------|---------|--------|
+| `/arch` | System architecture declaration + validation | `docs/architecture/system.md`, `constraints.md`, `stack.md`, ADRs |
+| `/domain` | Domain knowledge capture | `docs/domain/*.md` |
+| `/ux` | User flows and interface design | `docs/features/<feature>/ux.md` |
+| `/groom` | Feature requirements (3-phase gated) | `docs/features/<feature>/requirements.md` |
+| `/design` | Technical trade-offs, decision records | `docs/features/<feature>/design.md`, ADRs |
+| `/build` | Implementation | Code + updated docs |
+| `/plan` | Roadmap and prioritisation | `docs/plans/*.md` |
+| `/data` | Data exploration and analysis | `docs/reports/<topic>-<date>.md` |
+
+**`/arch` sub-modes:** `init` (declare), `view` (render summary), `update` (amend with ratification), `validate` (check drift).
+
+### Producer / Consumer Contract
+
+```
+/arch   → system.md, constraints.md, stack.md, ADRs
+/domain → docs/domain/*.md
+/ux     → docs/features/*/ux.md          (reads: domain docs)
+/groom  → docs/features/*/requirements.md (reads: ux, domain, architecture)
+/design → docs/features/*/design.md, ADRs (reads: requirements, domain, architecture)
+/build  → code + updated docs             (reads: CLAUDE.md, constraints, requirements, board)
+/test   → docs/features/*/test-plan.md   (reads: requirements)
+/plan   → docs/plans/*.md, board moves
+/data   → docs/reports/*.md
+```
+
+### Skills (13)
+
+Multi-step procedures invokable from any mode. Each lives in `plugins/pai-orbit/core/skills/<name>/SKILL.md`.
+
+| Skill | Purpose |
+|-------|---------|
+| `setup` | First-run scaffold: generates `.claude/pai-orbit-config.md`, `team.md`, `CLAUDE.md`, agent files, hooks, docs structure |
+| `board` | Board interface: GitHub Issues/Projects v2, Linear, Jira, GitLab |
+| `git` | Branch, commit, PR enforcement aligned to config branching model |
+| `analysis` | Cross-repo consumer discovery; classifies breaking vs compatible changes |
+| `security-review` | OWASP-based checklist before merging auth/input/file/DB changes |
+| `review` | Code review against constraints.md, CLAUDE.md, ADRs, requirements |
+| `simplify` | Remove over-engineering, dead code, unnecessary abstractions |
+| `data-model` | Schema reference management + migration checklists |
+| `deploy` | Guided deploy with preflight + post-deploy verification |
+| `test` | Write test plans from requirements; run test cases; log failures |
+| `incident` | Fast-path triage → build → review → deploy → post-mortem |
+| `epic` | Epic lifecycle: create, load, update, list in `docs/epics/` |
+| `suggest-skills` | Scan conversation history for patterns worth encoding as project skills |
+
+### Agents (2)
+
+Named sub-agents for parallel or specialised work.
+
+| Agent | Purpose | Scope |
+|-------|---------|-------|
+| `docs-writer` | Write/update docs (domain, ADRs, requirements, design, reports); optionally push to Confluence/Notion via MCP | `docs/` only |
+| `cross-repo-impact` | Find call sites and assess breaking vs compatible changes across repos | Read-only; never modifies files |
+
+### Hooks (4)
+
+Shell scripts wired to Claude Code tool-use events.
+
+| Hook | Event | Blocks? | Purpose |
+|------|-------|---------|---------|
+| `bash-guard.sh` | PreToolUse | Yes | Prevents force-push, `git add ./-A/-u`, `--no-verify`, destructive `rm -rf` |
+| `lint-python.sh` | PostToolUse | No | Runs `ruff check` after Python file edits |
+| `lint-ts.sh` | PostToolUse | No | Runs `eslint` after TypeScript/JavaScript edits |
+| `arch-drift-guard.sh` | PostToolUse | No | Advisory nudge when structural files edited (docker-compose, package.json, go.mod, etc.) |
+
+### Templates
+
+Generated by `/setup` into the **target project**:
+
+- **Config:** `.claude/pai-orbit-config.md`, `.claude/team.md`, `CLAUDE.md`
+- **Agents (7):** `fastapi-builder`, `django-builder`, `express-builder`, `nextjs-builder`, `react-vite-builder`, `infra-builder`, `generic-service-builder`
+- **Docs scaffold:** `docs/architecture/`, `domain/`, `features/`, `decisions/`, `epics/`, `plans/`, `ops/`, `backlog/`, `wip/`, `reports/`
+- **Rules:** `templates/rules/decisions.md` — ADR obligation enforced at build time
+
+---
+
+## Adapters
+
+Each adapter compiles `core/` into a tool-specific layout via `adapters/<tool>/build.sh`.
+
+### Fidelity Matrix
+
+| Adapter | Modes | Skills | Agents | Hooks | Templates |
+|---------|-------|--------|--------|-------|-----------|
+| **claude-code** | Full (`/commands/`) | Full (with invocation) | Full (named sub-agents) | Full (wired to events) | Full |
+| **cursor-plugin** | Full (rules + commands) | Full (directory discovery) | Mapped | `hooks.json` (Cursor events) | Full (path-rewritten) |
+| **cursor (legacy)** | Rules only (`.mdc`) | Concatenated single rule | Dropped | Dropped | Docs scaffold only |
+| **copilot** | Text in single file | Appendix reference | Dropped | Dropped | Dropped |
+| **codex** | Text in `AGENTS.md` | Appendix reference | Dropped | Dropped | Dropped |
+
+### Adapter Notes
+
+- **cursor-plugin** rewrites all `.claude/` paths to `.cursor/` and `CLAUDE.md` → `AGENTS.md`; generates `hooks.json` with Cursor event names (`beforeShellExecution`, `afterFileEdit`)
+- **cursor (legacy)** emits an `install.sh` self-contained downloader — no git clone required
+- **copilot** emits a single `.github/copilot-instructions.md`
+- **codex** is marked experimental; Codex CLI conventions may have drifted
+
+---
+
+## Build System
+
+**Entry point:** `bash plugins/pai-orbit/build.sh`
+
+1. Validates `core/` exists
+2. Discovers all `adapters/*/build.sh` via glob
+3. Runs each adapter in sequence via `env -u CORE_DIR -u DIST_DIR bash <adapter>`
+4. Fails fast (`set -euo pipefail`)
+
+`dist/` is committed to git. Safe to run idempotently — a no-op rebuild produces a clean `git status`.
+
+---
+
+## Installation
+
+**Claude Code (from GitHub):**
+```bash
+/plugin marketplace add the-psi/pai-orbit
+/plugin install pai-orbit@the-psi
+# then run /setup in your target project
+```
+
+**Claude Code (local dev):**
+```bash
+/plugin marketplace add /absolute/path/to/pai-orbit
+/plugin install pai-orbit@the-psi
+```
+
+**Cursor (plugin format):**
+Install from `https://github.com/the-psi/pai-orbit` as a marketplace plugin.
+
+**Cursor (legacy, no clone):**
+```bash
+curl -fsSL https://raw.githubusercontent.com/the-psi/pai-orbit/main/plugins/pai-orbit/dist/cursor/install.sh | bash
+```
+
+**GitHub Copilot:**
+Copy `dist/copilot/.github/copilot-instructions.md` into your project.
+
+---
+
+## Key Design Principles
+
+1. **Mode discipline** — no mixing headspaces; explicit `/mode` switches only
+2. **Written outputs** — nothing important stays in chat; everything goes to versioned markdown
+3. **Local-first docs** — markdown is source of truth; Notion/Confluence are publishing surfaces only
+4. **Config over baked-in** — project specifics (board, branching, deploy targets, team) in `.claude/pai-orbit-config.md`
+5. **Human-owned ops** — `docs/ops/` and `docs/backlog/` are never overwritten by agents
+6. **Flag ambiguity** — "I don't know" is better than a confident guess; modes surface uncertainty explicitly
+7. **Blast radius first** — `/analysis` before any shared-interface refactor; `/security-review` before auth/input merges
+
+---
+
+## Gaps and Observations
+
+| Area | Observation |
+|------|-------------|
+| CI/CD | No GitHub Actions to auto-build `dist/` on push; relies on manual `build.sh` runs |
+| Versioning | Version lives only in `plugin.json`; no `CHANGELOG.md`, no git tags |
+| Testing | No automated validation of build outputs or hook script correctness |
+| Codex adapter | Marked experimental; Codex CLI conventions may have changed since authoring |
+| Docs | No auto-generated API/reference docs; all docs are hand-maintained markdown |

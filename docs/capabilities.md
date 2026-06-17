@@ -102,6 +102,77 @@ Shows query before running. Prefers read-only. Flags data quality issues explici
 
 ---
 
+### `/setup` — Setup Mode
+
+**Headspace:** Project configuration  
+**Reads:** Repo root (stack detection), live board API  
+**Writes:** `.claude/pai-orbit-config.md`, `.claude/team.md`, `CLAUDE.md` stub, `.claude/agents/<service>-builder.md`, `.claude/hooks/*.sh`, `.claude/settings.json`, docs scaffold  
+**Switch to:** `/arch init` when setup is complete
+
+Discovers repo structure and tech stack, asks targeted questions in one block, queries the live board API for actual column/label taxonomy, generates all config and scaffold files. Creates and validates `.claude/hooks/` with all safety hooks wired into `.claude/settings.json`. Re-run when the stack or team changes significantly.
+
+---
+
+### `/test` — Test Mode
+
+**Headspace:** QA and test planning  
+**Reads:** docs/features/\*/requirements.md, CLAUDE.md, docs/decisions/  
+**Writes:** docs/features/\*/test-plan.md, docs/wip/test-failure-\*.md  
+**Switch to:** `/build` for code bug fixes, `/groom` for requirements gaps, `/design` for architecture issues
+
+Reviews a feature's requirements for testability, produces a structured test plan with test cases (happy path, edge cases, failure paths), maps each acceptance criterion to a test case ID, and distinguishes automated vs manual coverage. Runs a release readiness check. When a test run fails, classifies the failure (code bug / requirements gap / test setup) and hands off to `/build` or `/groom` with a failure doc as context.
+
+---
+
+### `/review` — Review Mode
+
+**Headspace:** Code review  
+**Reads:** Branch diff, CLAUDE.md, docs/architecture/constraints.md, docs/decisions/, docs/features/\*/  
+**Writes:** docs/wip/review-\*.md, docs/wip/security-review-\*.md  
+**Switch to:** `/build` for fixes, `/design` for architecture decisions
+
+Two sub-modes:
+- `/review` — full review: architecture conformance against `constraints.md`, conventions from CLAUDE.md, requirements match, safety
+- `/review security` — security-focused pass: full OWASP Top 10 checklist (injection, auth, authorisation, secrets, input validation, dependencies, cryptography, cloud/IAM). Critical and High findings block merge.
+- `/review full` — both passes in sequence
+
+Produces sign-off documents the architect or tech lead can reference as an approval record.
+
+---
+
+### `/release` — Release Mode
+
+**Headspace:** Deployment  
+**Reads:** `.claude/pai-orbit-config.md → ## Deploy`  
+**Writes:** Deployment outputs (stdout); no doc writes  
+**Switch to:** `/test` before deploying if tests haven't run, `/build` if a fix is needed, `/incident` if a post-deploy outage occurs
+
+Guided deployment with preflight (auth check, project guard, dirty working tree check, test confirmation) and post-deploy health check verification. Deploys multi-service projects in dependency order. Stops on first failure — never silently continues.
+
+---
+
+### `/incident` — Incident Mode
+
+**Headspace:** Production incident response  
+**Reads:** Error logs, git log, board state  
+**Writes:** docs/wip/postmortem-\*.md  
+**Switch to:** `/build` for fast-path fix, `/review` for fast-path approval, `/release` for fast-path deploy
+
+Production fast-path: triage → BUILD → REVIEW → RELEASE → post-mortem. Bypasses GROOM and DESIGN for speed. Use only when something is broken in production right now. P1/P2 incidents require a post-mortem with timeline, root cause, fix, and follow-up items.
+
+---
+
+### `/suggest-skills` — Suggest Skills Mode
+
+**Headspace:** Harness improvement  
+**Reads:** CLAUDE.md, git log, docs/wip/ session captures, docs/ops/, existing .claude/skills/  
+**Writes:** `.claude/skills/<name>/SKILL.md` (on scaffolding request)  
+**Switch to:** N/A — session ends after scaffolding
+
+Extends Claude Code's built-in suggest-skills capability with project-specific pattern analysis. Scans git log commit types, session captures, and ops docs for recurring, multi-step, error-prone workflows. Scaffolds selected skills using `templates/skills/domain-operational.template.md`.
+
+---
+
 ## Skills
 
 Skills are invoked with a slash command and perform a defined operation.
@@ -119,12 +190,6 @@ Features link to an epic via the `## Epic` field in `requirements.md`. `/plan` r
 
 ---
 
-### `/setup`
-
-First-time project configuration. Discovers repo structure and tech stack, asks targeted questions, generates `.claude/pai-orbit-config.md`, `.claude/team.md`, CLAUDE.md stub, stack-specific agents, lint hooks, and docs scaffold. Re-run when the stack or team changes significantly.
-
----
-
 ### `/git`
 
 Git operations following the project's configured branching model. Covers commit conventions, branch naming, PR process, and safety rules (no force-push, no bulk staging, no hook bypass). Reads from `.claude/pai-orbit-config.md → ## Git`.
@@ -134,30 +199,6 @@ Git operations following the project's configured branching model. Covers commit
 ### `/board`
 
 Task management — create issues, move cards, assign work, close on ship. Reads board config from `.claude/pai-orbit-config.md → ## Agile Board` and team roster from `.claude/team.md`. Supports GitHub Issues, Linear, and Jira.
-
----
-
-### `/test`
-
-Test session — reviews a feature's requirements for testability, produces `docs/features/<feature>/test-plan.md` with test cases (happy path, edge cases, failure paths), maps each acceptance criterion to a test case ID, and distinguishes automated vs manual coverage. Also runs a release readiness check. When a test run fails, classifies the failure (code bug / requirements gap / test setup) and hands off to `/build` or `/groom` with a failure doc as context.
-
----
-
-### `/review`
-
-Structured code review — reads a branch diff and checks it against CLAUDE.md conventions, ADRs in `docs/decisions/`, and the feature's requirements and design docs. Produces `docs/wip/review-<branch>-<date>.md` with blocking and non-blocking findings, architecture conformance checklist, and a sign-off section for the architect or tech lead.
-
----
-
-### `/security-review`
-
-Security-focused review — checks changed code against OWASP Top 10 (injection, auth, authorisation, secrets, input validation, dependencies, cryptography, cloud/IAM). Produces `docs/wip/security-review-<branch>-<date>.md`. Critical and High findings block merge.
-
----
-
-### `/incident`
-
-Production incident fast-path — triage scope and severity, open a tracking issue, coordinate the BUILD → REVIEW → DEPLOY fast-path (bypassing GROOM and DESIGN), and produce a post-mortem for P1/P2 incidents. Use only when something is broken in production right now.
 
 ---
 
@@ -176,18 +217,6 @@ Schema reference and change management — read the current schema for any table
 ### `/simplify`
 
 Code simplification pass — reviews recently changed code for over-engineering, dead code, unnecessary abstractions, and duplication, then fixes what's found. Runs the test suite after to confirm no behaviour change. Reports a summary of what was removed and why.
-
----
-
-### `/deploy`
-
-Guided deployment with preflight (auth, project guard, dirty working tree check) and post-deploy health check. Reads deployment targets from `.claude/pai-orbit-config.md → ## Deploy`. Stops on first failure; never silently continues.
-
----
-
-### `/suggest-skills`
-
-Analyses working patterns (git log, session captures, docs, existing skills) and suggests domain-operational skills worth adding. Scaffolds the selected skill using `templates/skills/domain-operational.template.md`.
 
 ---
 

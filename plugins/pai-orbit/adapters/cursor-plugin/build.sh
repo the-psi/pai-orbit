@@ -140,7 +140,7 @@ EOF
 # Rewrite .claude/ config paths → .cursor/ and CLAUDE.md → AGENTS.md in built artifacts
 while IFS= read -r -d '' f; do
   rewrite_cursor_paths "$f"
-done < <(find "$DIST_DIR" \( -name '*.md' -o -name '*.mdc' -o -name '*.template' \) ! -path '*/skills/setup/SKILL.md' -print0)
+done < <(find "$DIST_DIR" \( -name '*.md' -o -name '*.mdc' -o -name '*.template' \) -print0)
 
 # Always-on rule: written after rewrite (contains legacy Claude paths intentionally)
 cat > "$DIST_DIR/rules/pai-orbit-project-config.mdc" <<'EOF'
@@ -172,8 +172,6 @@ for arch_file in "$DIST_DIR/commands/arch.md" "$DIST_DIR/rules/arch.mdc"; do
   cat "$ADAPTER_DIR/arch-cursor-append.md" >> "$arch_file"
 done
 
-# Cursor-specific setup skill — copied after rewrite to preserve Claude/legacy references in migration text
-cp "$ADAPTER_DIR/setup-SKILL.md" "$DIST_DIR/skills/setup/SKILL.md"
 
 cat > "$DIST_ROOT/README.md" <<'EOF'
 # pai-orbit — Cursor plugin adapter

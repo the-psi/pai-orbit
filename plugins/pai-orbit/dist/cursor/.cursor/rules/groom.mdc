@@ -97,7 +97,30 @@ Before marking a feature as groomed and ready for `/design`, run a readiness gat
    - Do NOT mark the feature as groomed or suggest switching to `/design`.
    - Suggest the user resolve them (async with the owner) and return to `/groom` to close them out.
 
-3. **Mark ready only when phases 1–2 pass and functional questions are closed.** Once the pre-flight audit passes and all functional gaps are resolved (answers recorded in requirements, acceptance criteria updated to match), update the status line to `Groomed — ready for /design` and suggest the switch.
+3. **Mark ready only when phases 1–2 pass and functional questions are closed.** Once the pre-flight audit passes and all functional gaps are resolved (answers recorded in requirements, acceptance criteria updated to match), update the status line to `Groomed — ready for /design`.
+
+4. **Post open questions to the board issue.** If there are any remaining open questions (including design questions deferred to `/design`), post a comment on the parent board issue listing them, each tagged `[open question]`. This makes them trackable without leaving the issue thread. Example comment format:
+
+   ```
+   ## Open questions from grooming
+
+   - [open question] <question text> — owner: <name>
+   - [open question] <question text> — owner: <name>
+   ```
+
+   Use `/board` to post this comment. Note: this requires board write permission. If it fails, surface the error and the permission required (e.g. `gh auth refresh -s project` for GitHub Projects, a Linear API token, etc.) — do not silently skip.
+
+5. **Commit the requirements file.** Use `/git` to stage and commit `docs/features/<feature>/requirements.md`:
+
+   ```
+   docs: groom <feature-name> — requirements
+   ```
+
+   This is a local commit only. Do not push yet.
+
+6. **Offer to move the board issue.** Read the target "Groomed" or backlog-ready column name from `.claude/pai-orbit-config.md → ## Agile Board`. Offer: "Move issue #N to `<column name>`?" Wait for confirmation before acting via `/board`. Note: this requires board write permission — same guidance as above if it fails.
+
+7. **Offer to push.** After the commit, ask: "Push this branch to remote?" Wait for explicit confirmation. Note: this requires push permission for the branch.
 
 **Classification heuristic:** If removing the answer would leave an acceptance criterion untestable or ambiguous, it is a functional gap. If it would only affect the implementation approach without changing what the user experiences, it is a design question.
 

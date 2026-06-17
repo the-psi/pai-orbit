@@ -18,8 +18,14 @@ RULES=(
   ".cursor/rules/design.mdc"
   ".cursor/rules/domain.mdc"
   ".cursor/rules/groom.mdc"
+  ".cursor/rules/incident.mdc"
   ".cursor/rules/plan.mdc"
+  ".cursor/rules/release.mdc"
+  ".cursor/rules/review.mdc"
+  ".cursor/rules/setup.mdc"
   ".cursor/rules/skills.mdc"
+  ".cursor/rules/suggest-skills.mdc"
+  ".cursor/rules/test.mdc"
   ".cursor/rules/ux.mdc"
 )
 
