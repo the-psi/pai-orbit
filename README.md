@@ -1,4 +1,4 @@
-# pai-orbit
+# pai-orbit · v1.3.0
 
 A structured developer methodology harness, distributed as a Claude Code plugin and as rule/instruction bundles for Cursor, GitHub Copilot, and OpenAI Codex.
 
@@ -17,7 +17,9 @@ Backlog
 /ux              → user flow and layout design — produces docs/features/*/ux.md
 
 Sprint — recommended order for a new feature
-/groom           → feature requirements — produces docs/features/*/requirements.md; runs purpose → scenario confirmation → requirements; readiness gate blocks /design until functional gaps are closed
+/groom           → feature requirements — produces docs/features/*/requirements.md; runs purpose → scenario
+                   confirmation → requirements; readiness gate blocks /design until functional gaps are closed;
+                   at session close: posts open questions to board, commits file, offers card move and push
 /test (write)    → draft test cases from requirements before any code is written — produces docs/features/*/test-plan.md
 /design          → technical trade-offs — produces docs/decisions/ and docs/features/*/design.md
 /build           → implementation — reads docs and constraints, checks task board, ships
@@ -25,26 +27,26 @@ Sprint — recommended order for a new feature
 /build           → fix logged bugs; repeat test → build until clean
 /test (verify)   → final verification pass; confirm all acceptance criteria are met
 /review          → code review — checks diff against constraints, CLAUDE.md, ADRs, requirements
+/review security → OWASP Top 10 security pass — injection, auth, authz, secrets, input, deps, crypto, cloud/IAM
 
 Release
-/deploy          → guided deployment with preflight and post-deploy verification
+/release         → guided deployment with preflight checks and post-deploy health verification
 
 Production fast-path
-/incident        → triage → BUILD → REVIEW → DEPLOY → post-mortem
+/incident        → triage → BUILD → REVIEW → RELEASE → post-mortem
 
 Hand-off / issue response
 check issue      → read response or reviewer feedback
 /design          → revise approach if needed — updates design.md or creates a new ADR
 /build           → implement the change
 /test            → run relevant test cases; log any failures
-/deploy          → ship once the test pass is clean
+/release         → ship once the test pass is clean
 
-Workflow skills
+Workflow skills (callable from any mode)
 /git             → commit, branch, PR — reads project branching model
 /board           → task creation, card movement, team assignment (GitHub Issues, GitHub Projects v2, Linear, Jira, GitLab)
 /analysis        → change impact and dependency analysis
 /data-model      → schema reference and migration management
-/security-review → OWASP-based security pass on changed code
 /simplify        → code simplification — remove over-engineering, dead code, abstractions
 
 Planning and maintenance
@@ -52,7 +54,7 @@ Planning and maintenance
 /data            → data exploration — produces docs/reports/
 /epic            → epic lifecycle — create, load, update, and list epics in docs/epics/
 /setup           → first-time configuration — generates config, agents, hooks, docs scaffold
-/suggest-skills  → discover recurring patterns worth encoding as project skills
+/suggest-skills  → discover recurring patterns worth encoding as project skills (extends Claude's built-in)
 ```
 
 ## Mode flow
@@ -84,7 +86,7 @@ flowchart TD
     end
 
     subgraph RELEASE["Release"]
-        deploy["/deploy\nDeployment"]
+        release["/release\nDeployment"]
     end
 
     incident["/incident\nProduction fast-path"]
@@ -98,20 +100,22 @@ flowchart TD
     testrun -- bug found --> build
     testrun -- clean --> testverify
     testverify --> review
-    review --> deploy
+    review --> release
 
     issue --> design2
     design2 --> build2
     build2 --> test2
-    test2 --> deploy
+    test2 --> release
 
     incident --> build
-    incident --> deploy
+    incident --> release
 ```
 
-Workflow skills (`/git`, `/board`, `/analysis`, `/data-model`, `/security-review`, `/simplify`) can be invoked from any phase.
+Workflow skills (`/git`, `/board`, `/analysis`, `/data-model`, `/simplify`) can be invoked from any phase.
 
 > **`/groom` readiness gate** — before handing off to `/design`, `/groom` audits every open question and classifies it as a *functional gap* (what the system does — must be resolved) or a *design question* (how it does it — deferred to `/design`). The feature is not marked groomed until all functional gaps are closed. This prevents half-specified features from entering design.
+
+> **`/review security`** — security-focused pass is now a sub-mode of `/review`. Use `/review` for full code review, `/review security` for the OWASP checklist, or `/review full` for both in sequence. Critical and High findings block merge.
 
 ## Install
 
@@ -172,7 +176,8 @@ After installing, run `/setup` in your project directory. It will:
    - **Linear**: runs `linear team list` to read workflow states
    - **Jira / GitHub Issues / Notion**: prompts you to enter column names manually
 4. Generate `.claude/pai-orbit-config.md`, `.claude/team.md`, a `CLAUDE.md` stub, stack-specific agents, a `docs/` scaffold, and a `docs/architecture/` stub
-5. Tell you exactly what to fill in by hand
+5. Create `.claude/hooks/`, write all safety hook scripts, wire them into `.claude/settings.json`, and validate each hook path — with a clear recovery message if anything is missing
+6. Tell you exactly what to fill in by hand
 
 Then run `/arch init` to complete your architecture declaration — a guided interview that writes `docs/architecture/system.md` (service map), `constraints.md` (enforcement rules), and `stack.md`. Once declared, `/build` reads the constraints before generating code and `/review` checks every diff against them.
 
