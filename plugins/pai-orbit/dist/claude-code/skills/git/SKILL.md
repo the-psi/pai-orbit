@@ -9,6 +9,13 @@ Commit, branch, PR, and push following this project's git conventions.
 
 Reads branching model and conventions from `.claude/pai-orbit-config.md` → `## Git` section.
 
+## MCP vs shell
+
+Before executing any git or PR operation, check `.claude/pai-orbit-config.md → ## MCP → git`:
+
+- **`github` or `gitlab`** — prefer MCP tool calls for the operation (e.g. GitHub MCP `create_pull_request`, `push_files`). If the MCP call fails or the server is unreachable, fall back to the equivalent shell command and note the fallback: "MCP unavailable — using shell fallback."
+- **`none` or section absent** — use shell commands directly; no MCP attempt.
+
 ## Commit
 
 **Format:** `<type>: <short imperative description>`

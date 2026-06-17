@@ -39,6 +39,12 @@ Ask all unresolved questions in a single block — do not ask one at a time. Cov
 7. **Multi-repo project?**: Does this service repo belong to a larger multi-repo project with a separate repo for system-level docs (cross-cutting ADRs, epics spanning services, system-wide domain knowledge)? If yes, what is the path or git URL to that system docs repo?
 8. **Architecture (optional — can be done later with `/arch init`):** What services exist and how do they communicate? Any hard constraints — things that must never happen across the codebase? (e.g., "services must not share DBs", "frontend talks only to api-gateway")
 9. **Team**: names, roles, and handles (GitHub username / Linear ID / Jira user ID as relevant). Who is the default assignee for code issues? Who owns domain/expert decisions?
+10. **MCP servers (optional)**: do you have any MCP servers configured for this project? Answer for each category — enter the server name or "none":
+    - **Git**: GitHub MCP / GitLab MCP / none
+    - **Board**: GitHub Projects MCP / Linear MCP / Jira MCP / none
+    - **Docs**: Confluence MCP / Notion MCP / none
+
+    If MCP servers are configured, they will be preferred over CLI shell commands at runtime (with shell as fallback). If none are configured, all operations use shell commands — no MCP setup is required.
 
 ## Step 2b — Board Column Discovery (after Step 2 answers arrive)
 
@@ -225,6 +231,25 @@ done
 ```
 
 If any hook is missing, re-run Steps B–C before proceeding. Do not continue to Step 4 with a broken hook configuration — a missing `bash-guard.sh` will cause a non-blocking error on every Bash tool call.
+
+### MCP configuration
+
+If the user provided MCP server answers in Step 2, write an `## MCP` section to `.cursor/pai-orbit-config.md`:
+
+```markdown
+## MCP
+
+git: {{GIT_MCP_SERVER}}
+<!-- Choose one: github | gitlab | none -->
+
+board: {{BOARD_MCP_SERVER}}
+<!-- Choose one: github | linear | jira | none -->
+
+docs: {{DOCS_MCP_SERVER}}
+<!-- Choose one: confluence | notion | none -->
+```
+
+Omit the `## MCP` section entirely if all three answers are "none" — do not write a section with all-none values.
 
 ### Docs scaffold
 

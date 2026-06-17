@@ -145,6 +145,22 @@ Sync: outbound only
 
 ---
 
+## MCP
+<!-- Optional — omit this entire section if no MCP servers are configured -->
+<!-- Skills read this at runtime to decide whether to prefer MCP or shell commands -->
+<!-- Shell commands are always the fallback if MCP is unavailable or unconfigured -->
+
+git: {{GIT_MCP_SERVER}}
+<!-- Choose one: github | gitlab | none -->
+
+board: {{BOARD_MCP_SERVER}}
+<!-- Choose one: github | linear | jira | none -->
+
+docs: {{DOCS_MCP_SERVER}}
+<!-- Choose one: confluence | notion | none -->
+
+---
+
 ## System Docs
 <!-- Optional — omit this entire section for single-repo projects -->
 <!-- Include when this service repo is part of a multi-repo project and a separate repo holds system-level docs -->

@@ -1,7 +1,7 @@
-# Design Spike: MCP Support for Skills (Git, Board) and External Doc Storage
+# Design: MCP Support for Git, Board Skills and External Doc Storage
 
 **Issue:** #12  
-**Status:** Draft — awaiting team input  
+**Status:** Partially resolved — see decisions below  
 **Owner:** <!-- TODO: assign -->  
 **Date:** 2026-06-17
 
@@ -11,67 +11,61 @@
 
 Two related questions were raised about integrating MCP (Model Context Protocol) into pai-orbit:
 
-1. **MCP for skills** — Should `/git` and `/board` skills use MCP tool calls (structured, typed) instead of text instructions + shell commands?
-2. **MCP for docs** — Should project documentation (`requirements.md`, `design.md`, etc.) live in a centralised knowledge platform (Confluence, Notion) and be accessed via MCP, rather than being stored locally in `docs/`?
+1. **MCP for skills** — Should `/git` and `/board` skills use MCP tool calls in addition to (or instead of) CLI shell commands?
+2. **MCP for docs** — Should project documentation (`requirements.md`, `design.md`, etc.) live in a centralised knowledge platform (Confluence, Notion) and be accessed via MCP?
 
-These are independent decisions that could be adopted separately.
-
----
-
-## Option A: MCP-backed `/git` skill
-
-### What changes
-
-Replace CLI-based git operations (`git commit`, `gh pr create`, etc.) with structured MCP tool calls to a Git MCP server (e.g. the official GitHub MCP server).
-
-### Benefits
-
-<!-- TODO: evaluate -->
-- Structured tool calls → typed inputs → fewer shell injection risks
-- MCP server can enforce safety rules at the server layer (e.g. block force-push)
-- Platform-agnostic: same skill works against GitHub, GitLab, or Bitbucket MCP servers
-- Tool call responses are structured JSON → easier to parse and display
-
-### Drawbacks
-
-<!-- TODO: evaluate -->
-- Requires users to configure and authenticate an MCP server (higher setup cost)
-- Offline/air-gapped workflows break (no shell fallback once MCP is required)
-- MCP server availability becomes a dependency — adds operational complexity
-- Current `/git` skill works for any git host; MCP makes it host-specific
-
-### Decision criteria
-
-- [ ] Does the current shell-based approach have reliability or security gaps that MCP would fix?
-- [ ] Are users already running a Git/GitHub MCP server for other purposes?
-- [ ] Is the setup overhead acceptable for the typical pai-orbit user?
-
-### Recommendation
-
-<!-- TODO: fill in after evaluating criteria above -->
+These are independent decisions and are resolved separately below.
 
 ---
 
-## Option B: MCP-backed `/board` skill
+## Decision A: MCP for `/git` — opt-in, configured during `/setup`
 
-### What changes
+**Resolved.** MCP will not replace shell-based git operations. Shell commands (`git commit`, `gh pr create`, etc.) remain the default and always-available path.
 
-Replace CLI-based board operations (`gh issue create`, `glab api ...`, Linear CLI) with structured MCP tool calls to a board-specific MCP server (GitHub Projects MCP, Linear MCP, Jira MCP).
+MCP is offered as an **optional enhancement**: if a user has a GitHub MCP server (or equivalent) configured, `/setup` captures it and writes it to `pai-orbit-config.md → ## MCP`. The `/git` skill checks this config at runtime and prefers MCP tool calls when available, falling back to shell commands if the MCP server is unavailable or unconfigured.
+
+### Why opt-in, not replace
+
+- Shell commands work offline, across all git hosts, and with no additional setup
+- MCP requires a running server and authentication — mandatory MCP breaks the default install experience
+- Users who already run the GitHub MCP server for other purposes can get the benefits (structured tool calls, typed responses) without forcing that overhead on everyone
+
+### What `/setup` captures (new question in Step 2)
+
+> "Do you have any MCP servers configured for this project?  
+> Git: GitHub MCP / GitLab MCP / none  
+> Board: GitHub Projects MCP / Linear MCP / Jira MCP / none  
+> Docs: Confluence MCP / Notion MCP / none"
+
+This is written to `## MCP` in `.claude/pai-orbit-config.md`. Skills read it at runtime to decide whether to prefer MCP or shell.
+
+### Runtime behaviour in `/git`
+
+1. Read `.claude/pai-orbit-config.md → ## MCP → git`
+2. If a server is configured: attempt the operation via MCP tool call
+3. If MCP call fails or server is unconfigured: fall back to shell command, note the fallback
+
+---
+
+## Option B: MCP for `/board` — under evaluation
+
+**Not yet resolved.**
+
+### What changes (if adopted)
+
+Replace (or augment) CLI-based board operations (`gh issue create`, `glab api ...`, Linear CLI) with structured MCP tool calls to a board-specific MCP server.
 
 ### Benefits
 
-<!-- TODO: evaluate -->
-- Board MCP servers (e.g. Linear's official MCP) expose richer API surface than CLI
-- Typed inputs mean the LLM is less likely to misformat issue titles, labels, etc.
+- Board MCP servers (e.g. Linear's official MCP) expose a richer API surface than the CLI
+- Typed inputs reduce the chance of malformed issue titles, labels, or state transitions
 - Reduces dependency on per-tool CLIs (`glab`, `linear`, `jira`) being installed
 
 ### Drawbacks
 
-<!-- TODO: evaluate -->
-- One MCP server per board platform — users on Jira need a different server than Linear users
+- One MCP server per board platform — fragmented per-user setup
 - Auth complexity: each MCP server has its own credential/token flow
-- Current CLI fallback strategy works across all platforms; MCP fragments this
-- Not all board platforms have stable MCP servers (Jira MCP is less mature)
+- Not all board platforms have stable MCP servers (Jira MCP is less mature than Linear or GitHub)
 
 ### Decision criteria
 
@@ -82,64 +76,37 @@ Replace CLI-based board operations (`gh issue create`, `glab api ...`, Linear CL
 ### Recommendation
 
 <!-- TODO: fill in after evaluating criteria above -->
+Likely: same opt-in pattern as git — shell CLI remains default, MCP preferred when configured. `/setup` already captures board MCP server in the `## MCP` section.
 
 ---
 
 ## Option C: External doc storage via MCP (Confluence / Notion)
 
-### What changes
+**Resolved: hybrid.**
 
-Project documentation (requirements, design docs, ADRs) is written to and read from Confluence or Notion via MCP, rather than being committed locally to `docs/`.
+Keep `docs/` as the primary local source of truth. Add Confluence/Notion as an *optional outbound publishing surface* via the `docs-writer` agent's existing MCP sync capability. MCP reads are not mandatory in the core workflow — `/review` reads `constraints.md`, `/build` reads `requirements.md`, etc. all stay as local file reads.
 
-### Benefits
-
-<!-- TODO: evaluate -->
-- Centralized, searchable docs accessible to non-engineers
-- Real-time collaboration — multiple team members can edit simultaneously
-- Docs survive repo restructuring or migration
-- pai-orbit already has `docs-writer` agent with MCP sync support
-
-### Drawbacks
-
-<!-- TODO: evaluate -->
-- **Breaks local-first principle**: docs become inaccessible offline or when MCP is unavailable
-- **Version control loss**: Confluence/Notion don't have git-integrated history, blame, or PR reviews on docs
-- **Setup complexity**: every project member needs MCP credentials configured
-- **Search and read cost**: reading docs in LLM context requires MCP tool calls on every session, not a local `cat`
-- pai-orbit's producer/consumer contracts assume local file paths — `/review` reads `constraints.md`, `/build` reads `requirements.md` etc.; these would all need MCP-read equivalents
-
-### Decision criteria
-
-- [ ] Does the team already use Confluence/Notion as their primary knowledge platform?
-- [ ] Is the local `docs/` folder inaccessible to non-engineers on the team?
-- [ ] Can MCP reads be made reliable enough for session-critical reads (requirements before /build)?
-- [ ] Is the team willing to accept the offline/availability trade-off?
-
-### Recommendation
-
-<!-- TODO: fill in after evaluating criteria above -->
-
-**Likely outcome:** Hybrid — keep `docs/` as the primary local source of truth; add Confluence/Notion as an *optional publishing surface* via the `docs-writer` agent's existing MCP sync capability. Do not make MCP reads mandatory in the core workflow.
+**Rationale:**
+- Making MCP reads mandatory in the core session loop breaks offline work and adds latency on every session
+- The local-first principle is load-bearing — git history, diffs, and PR reviews all depend on docs being in the repo
+- Outbound-only sync (write to Confluence after writing locally) gives non-engineers visibility without breaking the workflow
 
 ---
 
 ## Overall Recommendation
 
-<!-- TODO: fill in after team discussion -->
-
-| Option | Recommend | Condition |
-|--------|-----------|-----------|
-| MCP for `/git` | <!-- TODO --> | |
-| MCP for `/board` | <!-- TODO --> | |
-| MCP for docs (write) | Already supported | Keep as optional via `docs-writer` |
-| MCP for docs (read) | <!-- TODO --> | |
+| Option | Decision | Notes |
+|--------|----------|-------|
+| MCP for `/git` | ✅ Adopt as opt-in | Configured during `/setup`; shell fallback always available |
+| MCP for `/board` | 🔲 Evaluate | Same opt-in pattern likely; pending board platform MCP maturity check |
+| MCP for docs (write) | ✅ Already supported | `docs-writer` agent handles outbound sync via MCP |
+| MCP for docs (read) | ❌ Reject for core flow | Local file reads stay; MCP reads optional for non-critical lookups |
 
 ---
 
-## Decision
+## Implementation
 
-<!-- TODO: record the decision here once the team reaches alignment. Then write an ADR in docs/decisions/. -->
-
-**Proceed / Defer / Reject** — rationale:
-
-ADR to write: `docs/decisions/YYYY-MM-DD-mcp-integration-strategy.md`
+- [x] `/setup` captures MCP server config (git, board, docs) in `## MCP` section of `pai-orbit-config.md`
+- [x] `/git` skill reads `## MCP → git` and prefers MCP when configured, falls back to shell
+- [ ] `/board` skill updated once Option B is resolved
+- [ ] ADR written once Option B is decided: `docs/decisions/YYYY-MM-DD-mcp-integration-strategy.md`
