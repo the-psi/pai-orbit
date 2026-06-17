@@ -1,7 +1,7 @@
 # Design: MCP Support for Git, Board Skills and External Doc Storage
 
 **Issue:** #12  
-**Status:** Partially resolved — see decisions below  
+**Status:** Resolved  
 **Owner:** <!-- TODO: assign -->  
 **Date:** 2026-06-17
 
@@ -47,36 +47,17 @@ This is written to `## MCP` in `.claude/pai-orbit-config.md`. Skills read it at 
 
 ---
 
-## Option B: MCP for `/board` — under evaluation
+## Decision B: MCP for `/board` — ✅ Adopted as opt-in layer
 
-**Not yet resolved.**
+**Resolved.** Same pattern as `/git`: CLI shell commands remain the default and fallback. If a board MCP server is configured in `## MCP → board`, the `/board` skill prefers MCP tool calls at runtime and falls back to CLI with an explicit note if the server is unavailable.
 
-### What changes (if adopted)
+Per-platform MCP preference:
+- `github` → GitHub MCP (`create_issue`, `add_issue_comment`, `update_issue`, etc.); fallback: `gh` CLI
+- `linear` → Linear MCP; fallback: `linear` CLI
+- `jira` → Jira MCP; fallback: `jira` CLI
+- `none` / absent → CLI directly, no MCP attempt
 
-Replace (or augment) CLI-based board operations (`gh issue create`, `glab api ...`, Linear CLI) with structured MCP tool calls to a board-specific MCP server.
-
-### Benefits
-
-- Board MCP servers (e.g. Linear's official MCP) expose a richer API surface than the CLI
-- Typed inputs reduce the chance of malformed issue titles, labels, or state transitions
-- Reduces dependency on per-tool CLIs (`glab`, `linear`, `jira`) being installed
-
-### Drawbacks
-
-- One MCP server per board platform — fragmented per-user setup
-- Auth complexity: each MCP server has its own credential/token flow
-- Not all board platforms have stable MCP servers (Jira MCP is less mature than Linear or GitHub)
-
-### Decision criteria
-
-- [ ] Is the `/board` skill's current failure mode CLI-related (missing CLIs, auth issues) or logic-related?
-- [ ] Are the target board platforms (Jira, Linear, GitHub) represented by production-ready MCP servers?
-- [ ] Would MCP allow richer operations not possible via CLI (e.g. bulk moves, sprint management)?
-
-### Recommendation
-
-<!-- TODO: fill in after evaluating criteria above -->
-Likely: same opt-in pattern as git — shell CLI remains default, MCP preferred when configured. `/setup` already captures board MCP server in the `## MCP` section.
+The GitLab label resolution step and column→label map logic remain unchanged regardless of MCP setting — those are board-logic concerns, not transport concerns.
 
 ---
 
@@ -98,7 +79,7 @@ Keep `docs/` as the primary local source of truth. Add Confluence/Notion as an *
 | Option | Decision | Notes |
 |--------|----------|-------|
 | MCP for `/git` | ✅ Adopt as opt-in | Configured during `/setup`; shell fallback always available |
-| MCP for `/board` | 🔲 Evaluate | Same opt-in pattern likely; pending board platform MCP maturity check |
+| MCP for `/board` | ✅ Adopt as opt-in | Same pattern as `/git`; shell CLI stays default; MCP preferred when configured |
 | MCP for docs (write) | ✅ Already supported | `docs-writer` agent handles outbound sync via MCP |
 | MCP for docs (read) | ❌ Reject for core flow | Local file reads stay; MCP reads optional for non-critical lookups |
 
@@ -108,5 +89,5 @@ Keep `docs/` as the primary local source of truth. Add Confluence/Notion as an *
 
 - [x] `/setup` captures MCP server config (git, board, docs) in `## MCP` section of `pai-orbit-config.md`
 - [x] `/git` skill reads `## MCP → git` and prefers MCP when configured, falls back to shell
-- [ ] `/board` skill updated once Option B is resolved
-- [ ] ADR written once Option B is decided: `docs/decisions/YYYY-MM-DD-mcp-integration-strategy.md`
+- [x] `/board` skill reads `## MCP → board` and prefers MCP when configured, falls back to CLI
+- [ ] ADR to be written: `docs/decisions/YYYY-MM-DD-mcp-integration-strategy.md`
