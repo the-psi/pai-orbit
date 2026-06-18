@@ -118,6 +118,20 @@ Flag these patterns in requirements and ask for clarification:
 
 ---
 
+## Session close
+
+When the test plan is signed off (all acceptance criteria covered, manual checklist reviewed):
+
+1. **Commit the test plan.** Use `/git` to stage and commit `docs/features/<feature>/test-plan.md`:
+   ```
+   docs: test-plan <feature-name>
+   ```
+   Local commit only. Do not push yet.
+
+2. **Offer to move the board issue.** If a board issue is associated with this feature, read the next column name from `.cursor/pai-orbit-config.md → ## Agile Board`. Offer: "Move issue #N to `<column name>`?" Wait for confirmation before acting via `/board`. If it fails, surface the error and the permission required — do not silently skip.
+
+3. **Offer to push.** After the commit, ask: "Push this branch to remote?" Wait for explicit confirmation.
+
 ## Release readiness check
 
 When the user asks if a feature is ready to release:

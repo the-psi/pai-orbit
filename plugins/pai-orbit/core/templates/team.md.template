@@ -1,6 +1,6 @@
 # Team
 
-Used by `/agile-board` for default assignees and handoffs.
+Used by `/board` for default assignees and handoffs.
 Update when team members join, leave, or change roles.
 
 | Name | Role | GitHub | Linear | Jira | Notes |
@@ -10,7 +10,7 @@ Update when team members join, leave, or change roles.
 
 ## Role reference
 
-Roles used by `/agile-board` for default assignments:
+Roles used by `/board` for default assignments:
 
 | Role | Assigned to | Used for |
 |------|-------------|----------|

@@ -35,7 +35,19 @@ Switch out when:
 ## Session close
 
 Every design session should end by:
-- Saving output to `docs/features/<feature>/design.md` or `docs/decisions/YYYY-MM-DD-<slug>.md`
-- Listing open questions explicitly — who owns each, what is blocked on it
-- Creating a task board item for the build phase via `/agile-board` if the design is approved
-- If the design touches system-level concerns (new service, new cross-service protocol, new external integration): prompt the user to run `/arch update` to keep the architecture declaration current
+
+1. **Save output.** Write to `docs/features/<feature>/design.md` or `docs/decisions/YYYY-MM-DD-<slug>.md`. List open questions explicitly — who owns each, what is blocked on it.
+
+2. **Commit.** Use `/git` to stage and commit the design file:
+   ```
+   docs: design <feature-name>
+   ```
+   Local commit only. Do not push yet.
+
+3. **Create a build-phase board item.** If the design is approved, create a task board item for the implementation work via `/board`.
+
+4. **Offer to move the board issue.** If a board issue tracks this design work, read the next column name from `.cursor/pai-orbit-config.md → ## Agile Board`. Offer: "Move issue #N to `<column name>`?" Wait for confirmation before acting via `/board`. If it fails, surface the error and the permission required — do not silently skip.
+
+5. **Offer to push.** After the commit, ask: "Push this branch to remote?" Wait for explicit confirmation.
+
+6. **Architecture follow-up.** If the design touches system-level concerns (new service, new cross-service protocol, new external integration): prompt the user to run `/arch update` to keep the architecture declaration current.

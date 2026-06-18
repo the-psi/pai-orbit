@@ -32,7 +32,7 @@ Before starting:
 - Read `AGENTS.md` — it contains the project's architecture, stack, conventions, and key file locations
 - If `docs/architecture/constraints.md` exists, read it before generating any code — treat violations of declared constraints as blocking; do not produce code that crosses a constraint boundary without flagging it explicitly and switching to `/arch` to ratify the change
 - Read relevant `docs/features/<feature>/` and `docs/decisions/` before starting significant work
-- Check the task board (see `/agile-board` for board details): find the relevant issue and confirm it is in the right in-progress state
+- Check the task board (see `/board` for board details): find the relevant issue and confirm it is in the right in-progress state
 
 During build:
 - Spawn sub-agents per repo where tasks are independent; run in parallel where possible
@@ -44,7 +44,7 @@ During build:
 ## After shipping
 
 - If the change added a service, modified inter-service communication, crossed a service boundary, or introduced a new external integration: run `/arch validate` or prompt the user to do so before closing out
-- Close the task board item; use `/agile-board` to handle the closure and any follow-up items
+- Close the task board item; use `/board` to handle the closure and any follow-up items
 - If new tasks were discovered during build, create board items rather than noting them inline
 - Update `docs/domain/product-capabilities.md` with what was added or changed
 - **ADR obligation:** if you introduced a new pattern, abstraction, naming convention, or chose between two viable approaches — write an ADR in `docs/decisions/` and include it in the same commit as the code. The signal: "would a future developer need to know why this was done this way?" If yes, it needs an ADR. Do not defer this to a follow-up — if the code ships without the ADR it will never be written.
