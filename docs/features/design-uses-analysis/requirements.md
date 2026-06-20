@@ -25,7 +25,7 @@ When Claude enters `/design` mode for a change that touches shared interfaces, A
 
 ## Non-functional requirements
 - The analysis check must happen at session start, before any design discussion — not mid-session.
-- The trigger heuristic (shared interface vs. additive) must be deterministic enough for Claude to apply consistently without always asking the user to classify.
+- Detection is heuristic: Claude judges from the change description whether it modifies an existing API endpoint, a data model field consumed by more than one service, or a cross-service contract. If uncertain, Claude must treat the change as shared-interface (conservative default) and invoke `/analysis`.
 
 ## Context
 The `/analysis` skill already exists at `plugins/pai-orbit/core/skills/analysis/SKILL.md`. This enhancement wires it into the `/design` mode entry sequence — no changes to the skill itself are required.
@@ -35,7 +35,7 @@ The `/analysis` skill already exists at `plugins/pai-orbit/core/skills/analysis/
 - Auto-running `/analysis` from modes other than `/design`.
 
 ## Open questions
-- [ ] Should the shared-interface detection be purely heuristic (Claude judges from context) or should there be an explicit signal in `pai-orbit-config.md` listing monitored interfaces? — owner: Pratham
+- [x] Should the shared-interface detection be purely heuristic or config-driven? → **Heuristic judgement.** Claude assesses from context whether the change touches an existing API, data model field used across services, or cross-service boundary. No config entry required. (resolved 2026-06-20)
 
 ## Acceptance criteria
 - AC-1 (Scenario 1): Given a change touching an existing API or data model field, when `/design` starts, then Claude invokes `/analysis` or states it is required before presenting options.
