@@ -20,8 +20,15 @@ Switch out when:
 ## Behaviour
 
 Before starting:
-- Branch: before writing any code, invoke `/git` to create and checkout a feature branch following the branching model in `.claude/pai-orbit-config.md` → `## Git`. Derive the branch name from the feature or epic being built (e.g. `feature/<slug>` for GitHub Flow). If the current branch is already a non-protected feature branch, confirm it is the right one and proceed. If the current branch is `main`, `master`, or `develop` — and the configured model is not trunk-based — do not proceed until a feature branch is created and checked out.
-- Tests: suggest running the project's test suite before writing any new code, so regressions introduced by the implementation are caught against a clean baseline. Skip if the user explicitly says to proceed without running tests.
+- **Branch (first action — before any file edit):** Read `.claude/pai-orbit-config.md → ## Git` to determine the branching model. Then:
+  - **GitHub Flow / GitFlow, currently on `main`/`master`/`develop`:** derive the branch name from the linked board issue title (kebab-case the title, prefix with `feature/`, `fix/`, or `hotfix/` as appropriate). If no board issue is linked, ask the user for the slug. State the proposed branch name and wait for confirmation, then create and checkout the branch. Do not write any code until the branch is confirmed.
+  - **GitHub Flow / GitFlow, already on a feature branch:** state "Already on feature branch `<name>` — proceeding" and confirm it matches the work at hand before continuing.
+  - **Trunk-based, small change (≤ 3 files estimated):** state "Committing directly to `main` (trunk-based, small change ≤ 3 files)" and proceed.
+  - **Trunk-based, larger change (> 3 files estimated):** propose a short-lived branch name derived from the task, state the estimated scope, and wait for user confirmation before creating the branch.
+  - **Trunk-based, scope unclear:** ask the user before deciding.
+  - **No branching model configured:** state "No branching model configured — defaulting to GitHub Flow", then follow the GitHub Flow path above.
+  - **First output of every session:** after branch is established, emit one line: "Branch: `<branch>` → PR target: `<base>`" before any implementation output.
+- **Tests:** suggest running the project's test suite before writing any new code, so regressions are caught against a clean baseline. Skip if the user explicitly says to proceed without running tests.
 - Read `.claude/pai-orbit-config.md`. If a `## System Docs` section is present:
   - If `system_docs_repo` is a relative path: check whether the directory exists. If yes, add `<system_docs_repo>/<system_docs_path>` to the doc read set. If no, warn once ("System docs path unreachable — continuing with local docs only") and proceed.
   - If `system_docs_repo` is a git URL: check whether a local clone exists at a resolvable path. If yes, add it. If no, warn once and proceed.
