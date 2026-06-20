@@ -25,6 +25,8 @@ Switch out when:
 ## Behaviour
 
 Before starting:
+- Branch: before writing any code, invoke `/git` to create and checkout a feature branch following the branching model in `.claude/pai-orbit-config.md` → `## Git`. Derive the branch name from the feature or epic being built (e.g. `feature/<slug>` for GitHub Flow). If the current branch is already a non-protected feature branch, confirm it is the right one and proceed. If the current branch is `main`, `master`, or `develop` — and the configured model is not trunk-based — do not proceed until a feature branch is created and checked out.
+- Tests: suggest running the project's test suite before writing any new code, so regressions introduced by the implementation are caught against a clean baseline. Skip if the user explicitly says to proceed without running tests.
 - Read `.claude/pai-orbit-config.md`. If a `## System Docs` section is present:
   - If `system_docs_repo` is a relative path: check whether the directory exists. If yes, add `<system_docs_repo>/<system_docs_path>` to the doc read set. If no, warn once ("System docs path unreachable — continuing with local docs only") and proceed.
   - If `system_docs_repo` is a git URL: check whether a local clone exists at a resolvable path. If yes, add it. If no, warn once and proceed.
