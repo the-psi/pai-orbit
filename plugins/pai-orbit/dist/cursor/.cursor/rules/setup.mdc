@@ -45,6 +45,15 @@ Ask all unresolved questions in a single block — do not ask one at a time. Cov
     - **Docs**: Confluence MCP / Notion MCP / none
 
     If MCP servers are configured, they will be preferred over CLI shell commands at runtime (with shell as fallback). If none are configured, all operations use shell commands — no MCP setup is required.
+11. **Assistant target(s)**: which AI assistant(s) does this team use? Pick one or more:
+    - `claude` — Claude Code (default; emits `.claude/` config + hooks)
+    - `cursor` — Cursor (emits `.cursor/` rules + plugin)
+    - `copilot` — GitHub Copilot Chat (emits `.copilot/` + `.github/copilot-instructions.md` + `.github/prompts/` + `.github/instructions/`)
+    - `multiple` — write config for two or more of the above (the Copilot, Cursor, and Claude folders are independent and may coexist in the same repo)
+
+    If unanswered, default to `claude` (today's behaviour). If `copilot` is one of the selections, additionally ask:
+    - **"Install the optional `.husky/pre-commit` hook for git-level bash-guard enforcement?"** Default: `yes` if the project has `.git/`, `no` otherwise.
+    - **"Choose pre-commit installer: husky / pre-commit framework / both / neither"** (per D29). Detection-driven defaults: `husky` if `.husky/` exists or `package.json` has a husky dep; `pre-commit` if `.pre-commit-config.yaml` already exists; `husky` otherwise.
 
 ## Step 2b — Board Column Discovery (after Step 2 answers arrive)
 
@@ -133,7 +142,15 @@ No API query needed. Ask the user to provide their workflow stages (column names
 
 ## Step 3 — Generate
 
-Create the following files. Tell the user what was created and what they need to fill in by hand.
+Create the following files based on the assistant target(s) chosen in Step 2 question 11. The Claude Code path (default) is documented first; the Cursor and Copilot paths follow as additive blocks. When multiple targets are selected, run each block in turn — the resulting folders coexist in the same repo without conflict.
+
+> **Regression discipline.** The pre-existing Claude Code and Cursor outputs are frozen. Running `/setup` with target `claude` (or `cursor`) on a scratch repo must produce a byte-identical tree to the pre-Copilot-upgrade behaviour. Do not opportunistically refactor either path during this run.
+
+---
+
+### Target: Claude Code (`.claude/` path)
+
+Run this block when `claude` is one of the selected assistant targets.
 
 ### `.claude/pai-orbit-config.md`
 
@@ -278,16 +295,109 @@ If the user answered the architecture question (Step 2, item 8), pre-populate th
 
 Tell the user: "Run `/arch init` to complete your architecture declaration. Once declared, `/build` and `/review` will read `constraints.md` to enforce architectural rules automatically."
 
+---
+
+### Target: Cursor (`.cursor/` path)
+
+Run this block when `cursor` is one of the selected targets. No changes to the Cursor path were made for the Copilot upgrade — the pre-existing Cursor scaffolding behaviour applies unchanged. Sources are emitted from `plugins/pai-orbit/dist/cursor-plugin/pai-orbit/` (or `dist/cursor/` for the legacy `.cursor/rules/` consumers).
+
+The exact files written here are owned by `dist/cursor-plugin/` and `dist/cursor/`; running `/setup` with `cursor` as the only target on a fresh repo must produce the same output as before this upgrade.
+
+---
+
+### Target: Copilot (`.copilot/` + `.github/` path)
+
+Run this block when `copilot` is one of the selected targets. The Copilot adapter output lives in `plugins/pai-orbit/dist/copilot/` and is copied verbatim into the project, then `.copilot/` config files are rendered from the Step 2 interview answers.
+
+#### Files to write
+
+Copy from the built `dist/copilot/` tree:
+
+| Source | Destination | Behaviour |
+|--------|-------------|-----------|
+| `dist/copilot/.github/copilot-instructions.md` | `<project>/.github/copilot-instructions.md` | **Overwrite** — pai-orbit owns this. |
+| `dist/copilot/.github/prompts/` | `<project>/.github/prompts/` | **Overwrite** the pai-orbit-emitted `*.prompt.md` files. Leave any user-authored prompts alone. |
+| `dist/copilot/.github/instructions/` | `<project>/.github/instructions/` | **Overwrite** the pai-orbit-emitted `*.instructions.md` files. Leave any user-authored instructions alone. |
+| `dist/copilot/.husky/pre-commit.template` | `<project>/.husky/pre-commit.template` | **Always copy** as the inert `.template` (D12). If the user opted in to `husky` during Step 2, additionally rename to `.husky/pre-commit`, `chmod +x`, and run `git update-index --add --chmod=+x .husky/pre-commit` (D21) so the exec bit is tracked. |
+| `dist/copilot/.pre-commit-config.yaml.template` | `<project>/.pre-commit-config.yaml.template` | **Always copy** as the inert `.template` (D29). If the user opted in to `pre-commit framework` during Step 2, rename to `.pre-commit-config.yaml` and instruct the user to run `pre-commit install` (this step does NOT install Python tooling itself). |
+
+Render from templates using the Step 2 answers:
+
+##### `.copilot/pai-orbit-config.md`
+
+Use the template at `templates/pai-orbit-config.md.template` — same template as the Claude path. The content is tool-agnostic; only the destination folder differs.
+
+For the `## Agile Board → columns` table, use **only** the column names and labels confirmed in Step 2b — never write placeholder or example values. Delete the tool-specific comment blocks that don't apply to the chosen board type.
+
+For the `## System Docs` section: same rules as the Claude path (omit for single-repo, write the pointer if multi-repo).
+
+##### `.copilot/team.md`
+
+Use the template at `templates/team.md.template`. Populate from the team answers.
+
+##### `.copilot/settings.json`
+
+Generate per D19. Write the following JSON, replacing placeholders:
+
+```json
+{
+  "pai_orbit_version": "<version from plugins/pai-orbit/core/plugin.json>",
+  "target": "copilot",
+  "installed_at": "<ISO-8601 UTC timestamp at scaffold time>",
+  "husky_opted_in": <true if user picked husky or both in Step 2, else false>,
+  "detected_languages": [<languages inferred from Step 1 file scan>],
+  "precommit_installer": "<husky | pre-commit | both | neither — Step 2 answer>"
+}
+```
+
+This file is read on subsequent re-runs (`/setup` or `npx … init copilot`) to know what was previously installed and to drive the diff report.
+
+##### `CLAUDE.md` (tool-agnostic; kept under that name per D26)
+
+Use the template at `templates/CLAUDE.md.template`. Fill in:
+- Project name and one-line description
+- Sub-projects / services table (name, path, stack, purpose)
+- Commands section (dev server, build, test for each service)
+- Leave architecture section with clear `<!-- TODO: fill in by hand -->` markers
+
+`CLAUDE.md` is tool-agnostic project documentation. The Copilot adapter's `.github/copilot-instructions.md` references it explicitly under `## Context discovery`. Do not rename it per-tool; Claude / Cursor / Copilot all read the same file.
+
+##### Docs scaffold
+
+If `docs/` does not exist, copy the scaffold from `templates/docs/`. Same behaviour as the Claude path.
+
+#### What is NOT written for the Copilot target
+
+- **No `.claude/` folder.** That is the Claude Code path.
+- **No `.cursor/` folder.** That is the Cursor path.
+- **No native hooks (`.claude/hooks/`).** Copilot has no hook event surface. `bash-guard` intent lives in `.github/copilot-instructions.md` as always-loaded advisory text plus the optional `.husky/pre-commit` (or `.pre-commit-config.yaml`). `arch-drift` intent lives in `.github/copilot-instructions.md` and `.github/instructions/arch-drift.instructions.md`. Lint hooks rely on the project's own linter config invoked at commit time by the pre-commit hook — the linter config (`pyproject.toml`, `.eslintrc.json`) is owned by the project, never authored by pai-orbit (D31).
+- **No editor-specific files (`.vscode/`, `.idea/`, etc.)** per D33. Editor settings are owned by the team. VS Code users who want lint-on-save follow the 4-line copy-paste recipe in `docs/copilot-install-and-usage.md`.
+- **Service-builder prompts already ship as `.github/prompts/<stack>-builder.prompt.md`** under the Copilot adapter (D30). On Pro/Business Copilot they run as multi-step agents (read `CLAUDE.md`, detect the service, propose file edits); on Free they degrade to regular prompts that still give correct manual scaffolding guidance.
+
+#### Standalone install alternative
+
+If the team does not use Claude Code or Cursor, the `/setup` mode is unreachable. Tell the user about the equivalent CLI entry point:
+
+```bash
+npx github:the-psi/pai-orbit init copilot
+```
+
+It runs the same interview, renders the same files, and is the supported path for Copilot-only teams.
+
+---
+
 ## Step 4 — Report
 
-List every file created. For each:
+Group the report by assistant target so the developer can see which adapter ran. For each file:
 - ✅ Complete — no action needed
 - ⚠️ Stub — what the human needs to fill in
 
-Architecture files:
+Architecture files (shared — written once regardless of how many targets were selected):
 - ⚠️ Stub — `docs/architecture/system.md` — run `/arch init` to complete
 - ⚠️ Stub — `docs/architecture/constraints.md` — run `/arch init` to define rules
 - ✅ Generated — `docs/architecture/stack.md` (populated from detected stack)
+
+### Claude Code target (only if `claude` was selected)
 
 Rules:
 - ✅ Generated — `.claude/rules/decisions.md` — ADR obligation rules (when to write one, how)
@@ -301,4 +411,31 @@ Hooks:
 
 If any hook shows ⚠️ in the Step 3 validation output, surface it here with instructions: "`.claude/hooks/<name>.sh` is missing. Re-run `/setup` or manually copy the file from the pai-orbit plugin's `hooks/` directory and run `chmod +x` on it."
 
-End with: "Run `/suggest-skills` after a few sessions to discover operational skills worth adding."
+### Cursor target (only if `cursor` was selected)
+
+- ✅ Generated — `.cursor/` rules, plugin metadata, and command/skill outputs (no change to the pre-existing Cursor scaffold).
+
+### Copilot target (only if `copilot` was selected)
+
+Methodology surfaces (always written):
+- ✅ Generated — `.github/copilot-instructions.md` — slim rule book + Context discovery + prompt-library pointer
+- ✅ Generated — `.github/prompts/` — 25 invokable slash commands (12 modes, 6 skills, 7 service-builder agent prompts)
+- ✅ Generated — `.github/instructions/` — 4 auto-attaching guidance files (`git`, `data-model`, `arch-drift`, `context-discovery`)
+- ✅ Generated — `.copilot/pai-orbit-config.md` — board, branch model, deploy targets, docs home, team conventions
+- ✅ Generated — `.copilot/team.md` — team members, owners, default assignees
+- ✅ Generated — `.copilot/settings.json` — version, target, install timestamp, husky opt-in, detected languages, pre-commit installer choice (per D19)
+
+Pre-commit enforcement (D29 — depends on the user's Step 2 answer):
+- ✅ Generated — `.husky/pre-commit.template` — inert template; rename to `.husky/pre-commit` + `chmod +x` to activate (D21 also sets the git-tracked exec bit)
+- ✅ Generated — `.pre-commit-config.yaml.template` — inert template; rename to `.pre-commit-config.yaml` + run `pre-commit install` to activate
+- If user opted into `husky`: ✅ Active — `.husky/pre-commit` is in place, executable, and the exec bit is tracked in git
+- If user opted into `pre-commit framework`: ✅ Active — `.pre-commit-config.yaml` is in place; remind the user to run `pre-commit install`
+- If user picked `both`: both active paths above
+- If user picked `neither`: both inert templates only; user can opt in later
+
+**Explicit non-emissions (per D33):**
+- ❌ No `.vscode/`, no `.idea/`, no editor-specific folders. Editor settings are owned by the team. VS Code users follow the 4-line lint-on-save recipe in `docs/copilot-install-and-usage.md`.
+
+**Honest gap statement (read aloud to the user):** Copilot has no runtime hook system. The `bash-guard` intent is delivered as advisory text in `.github/copilot-instructions.md` and as the optional `.husky/pre-commit` (or `.pre-commit-config.yaml`). The `arch-drift` intent is split between `.github/copilot-instructions.md` and `.github/instructions/arch-drift.instructions.md`. Lint hooks rely on the project's own linter config invoked at commit time. Service-builder prompts emit with `mode: agent` (D30): on Copilot Pro/Business they run as multi-step agents; on Free they degrade to regular prompts. Full agent-runtime parity with Claude Code is out of scope.
+
+End with: "Run `/suggest-skills` after a few sessions to discover operational skills worth adding." (Note: `/suggest-skills` is a Claude Code feature — Copilot-only teams should skip this line.)
