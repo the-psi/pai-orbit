@@ -1,0 +1,39 @@
+name: dist-freshness
+
+# Phase 2 freshness gate for the pai-orbit plugin build outputs.
+#
+# Source: docs/plans/copilot-adapter-upgrade-2026-06-28.md (Phase 2)
+#         docs/features/copilot-adapter-prompt-files/design.md (§9)
+#
+# Rebuilds every adapter on PRs that touch plugins/pai-orbit/ and fails the
+# check if the committed dist/ tree drifts from a fresh build. Prevents the
+# "contributor edits core/ but forgets to rebuild" silent-failure mode.
+
+on:
+  pull_request:
+    paths:
+      - "plugins/pai-orbit/**"
+      - ".github/workflows/dist-freshness.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "plugins/pai-orbit/**"
+      - ".github/workflows/dist-freshness.yml"
+
+jobs:
+  rebuild-and-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run all adapter builds
+        run: bash plugins/pai-orbit/build.sh
+
+      - name: Verify dist/ matches the committed tree
+        run: |
+          if ! git diff --exit-code -- plugins/pai-orbit/dist/; then
+            echo "::error::dist/ is out of sync with core/. Run 'bash plugins/pai-orbit/build.sh' locally and commit the result."
+            exit 1
+          fi

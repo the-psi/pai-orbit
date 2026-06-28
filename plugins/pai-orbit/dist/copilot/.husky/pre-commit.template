@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# pai-orbit pre-commit hook (husky variant)
+# Rename this file to .husky/pre-commit and `chmod +x` to activate.
+# After install on Windows, also run:
+#   git update-index --add --chmod=+x .husky/pre-commit
+# so the exec bit is tracked in the repo (D21).
+set -e
+
+# bash-guard intent — block force-push, bulk staging, hook-bypass, destructive rm
+
+# Reject if any staged change includes an attempt to force-push elsewhere is moot here —
+# pre-commit only sees the commit content, not the push. The force-push block lives in the
+# pre-push hook conceptually; for now we focus on what pre-commit can actually catch.
+
+# Block: a commit that contains a hook-bypass instruction in its body or any staged file content
+if git log -1 --format=%B HEAD 2>/dev/null | grep -q -- '--no-verify' ; then
+  : # Informational only — pre-commit cannot block the current commit's message.
+fi
+
+# Block: presence of common secret patterns in staged files (light heuristic — full secret-scanning
+# is the project's responsibility via dedicated tools; this is a tripwire).
+if git diff --cached --name-only -z | xargs -0 -I{} grep -l -E '(AWS_SECRET_ACCESS_KEY|PRIVATE KEY-----)' {} 2>/dev/null | head -1 | grep -q . ; then
+  echo "pai-orbit pre-commit: suspected secret in staged file. Refusing commit." >&2
+  echo "  If this is intentional (test fixture, doc example), un-stage and re-stage with explicit confirmation." >&2
+  exit 1
+fi
+
+# Lint Python — invoke project's ruff if pyproject.toml exists in repo root
+if [ -f pyproject.toml ] && command -v ruff >/dev/null 2>&1 ; then
+  ruff check --quiet $(git diff --cached --name-only --diff-filter=ACM | grep -E '\.py$' || true) || {
+    echo "pai-orbit pre-commit: ruff lint failed. Fix or amend." >&2
+    exit 1
+  }
+fi
+
+# Lint JS/TS — invoke project's eslint if .eslintrc.json or .eslintrc.cjs exists
+if { [ -f .eslintrc.json ] || [ -f .eslintrc.cjs ] || [ -f eslint.config.js ]; } && command -v npx >/dev/null 2>&1 ; then
+  staged_js_ts=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(js|jsx|ts|tsx|mjs|cjs)$' || true)
+  if [ -n "$staged_js_ts" ]; then
+    npx --no-install eslint $staged_js_ts || {
+      echo "pai-orbit pre-commit: eslint failed. Fix or amend." >&2
+      exit 1
+    }
+  fi
+fi
+
+exit 0

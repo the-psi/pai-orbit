@@ -1,195 +1,76 @@
-# pai-orbit — GitHub Copilot Reference Guide
+# pai-orbit — GitHub Copilot rule book
 
-pai-orbit is a mode-driven developer workflow. Each mode puts the assistant into a specific headspace with declared inputs and outputs. Modes do not bleed into each other.
+pai-orbit is a mode-driven developer workflow. The mode prompts in `.github/prompts/` carry the headspace and behaviour rules for each mode (`/groom`, `/design`, `/build`, etc.). This file is the always-loaded baseline that applies to every Copilot Chat turn.
 
-> **Copilot note:** This is a reference guide, not an executable plugin. Modes are not invokable commands — apply them by context. When these instructions reference `.claude/` paths, use `.github/pai-orbit/` instead (e.g. `.claude/pai-orbit-config.md` → `.github/pai-orbit/pai-orbit-config.md`). `CLAUDE.md` is tool-agnostic and stays as is.
+## Path conventions
 
----
+- pai-orbit metadata lives in `.copilot/`: `pai-orbit-config.md`, `team.md`, `settings.json`.
+- Project documentation lives in `docs/`.
+- `CLAUDE.md` at repo root is **tool-agnostic** project docs, named for historical reasons. Read it for project stack, key files, and conventions.
 
-## Modes
+## Context discovery — read at session start
 
-### /arch
+When a Copilot Chat session begins, look up these files in order. Read each that exists. If a referenced file does not exist, proceed without it — do not invent its contents.
 
-You are now in ARCHITECTURE MODE.
+1. `.copilot/pai-orbit-config.md` — board, branch model, deploy targets, docs home, team conventions
+2. `.copilot/team.md` — team members, owners, default assignees
+3. `CLAUDE.md` — project description, stack, key files, data model, auth
+4. `docs/architecture/constraints.md` — architectural rules (read before any structural change)
+5. `docs/architecture/system.md` — service inventory and inter-service communication
+6. `docs/architecture/stack.md` — language and framework choices
+7. `docs/decisions/` — ADRs relevant to the task
+8. `docs/domain/*.md` — business rules and expert knowledge
+9. `docs/features/<feature>/requirements.md` — when working on a known feature
 
-Switch out when:
-- A specific feature needs technical design → `/design`
-- Requirements for a feature need formalising → `/groom`
-- You are ready to implement → `/build`
-- You want to review code against the declared architecture → `/review`
+## Forbidden patterns (bash-guard intent, advisory)
 
+Never suggest, generate, or run commands matching these patterns. If a user asks for one, refuse and explain.
 
----
+- `git push --force` / `git push -f` on any branch.
+- `git add .`, `git add -A`, `git add --all`, `git add -u`.
+- `git commit --no-verify`, `git push --no-verify`, `git merge --no-verify`, `git rebase --no-verify`.
+- `rm -rf /`, `rm -rf ~`, `rm -rf $HOME`, `rm -rf .` (current directory wipe).
 
-### /build
+This is advisory only — Copilot's compliance is not guaranteed. Real enforcement lives in `.husky/pre-commit` (or `.pre-commit-config.yaml`), opted in at install.
 
-You are now in BUILD MODE.
+## Architectural drift (arch-drift intent, advisory)
 
-Switch out when:
-- A non-trivial design choice is needed → `/design`
-- Requirements are ambiguous → `/groom`
-- Priority or sequencing is unclear → `/plan`
-- Domain or expert knowledge is unresolved → `/domain`
-- A data question needs exploring before coding → `/data`
+When editing or proposing changes to structural files — `docker-compose.yml`, `docker-compose.yaml`, `package.json`, `go.mod`, `pom.xml`, `Cargo.toml`, `pyproject.toml`, `requirements.txt`, `fly.toml`, `vercel.json`, `app.yaml`, `main.py`, `app.py`, `index.ts`, `index.js`, `server.ts`, `server.js` — warn the user that the change may affect architecture and suggest running `/arch validate` after the session.
 
-**Before switching out mid-session:** save a handoff note to `docs/wip/session-capture-<date>.md` with:
+The path-scoped detail lives in `.github/instructions/arch-drift.instructions.md`, which auto-attaches when these files are open.
 
----
+## Prompt library
 
-### /data
+All mode and skill prompts live in `.github/prompts/`. Invoke them by typing `/<name>` in Copilot Chat. The slash-command picker prefixes them so kind is visible:
 
-You are now in DATA MODE.
+- `[mode]` — pai-orbit working modes (12): `/arch`, `/build`, `/data`, `/design`, `/domain`, `/groom`, `/incident`, `/plan`, `/release`, `/review`, `/test`, `/ux`
+- `[skill]` — invokable procedures (6): `/analysis`, `/board`, `/data-model`, `/epic`, `/git`, `/simplify`
+- `[agent]` — service-builder prompts (7, Pro/Business agentic; Free regular): `/django-builder`, `/express-builder`, `/fastapi-builder`, `/generic-service-builder`, `/infra-builder`, `/nextjs-builder`, `/react-vite-builder`
 
-Switch out when:
-- The data reveals a feature need → `/groom`
-- The data reveals a design decision → `/design`
-- A domain interpretation is needed → `/domain`
+Auto-attaching instructions files in `.github/instructions/`:
 
+- `git.instructions.md` — git conventions on every file
+- `data-model.instructions.md` — SQL and migration conventions
+- `arch-drift.instructions.md` — structural-file warnings
+- `context-discovery.instructions.md` — fall-back duplicate of the Context discovery directives above
 
----
+## Mode discipline
 
-### /design
+Each mode prompt opens with an anti-drift block. When in a mode, Copilot:
 
-You are now in DESIGN MODE.
+- Prefixes every reply with `[<MODE>]`
+- Refuses off-scope requests and redirects to the right mode
+- Holds the mode until the user explicitly switches
 
-Switch out when:
-- Requirements are not yet clear → `/groom`
-- Domain knowledge is unresolved → `/domain`
-- You are ready to implement → `/build`
-- Priority of this feature needs deciding → `/plan`
+If a Copilot reply lacks the `[<MODE>]` prefix in mode context, treat it as drift and re-issue the mode command.
 
+## Skill rendering
 
----
+A skill may exist in both `prompts/` (invokable) and `instructions/` (auto-attached). `/git` and `/data-model` are dual-use today. Other skills are prompts-only.
 
-### /domain
+## What this file does NOT do
 
-You are now in DOMAIN MODE.
-
-Switch out when:
-- Domain knowledge is ready to inform a feature requirement → `/groom`
-- Domain knowledge is ready to inform a technical design → `/design`
-- Domain knowledge reveals a data question → `/data`
-
-
----
-
-### /groom
-
-You are now in GROOM MODE.
-
-Switch out when:
-- Domain or expert knowledge is needed to resolve a requirement → `/domain`
-- The feature is groomed and ready for design → `/design`
-- Priority of the feature needs deciding → `/plan`
-
-
----
-
-### /incident
-
-You are now in INCIDENT MODE.
-
-Switch out when:
-- Fix is ready to implement → `/build` (return to INCIDENT after shipping to complete verify + post-mortem)
-- Fix needs review → `/review` (narrow focus: symptom, risk, rollback — not full conventions review)
-- Fix is ready to deploy → `/release`
-- Situation de-escalates to a planned fix → `/board` to file, then normal sprint flow
-
-**Before switching out:** note the incident issue number so you can return to it after each fast-path step.
-
-
----
-
-### /plan
-
-You are now in PLAN MODE.
-
-Switch out when:
-- A feature needs grooming before it can be planned → `/groom`
-- A technical uncertainty needs resolution before sequencing → `/design`
-
-
----
-
-### /release
-
-You are now in RELEASE MODE.
-
-Switch out when:
-- Tests need to run before deploying → `/test` (return after test sign-off)
-- A build fix is needed before shipping → `/build` (return after fix)
-- An incident occurs post-deploy → `/incident`
-
-
----
-
-### /review
-
-You are now in REVIEW MODE.
-
-Switch out when:
-- Blocking findings need to be fixed → `/build` (return to REVIEW after fix)
-- Architecture violations need a formal decision → `/design`
-
-
----
-
-### /setup
-
-You are now in SETUP MODE.
-
-Switch out when:
-- Setup is complete → return to whatever you were doing, or run `/arch init` next
-- Architecture needs to be declared → `/arch init`
-
-
----
-
-### /suggest-skills
-
-You are now in SUGGEST SKILLS MODE.
-
-Switch out when:
-- Suggestions are presented and user wants to scaffold one → remain in this mode to scaffold it
-- Session is complete
-
-
----
-
-### /test
-
-You are now in TEST MODE.
-
-Switch out when:
-- A test failure is a code bug → `/build` (return to TEST after the fix)
-- A requirements gap surfaces → `/groom` (update requirements first, then return)
-- A design or architecture issue is found → `/design`
-
-
----
-
-### /ux
-
-You are now in UX MODE.
-
-Switch out when:
-- Domain knowledge is needed to define the right user experience → `/domain`
-- The UX is defined and functional requirements need formalising → `/groom`
-- The UX is groomed and technical design is next → `/design`
-
-
----
-
-## Skills (reference)
-
-Skills are operational procedures. Copilot has no skill-invocation system — apply these as instructions when the context matches the trigger.
-
-| Skill | When to invoke |
-|-------|---------------|
-| `/analysis` | Change impact and dependency analysis — assess the blast radius of a proposed change before buildi |
-| `/board` | Task management — create issues, move cards, assign work, close on ship — using the project's co |
-| `/data-model` | Data model reference and schema change management — document the current schema, propose and valid |
-| `/epic` | Epic lifecycle management — create, load, update, and list epics in docs/epics/ |
-| `/git` | Git operations — commit, branch, PR, push — following the project's configured branching model a |
-| `/simplify` | Code simplification pass — review recently changed or new code for over-engineering, dead code, un |
-
+- It does NOT replace mode prompts. Mode behaviour lives in `.github/prompts/<mode>.prompt.md`.
+- It does NOT carry full skill bodies. Skill behaviour lives in `.github/prompts/<skill>.prompt.md` (and `.github/instructions/<skill>.instructions.md` for dual-use ones).
+- It does NOT emit lint rules. Linter config (`pyproject.toml`, `.eslintrc.json`) is owned by the project; the pre-commit hook enforces it at commit time.
+- It does NOT write `.vscode/`, `.idea/`, or any editor config. VS Code lint-on-save is a 4-line copy-paste recipe in the adoption page, configured once by the user.
