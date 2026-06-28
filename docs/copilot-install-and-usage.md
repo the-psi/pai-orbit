@@ -1,0 +1,370 @@
+# GitHub Copilot Install and Usage
+
+This guide explains how to install pai-orbit in a project that uses **GitHub Copilot Chat in VS Code**, how to use it day-to-day, and how to verify it is working.
+
+Companion docs: [Cursor install and usage](cursor-plugin-install-and-usage.md) | [Getting started](getting-started.md) | [Capabilities reference](capabilities.md)
+
+---
+
+## Prerequisites
+
+- **VS Code** (any current version with Copilot Chat support).
+- **GitHub Copilot Chat extension** installed and signed in.
+  - Copilot **Free** is sufficient for evaluation. Mode prompts, skill prompts, instructions files, and the always-loaded rule book all work on Free.
+  - Copilot **Pro / Business** unlocks the agentic side of the seven service-builder prompts (`/fastapi-builder`, `/nextjs-builder`, etc. — `mode: agent` per D30). On Free those prompts still load as regular text and give correct manual scaffolding guidance.
+  - PSI client code requires **Copilot Business** (or stricter) per company policy. Copilot Free is for personal evaluation only.
+- **Node.js ≥ 18** on the machine of the dev running the install (required by the `npx` install path). Most current PSI dev machines satisfy this without action.
+- **git on PATH** — `npx` clones the install bundle from GitHub.
+- **Network access to `github.com`** — npx clones from GitHub. PSI firewalled environments may need allowlisting.
+
+---
+
+## Install (team lead, first time)
+
+One command, no clone required, from the project root:
+
+```bash
+npx github:the-psi/pai-orbit init copilot
+```
+
+The CLI:
+
+1. Detects whether this is a first-run, re-run, or migration (see "Updating pai-orbit later" below).
+2. Asks a short interview (board, branch model, docs home, pre-commit installer).
+3. Copies `dist/copilot/.github/` + `.husky/pre-commit.template` + `.pre-commit-config.yaml.template` into the project.
+4. Renders `.copilot/pai-orbit-config.md`, `.copilot/team.md`, `.copilot/settings.json` from the interview answers.
+5. Scaffolds `docs/` if absent, writes `CLAUDE.md`, and prints a report.
+
+After the CLI finishes:
+
+1. Reload VS Code (`Ctrl+Shift+P` → "Developer: Reload Window") so Copilot Chat picks up the new prompts.
+2. Open Copilot Chat. Type `/` — you should see 25 pai-orbit entries with `[mode]`, `[skill]`, or `[agent]` prefixes.
+3. Commit the new files. Suggested message: `feat(copilot): install pai-orbit Copilot adapter`.
+
+### Version pinning (recommended for client projects)
+
+Track a release tag instead of `main` so updates are deliberate, not surprise:
+
+```bash
+npx github:the-psi/pai-orbit#v1.4.0 init copilot
+```
+
+For full reproducibility, pin a specific commit:
+
+```bash
+npx github:the-psi/pai-orbit#a1b2c3d init copilot
+```
+
+Your team's wiki should record the version the team is tracking; updates become an explicit `git tag bump → re-run` motion rather than a silent drift.
+
+### Non-interactive / CI
+
+```bash
+npx github:the-psi/pai-orbit init copilot --yes --board=gitlab --branch=github-flow
+```
+
+Available flags:
+
+| Flag | Purpose |
+|------|---------|
+| `--yes` / `--no-interactive` | Skip the interview; use defaults plus other flags |
+| `--board=<value>` | `gitlab` / `github` / `linear` / `jira` / `none` |
+| `--branch=<value>` | `github-flow` / `gitflow` / `trunk` |
+| `--re-interview` | Force a fresh interview on re-run (rewrites `.copilot/*`) |
+| `--re-init-claude-md` | Force rewrite of `CLAUDE.md` |
+| `--install-husky` | Install the `.husky/pre-commit` hook even if previously opted out |
+| `--reinstall-husky` | Overwrite an existing `.husky/pre-commit` |
+| `--install-precommit-framework` | Install `.pre-commit-config.yaml` even if previously opted out (D29) |
+| `--reinstall-precommit-framework` | Overwrite an existing `.pre-commit-config.yaml` |
+| `--ignore-existing` | Forces npx to re-fetch from GitHub (bypasses the npx cache) |
+
+### Alternative: use `/setup` inside Claude Code or Cursor
+
+If your team already uses Claude Code or Cursor, run `/setup` inside the host tool and select `copilot` (or `multiple`) as a target. The same templates and same `dist/copilot/` output land in the project. The `npx` CLI exists for **Copilot-only teams** that have neither tool installed.
+
+---
+
+## Joining a team that already has pai-orbit installed (every other dev)
+
+When pai-orbit's files are already committed to the repo (`.github/copilot-instructions.md`, `.github/prompts/`, `.github/instructions/`, `.copilot/`, `CLAUDE.md`), new team members **do NOT run the npx command**. They:
+
+1. `git pull` to get the latest files.
+2. Open the project in VS Code.
+3. Reload the window (`Ctrl+Shift+P` → "Developer: Reload Window").
+4. Smoke-test: open Copilot Chat, type `/groom`, confirm the slash picker shows pai-orbit's prompts.
+
+Re-running the npx install is unnecessary and would only matter if the team lead changes the pai-orbit version pin and wants every dev to refresh — in which case **all** devs run `npx github:the-psi/pai-orbit#<new-tag> init copilot` once. The `.copilot/` config is preserved on re-run, so this is safe.
+
+---
+
+## Path conventions
+
+| Path | Owned by | Purpose |
+|------|----------|---------|
+| `.copilot/` | pai-orbit | Team metadata (`pai-orbit-config.md`, `team.md`, `settings.json`). Read by the prompts via the Context-discovery directives. |
+| `.github/copilot-instructions.md` | pai-orbit | Always-loaded rule book + Context-discovery + prompt-library pointer. Refreshed on every re-run. |
+| `.github/prompts/*.prompt.md` | pai-orbit | 25 invokable slash commands (12 modes + 6 skills + 7 service-builder agents). Refreshed on every re-run. |
+| `.github/instructions/*.instructions.md` | pai-orbit | 4 auto-attaching guidance files. Refreshed on every re-run. |
+| `.husky/` and `.pre-commit-config.yaml(.template)` | pai-orbit (templates) / user (active files) | Inert templates are owned by pai-orbit and refreshed on re-run. The active `.husky/pre-commit` or `.pre-commit-config.yaml` is **preserved** once installed. |
+| `CLAUDE.md` | user (after first scaffold) | **Tool-agnostic** project documentation. Named historically — read by Claude, Cursor, and Copilot. **Do not rename per-tool.** (D26) |
+| `docs/` | user | Methodology output (requirements, design, ADRs, plans). Never overwritten on re-run. |
+
+**Note on `.github/`:** Copilot reads from `.github/copilot-instructions.md`, `.github/prompts/`, and `.github/instructions/` regardless of where the repo is hosted. `.github/` is a Copilot product path — it works on GitHub, GitLab, Bitbucket, Azure DevOps, and self-hosted git equally.
+
+**Note on `CLAUDE.md`:** The file's content describes the project itself (stack, services, key files, data model, auth) — none of which is Claude-specific. Copilot's `.github/copilot-instructions.md` references it under `## Context discovery`. Renaming it would break every adoption doc across pai-orbit's adapters. Keep the name as-is.
+
+---
+
+## AGENTS.md disambiguation
+
+pai-orbit does **NOT** emit `AGENTS.md` for Copilot. `AGENTS.md` is the file format read by **OpenAI Codex CLI**, not GitHub Copilot Chat.
+
+Copilot Chat in VS Code reads:
+
+- `.github/copilot-instructions.md` (always-loaded baseline)
+- `.github/prompts/*.prompt.md` (invokable slash commands)
+- `.github/instructions/*.instructions.md` (auto-attaching guidance)
+
+Nothing else. If you see references to `AGENTS.md` in pai-orbit's repo, those belong to the Codex adapter (`plugins/pai-orbit/adapters/codex/`) and ship under `plugins/pai-orbit/dist/codex/`. Safe to ignore for Copilot-only teams.
+
+---
+
+## Multi-assistant teams (Claude Code + Cursor + Copilot in the same repo)
+
+pai-orbit supports it. A single project can have `.claude/`, `.cursor/`, and `.copilot/` simultaneously alongside `.github/copilot-instructions.md` — each assistant reads its own folder, no conflict.
+
+The tool-agnostic surface is shared:
+
+- `CLAUDE.md` — every assistant reads this.
+- `docs/` — every assistant writes here.
+
+To set up multiple assistants:
+
+- Inside Claude Code or Cursor: run `/setup` and select multiple targets in Step 2.
+- For the Copilot half on a machine without Claude Code or Cursor: `npx github:the-psi/pai-orbit init copilot` adds the Copilot files non-destructively to a project that already has `.claude/` or `.cursor/`.
+
+Re-running one assistant's install does not touch the others.
+
+---
+
+## Daily workflow
+
+Type `/<command>` in Copilot Chat. Same vocabulary as Claude Code or Cursor:
+
+- **Modes** drive headspace and outputs:
+  - `/groom` — feature requirements (purpose → scenarios → acceptance criteria; writes `docs/features/<feature>/requirements.md`)
+  - `/design` — technical design and trade-offs (writes `docs/features/<feature>/design.md` + ADRs)
+  - `/build` — implementation work (code + docs)
+  - `/arch`, `/data`, `/domain`, `/incident`, `/plan`, `/release`, `/review`, `/test`, `/ux` — see [`capabilities.md`](capabilities.md)
+- **Skills** are reusable operational procedures, invokable from any mode:
+  - `/git`, `/board`, `/analysis`, `/data-model`, `/epic`, `/simplify`
+- **Service-builder agents** scaffold a service on Pro/Business; act as regular prompts on Free:
+  - `/django-builder`, `/express-builder`, `/fastapi-builder`, `/generic-service-builder`, `/infra-builder`, `/nextjs-builder`, `/react-vite-builder`
+
+### Mode discipline (D28)
+
+Every mode prompt opens with an anti-drift block. When you invoke `/build`, Copilot:
+
+- Prefixes every reply with `[BUILD]` so drift is visible.
+- Refuses off-scope requests and redirects to the right mode (e.g., an architecture question gets redirected to `/design`).
+- Holds the mode until you explicitly switch with another slash command.
+
+If a reply lacks the `[<MODE>]` prefix, treat it as drift and re-issue the mode command.
+
+---
+
+## Skill rendering split — prompts AND/OR instructions
+
+A skill in pai-orbit is a piece of operational guidance. In Copilot it can render into two places:
+
+| Folder | When Copilot uses it | Trigger |
+|--------|----------------------|---------|
+| `.github/prompts/<skill>.prompt.md` | User explicitly invokes it | User types `/<skill>` |
+| `.github/instructions/<skill>.instructions.md` | Auto-attaches based on file path | User opens or edits a file matching the `applyTo:` glob |
+
+The two are **not mutually exclusive** — the same skill body may appear in both folders. Mapping for v1:
+
+| Skill | Prompt (invokable) | Instructions (auto-attached) | Auto-attach glob |
+|-------|--------------------|------------------------------|------------------|
+| `/analysis` | ✅ | ❌ | — |
+| `/board` | ✅ | ❌ | — |
+| `/data-model` | ✅ | ✅ | `**/*.sql, **/migrations/**` |
+| `/epic` | ✅ | ❌ | — |
+| `/git` | ✅ | ✅ | `**/*` (always-on baseline) |
+| `/simplify` | ✅ | ❌ | — |
+
+Plus two instructions files that are not skill-derived:
+
+- `arch-drift.instructions.md` — auto-attaches to structural files (`docker-compose.yml`, `package.json`, `go.mod`, …) and warns of architectural drift
+- `context-discovery.instructions.md` — `applyTo: "**/*"`; fall-back duplicate of the `## Context discovery` block inside `copilot-instructions.md` (R8 — two channels for the same critical content)
+
+---
+
+## Hook coverage in Copilot
+
+Copilot has **no tool-use event triggers** — prompt files only fire when the user types `/<name>`, instructions files only activate when matching files are open. So pai-orbit's `.sh` hooks **cannot be ported as-is**. Each hook's intent lands in a different layer:
+
+| Hook intent | Where it lives | Enforced? |
+|-------------|---------------|-----------|
+| Block dangerous bash patterns | `.github/copilot-instructions.md` (always-loaded text) | **Advisory** — Copilot usually obeys |
+| Block dangerous bash patterns — real | `.husky/pre-commit` (opt-in) or `.pre-commit-config.yaml` (opt-in, D29) | **Enforced** at commit time |
+| Lint Python at commit | Pre-commit hook + project's `pyproject.toml` (existing) | **Enforced** every editor |
+| Lint TypeScript/JS at commit | Pre-commit hook + project's `.eslintrc.json` (existing) | **Enforced** every editor |
+| Lint at save (VS Code users only, optional) | User's own VS Code settings (recipe below) | **Convenience**, user opts in |
+| Warn on architectural drift | `.github/copilot-instructions.md` + `.github/instructions/arch-drift.instructions.md` | **Advisory** |
+
+**Honest restatement:** enforcement is preserved for linting and for git-level guards via the pre-commit hook. Advisory-only for in-Chat bash safety, because Copilot doesn't offer a real interception point.
+
+### Linting across editors
+
+pai-orbit does **NOT** author lint rules and does **NOT** emit editor-specific config files (D33). Your project's existing linter config (`pyproject.toml`, `.eslintrc.json`, `.editorconfig`) is the source of truth, read natively by every modern editor with linter integration. Enforcement happens at **commit time** via the pre-commit hook — editor-agnostic, runs regardless of who or what produced the change.
+
+**VS Code users who want save-time feedback** add four lines to their own VS Code settings (User or Workspace — their choice; pai-orbit does not write either):
+
+```json
+{
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.ruff": "explicit",
+    "source.fixAll.eslint": "explicit"
+  }
+}
+```
+
+Same philosophy as pai-orbit's Claude Code and Cursor adapters — pai-orbit never touches editor configuration. JetBrains and Visual Studio users get equivalent save-time behaviour from their editor's own settings UI; one-time setup, documented in their tool's docs, not pai-orbit's responsibility.
+
+---
+
+## Updating pai-orbit later
+
+To update pai-orbit in this project, re-run the install command from the project root:
+
+```bash
+npx github:the-psi/pai-orbit init copilot
+```
+
+(Or the explicit `update copilot` subcommand — same code path, re-run-specific status messages.)
+
+The CLI detects your existing install, refreshes pai-orbit-owned files (prompts, instructions, rule book) to the latest version, and **preserves your team's customisations** (`.copilot/pai-orbit-config.md`, `.copilot/team.md`, `CLAUDE.md`).
+
+If you pinned a version (e.g., `#v1.4.0`), bump the tag in your install command before re-running.
+
+If you tracked `main` and the result feels stale, npx's GitHub-install cache may be the cause:
+
+- Add `--ignore-existing` to force a fresh fetch.
+- Or bump or change the ref (`#v1.4.1`, `#<commit-sha>`) — a different ref always fetches fresh.
+
+### File-ownership table (re-run behaviour)
+
+| File category | First run | Re-run behaviour |
+|---------------|-----------|------------------|
+| `.github/copilot-instructions.md` | Write | **Overwrite** — pai-orbit owns it |
+| `.github/prompts/*.prompt.md` | Write | **Overwrite** — pai-orbit owns them |
+| `.github/instructions/*.instructions.md` | Write | **Overwrite** — pai-orbit owns them |
+| `.copilot/pai-orbit-config.md` | Create from interview | **Preserve** by default; `--re-interview` forces rewrite |
+| `.copilot/team.md` | Create from interview | **Preserve** by default — team rosters drift |
+| `.copilot/settings.json` | Write | **Preserve** by default |
+| `CLAUDE.md` | Create from template | **Preserve** — `--re-init-claude-md` to reset |
+| `docs/` scaffold | Create empty folders | **Skip if exists** — never touch user docs |
+| `.husky/pre-commit` (active) | Optional install | **Preserve** unless `--reinstall-husky` |
+| `.husky/pre-commit.template` (inert) | Write | **Overwrite** — latest wins |
+| `.pre-commit-config.yaml` (active) | Optional install (D29) | **Preserve** unless `--reinstall-precommit-framework` |
+| `.pre-commit-config.yaml.template` (inert) | Write | **Overwrite** — latest wins |
+
+---
+
+## Uninstalling pai-orbit from a project
+
+If a team decides to remove pai-orbit, delete these paths from the repo and commit:
+
+- `.copilot/` (entire folder)
+- `.github/copilot-instructions.md`
+- `.github/prompts/` — **only the pai-orbit-emitted `*.prompt.md` files**. Leave any user-authored prompts alone.
+- `.github/instructions/` — **only the pai-orbit-emitted `*.instructions.md` files**. Leave any user-authored instructions alone.
+- `.husky/pre-commit` (only if it is the pai-orbit-emitted version) and `.husky/pre-commit.template`
+- `.pre-commit-config.yaml.template` (and the active `.pre-commit-config.yaml` if it was the pai-orbit version)
+
+`CLAUDE.md` is **NOT** auto-removed — it is your project's tool-agnostic documentation. Decide separately whether to keep it.
+
+`docs/` is **NOT** auto-removed — your team's documentation lives there. Decide separately.
+
+Future work: a `pai-orbit uninstall copilot` subcommand may be added later. For now, uninstall is a manual `git rm` operation.
+
+---
+
+## Known gaps vs Claude Code
+
+pai-orbit's Copilot adapter delivers **~85% of the methodology benefit on Free, ~90% on Pro/Business**. The honest gap list:
+
+- **No native hooks** — Copilot has no tool-use event system. Hook intent is split between always-loaded instruction text (advisory) and the optional pre-commit hook (enforced at commit time). See the Hook coverage matrix above.
+- **Agents work only on Pro/Business** — service-builder prompts emit with `mode: agent` (D30). Pro/Business runs them as multi-step agents; Free degrades them to regular prompts that still give correct manual scaffolding guidance.
+- **Mode discipline is text-based, not runtime-enforced** — the anti-drift block (D28) tightens but does not enforce. Copilot Free tier may drift on some replies; check for the `[<MODE>]` prefix and re-issue the mode command if missing.
+- **No `/setup` or `/suggest-skills`** — replaced by the `npx ... init copilot` CLI. `/suggest-skills` is a Claude Code introspection feature with no Copilot equivalent.
+- **No editor-specific files** — pai-orbit never authors editor config (D33). VS Code lint-on-save is the 4-line recipe above; JetBrains/Visual Studio use their own editor settings.
+
+---
+
+## Troubleshooting
+
+### Prompts don't show up in Copilot Chat
+
+1. Did you reload VS Code? (`Ctrl+Shift+P` → "Developer: Reload Window")
+2. Open `.github/copilot-instructions.md` in VS Code. It should exist and start with `# pai-orbit — GitHub Copilot rule book`.
+3. List `.github/prompts/` — there should be 25 `*.prompt.md` files (12 mode + 6 skill + 7 agent).
+4. Check the VS Code Copilot Chat settings — `chat.promptFiles` and `chat.instructionsFilesLocations` should be enabled. If they're disabled (org policy), prompt files won't be invokable; use the `## Modes` reference in `copilot-instructions.md` as a fall-back.
+
+### `npx` fails
+
+- Node version: ensure `node -v` is ≥ 18.
+- `git` on PATH: `git --version` must succeed (npx clones via git).
+- Firewall: npx hits `github.com`. PSI firewalled environments may need allowlisting.
+- Stale cache: pass `--ignore-existing` or pin a different ref (`#v1.4.1`, `#<commit-sha>`).
+
+### A re-run unexpectedly overwrote something
+
+The file-ownership table above lists exactly what re-run overwrites vs preserves. If something was clobbered:
+
+```bash
+git diff <file>            # see what changed
+git checkout -- <file>     # restore from git
+```
+
+If the file was tracked, git always has the prior version. If it was untracked (e.g., a personal note), that content is unrecoverable — file an issue so we can tighten the ownership rules.
+
+### Copilot ignores Context discovery and gives generic answers
+
+Per [risk R8 in the plan](plans/copilot-adapter-upgrade-2026-06-28.md):
+
+1. Restart Chat (close + reopen the Chat panel in VS Code).
+2. Verify `.github/copilot-instructions.md` exists and contains the `## Context discovery` section.
+3. Verify `.copilot/pai-orbit-config.md` exists with the expected content.
+4. If still failing, check that `.github/instructions/context-discovery.instructions.md` is present (the R8 fall-back) — it auto-attaches to every file via `applyTo: "**/*"`.
+5. If both channels fail on Copilot Free, this is a known Free-tier limitation. Switch to Pro/Business for production use, or document the gap and proceed with caveat.
+
+### Failed-install recovery (per D27)
+
+If `npx` crashed mid-write (Ctrl-C, network blip, OOM) and you have a partial install:
+
+```bash
+git status                                                                                 # see what was written
+git clean -fd .copilot/ .github/copilot-instructions.md .github/prompts/ .github/instructions/ .husky/
+git checkout -- <any-tracked-file>                                                          # restore tracked files
+```
+
+Then re-run `npx github:the-psi/pai-orbit init copilot`. No special rollback subcommand is provided in v1 — git is the rollback tool.
+
+### Migration from the old `.github/pai-orbit/` layout
+
+`init copilot` auto-detects the old layout (the pre-upgrade adapter wrote config to `.github/pai-orbit/` instead of `.copilot/`). It prints a dry-run plan, prompts for confirmation, backs up the original to `.github/pai-orbit.bak/<timestamp>/`, and moves content into `.copilot/`. The backup directory is auto-added to `.gitignore` so it never accidentally lands in a commit (D23).
+
+If auto-detection misses or misclassifies your layout, use the explicit subcommand:
+
+```bash
+npx github:the-psi/pai-orbit migrate copilot --yes
+```
+
+The backup folder is **not** auto-cleaned — remove it once you've confirmed the new install:
+
+```bash
+rm -rf .github/pai-orbit.bak/
+```
