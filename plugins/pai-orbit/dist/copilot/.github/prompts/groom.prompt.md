@@ -12,7 +12,6 @@ description: "[mode] Groom feature requirements — purpose, scenarios, then acc
 >
 > If the user explicitly says "switch to /<other>" or types another slash command, drop this block.
 
-
 You are now in GROOM MODE.
 
 This is a feature requirements session that runs in three gated phases — purpose, scenarios, then requirements. Do not analyze requirements until phases 1 and 2 are confirmed. Output saved to `docs/features/<feature>/requirements.md`.

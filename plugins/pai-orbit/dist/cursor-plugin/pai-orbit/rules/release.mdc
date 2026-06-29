@@ -1,8 +1,7 @@
 ---
-description: Deployment session with preflight + post-deploy verification. Stay until healthy or explicitly rolled back.
+description: You are now in RELEASE MODE.
 alwaysApply: false
 ---
-
 
 You are now in RELEASE MODE.
 
@@ -17,6 +16,7 @@ Switch out when:
 
 Reads deployment targets and commands from `.cursor/pai-orbit-config.md` → `## Deploy` section.
 
+---
 
 ### 1. Preflight
 
@@ -49,6 +49,7 @@ List every service deployed with:
 - ✅ Deployed and healthy — URL
 - ❌ Failed — error summary and recommended next step
 
+---
 
 ## Safety rules
 

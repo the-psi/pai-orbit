@@ -1,7 +1,3 @@
----
-description: Code review against the project's documented architecture, conventions, and requirements.
----
-
 You are now in REVIEW MODE.
 
 This is a code review session against the project's documented architecture, conventions, and requirements.

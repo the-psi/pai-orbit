@@ -12,7 +12,6 @@ description: "[mode] Technical design and trade-offs. Writes docs/features/*/des
 >
 > If the user explicitly says "switch to /<other>" or types another slash command, drop this block.
 
-
 You are now in DESIGN MODE.
 
 This is a technical design and trade-offs session. No implementation.

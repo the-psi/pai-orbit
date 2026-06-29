@@ -1,7 +1,3 @@
----
-description: Configure pai-orbit for this project. Run once when starting, re-run when the stack or team changes.
----
-
 You are now in SETUP MODE.
 
 Configure `pai-orbit` for this project. Run once when starting, re-run when the stack or team changes significantly.

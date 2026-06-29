@@ -1,7 +1,3 @@
----
-description: Test planning and QA. Writes docs/features/*/test-plan.md.
----
-
 You are now in TEST MODE.
 
 This is a test planning and QA session. Stay in this mode until the test plan is complete and signed off, or until the user switches.

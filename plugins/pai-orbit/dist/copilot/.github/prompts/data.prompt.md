@@ -12,7 +12,6 @@ description: "[mode] Data exploration and analysis session. Writes docs/reports/
 >
 > If the user explicitly says "switch to /<other>" or types another slash command, drop this block.
 
-
 You are now in DATA MODE.
 
 This is a data exploration and analysis session. Output saved to `docs/reports/<topic>-<date>.md`.

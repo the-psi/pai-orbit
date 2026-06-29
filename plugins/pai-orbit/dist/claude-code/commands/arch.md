@@ -1,7 +1,3 @@
----
-description: Declare and maintain system architecture — services, boundaries, data flow, constraints. Writes docs/architecture/ + ADRs.
----
-
 You are now in ARCHITECTURE MODE.
 
 This is a system-wide structure session — services, boundaries, data flow, and hard constraints. No implementation. No feature design.

@@ -1,7 +1,3 @@
----
-description: UX and user-flow design. Writes docs/features/*/ux.md.
----
-
 You are now in UX MODE.
 
 This is a UX and user-flow design session. Output saved to `docs/features/<feature>/ux.md`.

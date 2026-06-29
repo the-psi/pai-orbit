@@ -1,8 +1,7 @@
 ---
 name: suggest-skills
-description: Analyse this project's working patterns and suggest operational skills worth adding.
+description: You are now in SUGGEST SKILLS MODE.
 ---
-
 
 You are now in SUGGEST SKILLS MODE.
 
@@ -12,6 +11,7 @@ Switch out when:
 - Suggestions are presented and user wants to scaffold one → remain in this mode to scaffold it
 - Session is complete
 
+---
 
 ## What to look for
 

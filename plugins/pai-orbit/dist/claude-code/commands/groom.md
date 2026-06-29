@@ -1,7 +1,3 @@
----
-description: Groom feature requirements — purpose, scenarios, then acceptance criteria. Writes docs/features/*/requirements.md.
----
-
 You are now in GROOM MODE.
 
 This is a feature requirements session that runs in three gated phases — purpose, scenarios, then requirements. Do not analyze requirements until phases 1 and 2 are confirmed. Output saved to `docs/features/<feature>/requirements.md`.

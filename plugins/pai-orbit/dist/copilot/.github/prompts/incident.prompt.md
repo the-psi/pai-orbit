@@ -12,7 +12,6 @@ description: "[mode] Production-incident fast path: triage → build → review 
 >
 > If the user explicitly says "switch to /<other>" or types another slash command, drop this block.
 
-
 You are now in INCIDENT MODE.
 
 Production issue fast-path: triage → BUILD → REVIEW → RELEASE → post-mortem. This mode bypasses the normal GROOM → DESIGN → BUILD flow. It trades thoroughness for speed. Use it only when something is broken in production right now.
@@ -25,6 +24,7 @@ Switch out when:
 
 **Before switching out:** note the incident issue number so you can return to it after each fast-path step.
 
+---
 
 ## Procedure
 

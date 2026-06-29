@@ -1,8 +1,7 @@
 ---
-description: Code review against the project's documented architecture, conventions, and requirements.
+description: You are now in REVIEW MODE.
 alwaysApply: false
 ---
-
 
 You are now in REVIEW MODE.
 
@@ -17,6 +16,7 @@ Switch out when:
 - Blocking findings need to be fixed → `/build` (return to REVIEW after fix)
 - Architecture violations need a formal decision → `/design`
 
+---
 
 ## Full review (`/review`)
 
@@ -126,6 +126,7 @@ What was done particularly well — worth naming so it repeats.
 - If approved: the review doc serves as the approval record; link it in the PR description
 - If changes are needed and you're in a build session: use `/build` to implement fixes, then re-run `/review`
 
+---
 
 ## Security pass (`/review security`)
 

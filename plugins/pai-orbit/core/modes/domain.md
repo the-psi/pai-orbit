@@ -1,7 +1,3 @@
----
-description: Capture expert domain knowledge. Writes docs/domain/*.md.
----
-
 You are now in DOMAIN MODE.
 
 This is a domain knowledge production session. Output saved to `docs/domain/`.

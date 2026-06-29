@@ -1,8 +1,7 @@
 ---
 name: incident
-description: Production-incident fast path: triage → build → review → release → post-mortem. Trades thoroughness for speed.
+description: You are now in INCIDENT MODE.
 ---
-
 
 You are now in INCIDENT MODE.
 
@@ -16,6 +15,7 @@ Switch out when:
 
 **Before switching out:** note the incident issue number so you can return to it after each fast-path step.
 
+---
 
 ## Procedure
 

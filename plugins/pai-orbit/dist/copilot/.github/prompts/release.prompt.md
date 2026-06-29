@@ -12,7 +12,6 @@ description: "[mode] Deployment session with preflight + post-deploy verificatio
 >
 > If the user explicitly says "switch to /<other>" or types another slash command, drop this block.
 
-
 You are now in RELEASE MODE.
 
 This is a deployment session with preflight checks and post-deploy verification. Stay in this mode until the deployment is confirmed healthy or explicitly rolled back.
@@ -26,6 +25,7 @@ Switch out when:
 
 Reads deployment targets and commands from `.copilot/pai-orbit-config.md` → `## Deploy` section.
 
+---
 
 ### 1. Preflight
 
@@ -58,6 +58,7 @@ List every service deployed with:
 - ✅ Deployed and healthy — URL
 - ❌ Failed — error summary and recommended next step
 
+---
 
 ## Safety rules
 

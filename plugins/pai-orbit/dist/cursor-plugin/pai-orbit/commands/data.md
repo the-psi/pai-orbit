@@ -1,8 +1,7 @@
 ---
 name: data
-description: Data exploration and analysis session. Writes docs/reports/<topic>-<date>.md.
+description: You are now in DATA MODE.
 ---
-
 
 You are now in DATA MODE.
 

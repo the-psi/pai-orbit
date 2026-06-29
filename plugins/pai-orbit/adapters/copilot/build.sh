@@ -89,20 +89,23 @@ mode_token() {
 }
 
 # Mode → one-liner description shown in Copilot's slash-command picker (§2.1).
-# Reads the canonical `description:` field from each mode's YAML frontmatter
-# (added during the canonical-frontmatter migration). Falls back to a generic
-# placeholder if a mode is missing the field — useful when adding new modes.
+# Constructed from the source headspace declaration plus the mode's output contract.
 mode_description() {
-  local mode_name="$1"
-  local src="$CORE_DIR/modes/${mode_name}.md"
-  local desc=""
-  if [ -f "$src" ]; then
-    desc=$(awk '/^---/{p++;next} p==1 && /^description:/{sub(/^description: */,""); print; exit}' "$src")
-  fi
-  if [ -z "$desc" ]; then
-    desc="pai-orbit ${mode_name} mode."
-  fi
-  printf '%s' "$desc"
+  case "$1" in
+    arch)     echo "Declare and maintain system architecture — services, boundaries, data flow, constraints. Writes docs/architecture/ + ADRs." ;;
+    build)    echo "Implement features and fixes. Code + updated docs. No architecture debate, no requirements writing." ;;
+    data)     echo "Data exploration and analysis session. Writes docs/reports/<topic>-<date>.md." ;;
+    design)   echo "Technical design and trade-offs. Writes docs/features/*/design.md + ADRs. No implementation." ;;
+    domain)   echo "Capture expert domain knowledge. Writes docs/domain/*.md." ;;
+    groom)    echo "Groom feature requirements — purpose, scenarios, then acceptance criteria. Writes docs/features/*/requirements.md." ;;
+    incident) echo "Production-incident fast path: triage → build → review → release → post-mortem. Trades thoroughness for speed." ;;
+    plan)     echo "Roadmap, prioritisation, and sprint scoping. Writes docs/plans/*.md." ;;
+    release)  echo "Deployment session with preflight + post-deploy verification. Stay until healthy or explicitly rolled back." ;;
+    review)   echo "Code review against the project's documented architecture, conventions, and requirements." ;;
+    test)     echo "Test planning and QA. Writes docs/features/*/test-plan.md." ;;
+    ux)       echo "UX and user-flow design. Writes docs/features/*/ux.md." ;;
+    *)        echo "pai-orbit $1 mode." ;;
+  esac
 }
 
 # Per-mode "Do NOT" line for the anti-drift block (design §3.2 table). Backticks
@@ -288,9 +291,7 @@ emit_mode_prompts() {
       printf '>\n'
       printf '> If the user explicitly says "switch to /<other>" or types another slash command, drop this block.\n'
       printf '\n'
-      # Strip source frontmatter (canonical migration) before copying the body —
-      # the prompt file's own frontmatter is emitted above.
-      strip_frontmatter "$mode_file" | rewrite_paths
+      rewrite_paths < "$mode_file"
     } > "$DIST_DIR/.github/prompts/${mode_name}.prompt.md"
 
     count=$((count + 1))

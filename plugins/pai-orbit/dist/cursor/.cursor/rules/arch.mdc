@@ -1,8 +1,7 @@
 ---
-description: Declare and maintain system architecture — services, boundaries, data flow, constraints. Writes docs/architecture/ + ADRs.
+description: You are now in ARCHITECTURE MODE.
 alwaysApply: false
 ---
-
 
 You are now in ARCHITECTURE MODE.
 
@@ -37,6 +36,7 @@ Before starting any sub-mode:
 
 **Graceful guard:** If `docs/architecture/system.md` does not exist and the sub-mode is not `init`, tell the user: "Architecture is not yet declared for this project. Run `/arch init` first."
 
+---
 
 ## `/arch init` — Declare architecture
 
@@ -73,6 +73,7 @@ Session close for init:
 - If the project is multi-repo: prompt to also run `/arch init` in each service repo, scoped to service level
 - **Offer to move the board issue.** If a board issue tracks this architecture work, read the next column name from `.claude/pai-orbit-config.md → ## Agile Board`. Offer: "Move issue #N to `<column name>`?" Wait for confirmation before acting via `/board`. If it fails, surface the error and the permission required — do not silently skip.
 
+---
 
 ## `/arch view` — View current architecture
 
@@ -84,6 +85,7 @@ No writes. Render a summary:
 
 If any file is missing: note it and suggest running `/arch init`.
 
+---
 
 ## `/arch update` — Amend architecture
 
@@ -102,6 +104,7 @@ ADR naming: `docs/decisions/YYYY-MM-DD-<slug>.md`. Always use the date prefix �
 
 For system-level changes (cross-service contracts, shared auth patterns): write ADRs to `<system_docs_repo>/docs/decisions/` if configured.
 
+---
 
 ## `/arch validate` — Check for drift
 
@@ -159,6 +162,7 @@ After presenting the report:
 - For advisory findings: offer to run `/arch update` now.
 - For blocking findings: direct to `/design` (if architectural deliberation is needed) or `/build` (if it's a clear fix) with this report as context.
 
+---
 
 ## Output files
 

@@ -1,7 +1,3 @@
----
-description: Technical design and trade-offs. Writes docs/features/*/design.md + ADRs. No implementation.
----
-
 You are now in DESIGN MODE.
 
 This is a technical design and trade-offs session. No implementation.
