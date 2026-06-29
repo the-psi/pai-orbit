@@ -21,15 +21,14 @@ gh issue create --repo the-psi/pai-orbit --title "<title>" --body-file <(awk '/^
 |---|--------------|----------|------------|
 | 1 | resolve-husky-template-style | Low — open question | Phase 4 live-Chat validation results |
 | 2 | resolve-applyto-glob-breadth | Low — open question | Phase 4 live-Chat validation results |
-| 3 | implement-init-claude-init-cursor | Low — future | Concrete demand from a team |
-| 4 | implement-pai-orbit-uninstall-copilot | Low — future | At least one team having uninstalled |
-| 5 | scheduled-github-action-pai-orbit-update | Low — future | Adoption signal that pull-based updates are too friction-heavy |
-| 6 | canonical-frontmatter-migration | Medium — broader epic | None — work can start any time but requires coordinated PR |
-| 7 | security-review-skill | Medium — gap | None |
-| 8 | doc-canonical-versions-of-decisions | Low — hygiene | None |
-| 9 | sequence-canonical-frontmatter-migration | Low — open question | Concrete schedule for ticket #6 |
-| 10 | classify-cursor-skill-rule-types | Low — open question | Cursor adapter touch-up |
-| 11 | detect-codex-cli-binary-in-pai-wrapper | Low — open question | Codex adapter wrapper work |
+| 3 | canonical-frontmatter-migration | Medium — broader epic | None — work can start any time but requires coordinated PR |
+| 4 | security-review-skill | Medium — gap | None |
+| 5 | doc-canonical-versions-of-decisions | Low — hygiene | None |
+| 6 | sequence-canonical-frontmatter-migration | Low — open question | Concrete schedule for ticket #3 |
+| 7 | classify-cursor-skill-rule-types | Low — open question | Cursor adapter touch-up |
+| 8 | detect-codex-cli-binary-in-pai-wrapper | Low — open question | Codex adapter wrapper work |
+
+> **Dropped on 2026-06-29:** `implement-init-claude-init-cursor`, `implement-pai-orbit-uninstall-copilot`, and `scheduled-github-action-pai-orbit-update` were removed from the followups list. They were "wait for demand" entries; we explicitly do not plan to build them speculatively. Document them again as new tickets when a team actually asks.
 
 ---
 
@@ -84,103 +83,6 @@ applyTo: "**/*.{ts,tsx,js,jsx,py,sql,md,yml,yaml,json,toml}"
 - If Probe 3 fails both channels on Free, ship the per-extension splits in a follow-up PR.
 
 **Reference:** Phase 1 design §10.2.
-
----
-
-### TICKET: implement-init-claude-init-cursor
-
-**Title:** Wire `pai-orbit init claude` and `pai-orbit init cursor` end-to-end (currently stubs)
-
-**Labels:** `pai-orbit`, `install-cli`, `future`
-
-**Body:**
-
-Per D9, `init claude` and `init cursor` are intentional stubs in v1 — they print "use `/setup` inside the host tool" and exit 2. The Copilot path is the only fully-wired target because the use case (Copilot-only team with no Claude Code or Cursor install) only exists for Copilot.
-
-If a real ask appears — e.g., a team wants to install pai-orbit into a Claude Code or Cursor project without launching the host tool — wire the missing logic:
-
-- `lib/claude.js` — render `.claude/` config + hooks (existing `dist/claude-code/` provides the source files).
-- `lib/cursor.js` — render `.cursor/` rules (existing `dist/cursor/` or `dist/cursor-plugin/` provides the source files).
-
-Both should follow the same lifecycle detection (first-run / re-run / migration) and the same flag set as `init copilot`.
-
-**Acceptance:**
-- A user can run `npx github:the-psi/pai-orbit init claude` in a scratch repo and end up with a working `.claude/` layout.
-- Same for `init cursor`.
-- All three targets share the same `cli.js` arg-parser and library structure.
-
-**Trigger to schedule:** first concrete request from a team for non-host-tool install. Until then, deliberate non-work.
-
-**Reference:** D9 in the Decisions table of the parent plan.
-
----
-
-### TICKET: implement-pai-orbit-uninstall-copilot
-
-**Title:** Add `pai-orbit uninstall copilot` subcommand for clean removal
-
-**Labels:** `pai-orbit`, `install-cli`, `future`
-
-**Body:**
-
-The adoption page (`docs/copilot-install-and-usage.md` → "Uninstalling pai-orbit from a project") documents the manual `git rm` list. Future work — once at least one team has uninstalled — is to automate this as a subcommand:
-
-```bash
-npx github:the-psi/pai-orbit uninstall copilot
-```
-
-Logic:
-- Remove `.copilot/`, `.github/copilot-instructions.md`, pai-orbit-emitted `.github/prompts/*.prompt.md`, pai-orbit-emitted `.github/instructions/*.instructions.md`.
-- Leave any user-authored prompts or instructions alone (need a fingerprinting strategy — likely a `# pai-orbit-emitted` comment in the file body that the install adds and uninstall checks).
-- Preserve `.husky/pre-commit` if it was customised post-install (compare against the inert `.husky/pre-commit.template` content hash).
-- Never touch `CLAUDE.md` or `docs/` — those are user property.
-
-**Acceptance:**
-- Round-trip works: install → uninstall → repo is in the same state as before install (excluding `CLAUDE.md` and `docs/` which are intentionally preserved).
-- Custom user prompts/instructions in `.github/prompts/` and `.github/instructions/` survive uninstall.
-
-**Trigger to schedule:** first team reports they want to remove pai-orbit. Until then, the manual `git rm` is documented and sufficient.
-
----
-
-### TICKET: scheduled-github-action-pai-orbit-update
-
-**Title:** Ship optional `.github/workflows/pai-orbit-update.yml` template for hands-off update polling
-
-**Labels:** `pai-orbit`, `install-cli`, `future`
-
-**Body:**
-
-Per the parent plan's "Updating pai-orbit later" section, three update mechanisms were considered:
-
-- **A.** Re-run `npx ... init copilot` — shipped.
-- **B.** Version pinning — shipped.
-- **C.** Scheduled GitHub Action — explicitly **out of scope for this upgrade.**
-
-Path C is the "hands-off" path for teams that want pai-orbit updates flowing automatically with a human-review gate:
-
-```yaml
-# Runs weekly on Mondays
-on:
-  schedule: [{ cron: '0 9 * * 1' }]
-jobs:
-  refresh:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: npx github:the-psi/pai-orbit update copilot --no-interactive
-      - if: <files changed>
-        run: gh pr create --title "chore(pai-orbit): refresh to <latest-version>" ...
-```
-
-Best of both worlds: automation drives the refresh, human reviews the PR before merge.
-
-**Trigger to schedule:** ≥2 teams ask for it, OR pull-based update friction becomes a measurable adoption blocker. Until then, the explicit `npx ... update copilot` motion is the supported path.
-
-**Acceptance:**
-- Workflow template lives in `plugins/pai-orbit/core/templates/workflows/` (new directory) and is copied into the project on opt-in.
-- The CLI gains an `--install-update-workflow` flag.
-- The workflow opens a PR when `dist/` content has drifted; closes itself silently otherwise.
 
 ---
 
@@ -356,10 +258,9 @@ Inherited open question from `docs/epics/multi-tool-compat/EPIC.md` — predates
 
 Suggested order:
 
-1. **6 (canonical-frontmatter-migration)** and **7 (security-review-skill)** — file these first; they're real gaps with no blocker. File #9 right after #6 since it gates the sequencing.
+1. **3 (canonical-frontmatter-migration)** and **4 (security-review-skill)** — file these first; they're real gaps with no blocker. File #6 right after #3 since it gates the sequencing.
 2. **1, 2 (Copilot open-question resolutions)** — file immediately so they're tracked, but leave them in `New` until Phase 4 live-Chat validation has run.
-3. **9, 10, 11 (inherited open questions from the epic)** — file with `open-question` label. These belong to Punit Singhal per the EPIC; assign accordingly.
-4. **3, 4, 5 (future work)** — file with `future` label and let demand drive scheduling.
-5. **8 (decisions → ADRs)** — file as a `hygiene` ticket to do whenever there's a quiet pocket.
+3. **6, 7, 8 (inherited open questions from the epic)** — file with `open-question` label. These belong to Punit Singhal per the EPIC; assign accordingly.
+4. **5 (decisions → ADRs)** — file as a `hygiene` ticket to do whenever there's a quiet pocket.
 
 If your board uses GitLab (`git.thepsi.com`), substitute `glab` for `gh` in the command above. If the board doesn't track follow-ups at all, this file IS the tracker — keep it under `docs/wip/` and prune entries as they ship.
