@@ -27,6 +27,9 @@ gh issue create --repo the-psi/pai-orbit --title "<title>" --body-file <(awk '/^
 | 6 | canonical-frontmatter-migration | Medium — broader epic | None — work can start any time but requires coordinated PR |
 | 7 | security-review-skill | Medium — gap | None |
 | 8 | doc-canonical-versions-of-decisions | Low — hygiene | None |
+| 9 | sequence-canonical-frontmatter-migration | Low — open question | Concrete schedule for ticket #6 |
+| 10 | classify-cursor-skill-rule-types | Low — open question | Cursor adapter touch-up |
+| 11 | detect-codex-cli-binary-in-pai-wrapper | Low — open question | Codex adapter wrapper work |
 
 ---
 
@@ -272,13 +275,91 @@ Each ADR follows the existing `docs/decisions/` template — context, decision, 
 
 ---
 
+### TICKET: sequence-canonical-frontmatter-migration
+
+**Title:** Decide sequencing of the canonical front-matter migration — one PR or incremental?
+
+**Labels:** `pai-orbit`, `multi-tool-compat`, `open-question`
+
+**Body:**
+
+Inherited open question from `docs/epics/multi-tool-compat/EPIC.md` — predates the Copilot upgrade. Adjacent to ticket #6 (`canonical-frontmatter-migration`) but a distinct sequencing decision that needs to be made before #6 starts.
+
+**The question:** the canonical front-matter migration touches 14 mode files + 6 skill files + per-adapter regeneration. Two ways to land it:
+
+- **One PR across all commands + skills** — single atomic commit, single byte-identical-output regression check, single review. Higher review burden, but everything lands together so cross-adapter inconsistency windows don't exist.
+- **Incremental, file by file** — smaller per-PR review, easier to back out one if it goes wrong, but the codebase lives in a half-migrated state for the duration. Adapters need to cope with both old and new front-matter formats simultaneously.
+
+**Acceptance:**
+- Owner (Punit Singhal per EPIC.md) decides between the two options.
+- Decision recorded as a one-line update to `docs/epics/multi-tool-compat/EPIC.md` Open Questions, and referenced from ticket #6.
+- If "one PR": close this ticket as resolved and start ticket #6 with that plan.
+- If "incremental": split ticket #6 into N per-file sub-tickets first.
+
+**Reference:** `docs/epics/multi-tool-compat/EPIC.md` Open Questions section (first bullet).
+
+---
+
+### TICKET: classify-cursor-skill-rule-types
+
+**Title:** Classify each pai-orbit skill — Cursor `auto_attached` vs `agent_requested` rule type?
+
+**Labels:** `pai-orbit`, `cursor-adapter`, `open-question`
+
+**Body:**
+
+Inherited open question from `docs/epics/multi-tool-compat/EPIC.md` — predates the Copilot upgrade. Cursor's rule system supports two relevant types:
+
+- **`auto_attached`** — rule activates automatically when the user opens or edits a file matching the rule's glob. Example: `data-model` auto-attaches to `*.sql` and `**/migrations/**`.
+- **`agent_requested`** — rule activates when the agent explicitly requests it (e.g., user types "enter build mode").
+
+The Copilot adapter applies the same split via `instructions/<skill>.instructions.md` (auto-attach) and `prompts/<skill>.prompt.md` (invokable). The Cursor adapter currently uses `agent_requested` for everything — but at least `data-model` and `git` should match Copilot's dual-use pattern (D10).
+
+**Acceptance:**
+- Each of the 6 skills classified: `auto_attached` (with the glob), `agent_requested`, or both. Decision recorded in `docs/epics/multi-tool-compat/EPIC.md`.
+- Cursor adapter (`plugins/pai-orbit/adapters/cursor*/build.sh`) updated to emit the right `.cursor/rules/<skill>.mdc` shape per the classification.
+- `dist/cursor/` and `dist/cursor-plugin/` regenerated; byte-diff against pre-change output is intentional (skills change rule type) but documented.
+- Recommend the mapping match the Copilot adapter's `instructions/` split for consistency: `git` and `data-model` get both; `analysis`, `board`, `epic`, `simplify` stay `agent_requested`-only.
+
+**Reference:** `docs/epics/multi-tool-compat/EPIC.md` Open Questions section (second bullet); Copilot design §4.1 for the recommended skill→folder mapping.
+
+---
+
+### TICKET: detect-codex-cli-binary-in-pai-wrapper
+
+**Title:** `pai` CLI wrapper — detect which Codex CLI binary is installed (`codex` vs `openai`)?
+
+**Labels:** `pai-orbit`, `codex-adapter`, `open-question`
+
+**Body:**
+
+Inherited open question from `docs/epics/multi-tool-compat/EPIC.md` — predates the Copilot upgrade. The Codex adapter ships a `pai` CLI wrapper that delivers pre/post execution hook intent (since Codex CLI itself has no native hook system).
+
+**The question:** OpenAI's Codex CLI has shipped under multiple binary names over its lifetime — `codex` (current), `openai` (older), and there are forks/wrappers in the wild. The `pai` wrapper needs to pick the right one to invoke.
+
+**Options to evaluate:**
+
+- **PATH probe order:** try `codex` first, fall back to `openai`. Simple, robust to either naming.
+- **Config-driven:** read `.codex/pai-orbit-config.md` for an explicit `codex_binary:` setting. More explicit, more boilerplate.
+- **Environment variable:** honour `$PAI_CODEX_BINARY` for override; PATH probe otherwise. Compromise.
+
+**Acceptance:**
+- One option picked and documented as a new D-decision in the Codex adapter's design (or a fresh ADR in `docs/decisions/`).
+- `pai` wrapper script updated to implement the chosen detection.
+- Smoke-test against both binary names (where available) succeeds.
+
+**Reference:** `docs/epics/multi-tool-compat/EPIC.md` Open Questions section (third bullet); `plugins/pai-orbit/adapters/codex/` for the existing wrapper.
+
+---
+
 ## When you're ready to file
 
 Suggested order:
 
-1. **6 (canonical-frontmatter-migration)** and **7 (security-review-skill)** — file these first; they're real gaps with no blocker.
-2. **1, 2 (open-question resolutions)** — file these immediately so they're tracked, but leave them in `New` until Phase 4 live-Chat validation has run.
-3. **3, 4, 5 (future work)** — file with `future` label and let demand drive scheduling.
-4. **8 (decisions → ADRs)** — file as a `hygiene` ticket to do whenever there's a quiet pocket.
+1. **6 (canonical-frontmatter-migration)** and **7 (security-review-skill)** — file these first; they're real gaps with no blocker. File #9 right after #6 since it gates the sequencing.
+2. **1, 2 (Copilot open-question resolutions)** — file immediately so they're tracked, but leave them in `New` until Phase 4 live-Chat validation has run.
+3. **9, 10, 11 (inherited open questions from the epic)** — file with `open-question` label. These belong to Punit Singhal per the EPIC; assign accordingly.
+4. **3, 4, 5 (future work)** — file with `future` label and let demand drive scheduling.
+5. **8 (decisions → ADRs)** — file as a `hygiene` ticket to do whenever there's a quiet pocket.
 
 If your board uses GitLab (`git.thepsi.com`), substitute `glab` for `gh` in the command above. If the board doesn't track follow-ups at all, this file IS the tracker — keep it under `docs/wip/` and prune entries as they ship.
