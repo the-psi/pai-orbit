@@ -1,7 +1,8 @@
 ---
 name: setup
-description: You are now in SETUP MODE.
+description: Configure pai-orbit for this project. Run once when starting, re-run when the stack or team changes.
 ---
+
 
 You are now in SETUP MODE.
 
@@ -11,7 +12,6 @@ Switch out when:
 - Setup is complete → return to whatever you were doing, or run `/arch init` next
 - Architecture needs to be declared → `/arch init`
 
----
 
 ## Step 1 — Discover
 
@@ -138,7 +138,6 @@ Present the team's workflow states and ask the user to confirm the ordered colum
 
 No API query needed. Ask the user to provide their workflow stages (column names) in order as a comma-separated list.
 
----
 
 ## Step 3 — Generate
 
@@ -146,7 +145,6 @@ Create the following files based on the assistant target(s) chosen in Step 2 que
 
 > **Regression discipline.** The pre-existing Claude Code and Cursor outputs are frozen. Running `/setup` with target `claude` (or `cursor`) on a scratch repo must produce a byte-identical tree to the pre-Copilot-upgrade behaviour. Do not opportunistically refactor either path during this run.
 
----
 
 ### Target: Claude Code (`.claude/` path)
 
@@ -295,7 +293,6 @@ If the user answered the architecture question (Step 2, item 8), pre-populate th
 
 Tell the user: "Run `/arch init` to complete your architecture declaration. Once declared, `/build` and `/review` will read `constraints.md` to enforce architectural rules automatically."
 
----
 
 ### Target: Cursor (`.cursor/` path)
 
@@ -303,7 +300,6 @@ Run this block when `cursor` is one of the selected targets. No changes to the C
 
 The exact files written here are owned by `dist/cursor-plugin/` and `dist/cursor/`; running `/setup` with `cursor` as the only target on a fresh repo must produce the same output as before this upgrade.
 
----
 
 ### Target: Copilot (`.copilot/` + `.github/` path)
 
@@ -384,7 +380,6 @@ npx github:the-psi/pai-orbit init copilot
 
 It runs the same interview, renders the same files, and is the supported path for Copilot-only teams.
 
----
 
 ## Step 4 — Report
 

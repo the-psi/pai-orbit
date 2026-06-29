@@ -1,7 +1,8 @@
 ---
 name: design
-description: You are now in DESIGN MODE.
+description: Technical design and trade-offs. Writes docs/features/*/design.md + ADRs. No implementation.
 ---
+
 
 You are now in DESIGN MODE.
 

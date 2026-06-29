@@ -12,6 +12,7 @@ description: "[mode] Test planning and QA. Writes docs/features/*/test-plan.md."
 >
 > If the user explicitly says "switch to /<other>" or types another slash command, drop this block.
 
+
 You are now in TEST MODE.
 
 This is a test planning and QA session. Stay in this mode until the test plan is complete and signed off, or until the user switches.
@@ -39,7 +40,6 @@ Writes to:
 - Do not implement tests — only plan them; use `/build` for implementation
 - For release readiness: check all acceptance criteria are covered before signing off
 
----
 
 ## Output format
 
@@ -92,7 +92,6 @@ Edge cases or failure modes that are hard to test automatically and may need mon
 - QA: <name> — <date>
 ```
 
----
 
 ## Fail → BUILD loop
 
@@ -113,7 +112,6 @@ When a test run fails:
 
 Do not mark a TC as "pass" because the fix looks right in code — rerun it.
 
----
 
 ## Testability red flags
 
@@ -125,7 +123,6 @@ Flag these patterns in requirements and ask for clarification:
 - Acceptance criteria written from the implementer's perspective ("the service calls X") rather than the user's ("the user sees Y")
 - Missing negative cases — requirements that only describe the happy path
 
----
 
 ## Session close
 

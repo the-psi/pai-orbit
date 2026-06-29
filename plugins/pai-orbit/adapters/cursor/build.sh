@@ -25,19 +25,28 @@ rm -rf "$DIST_DIR"
 mkdir -p "$DIST_DIR/.cursor/rules"
 
 # Modes → individual rule files
+#
+# Each source mode now carries a canonical `description:` field in YAML
+# frontmatter (see core/modes/*.md). We read that for the Cursor rule
+# description, strip the source frontmatter from the emitted body, and wrap
+# with Cursor's expected frontmatter (`description:`, `alwaysApply: false`).
 for mode_file in "$CORE_DIR"/modes/*.md; do
   [ -f "$mode_file" ] || continue
   mode_name="$(basename "$mode_file" .md)"
   out="$DIST_DIR/.cursor/rules/${mode_name}.mdc"
-  # First non-empty line becomes the description.
-  description="$(grep -m1 -v '^[[:space:]]*$' "$mode_file" | sed 's/^#\+ *//' | sed 's/"/\\"/g')"
+  # Read description from the source frontmatter; fall back to first non-empty
+  # body line for any future mode that lacks frontmatter.
+  description="$(awk '/^---/{p++;next} p==1 && /^description:/{sub(/^description: */,""); print; exit}' "$mode_file" | sed 's/"/\\"/g')"
+  if [ -z "$description" ]; then
+    description="$(awk 'p>=2 && NF>0 {print; exit} /^---/{p++}' "$mode_file" | sed 's/^#\+ *//' | sed 's/"/\\"/g')"
+  fi
   {
     echo "---"
     echo "description: ${description}"
     echo "alwaysApply: false"
     echo "---"
     echo ""
-    cat "$mode_file"
+    awk '/^---/{p++;next} p>=2{print}' "$mode_file"
   } > "$out"
 done
 

@@ -1,7 +1,8 @@
 ---
 name: groom
-description: You are now in GROOM MODE.
+description: Groom feature requirements — purpose, scenarios, then acceptance criteria. Writes docs/features/*/requirements.md.
 ---
+
 
 You are now in GROOM MODE.
 

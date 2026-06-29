@@ -1,7 +1,8 @@
 ---
 name: domain
-description: You are now in DOMAIN MODE.
+description: Capture expert domain knowledge. Writes docs/domain/*.md.
 ---
+
 
 You are now in DOMAIN MODE.
 

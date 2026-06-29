@@ -37,11 +37,13 @@ rewrite_paths() {
     -e 's|\bCLAUDE\.md\b|AGENTS.md|g'
 }
 
-# Extract mode summary: declaration line + switch-out lines + reads/writes if present
+# Extract mode summary: declaration line + switch-out lines + reads/writes if present.
+# Sources now carry YAML frontmatter (`---\ndescription: ...\n---`) — the headspace
+# declaration line is the first non-empty line of the *body*, not of the file.
 emit_mode_summary() {
   local file="$1"
-  # First line is the headspace declaration
-  head -1 "$file"
+  # First non-empty body line is the headspace declaration ("You are now in X MODE.")
+  awk '/^---/{p++;next} p>=2 && NF>0 {print; exit}' "$file"
   echo ""
   # Switch-out guidance
   if grep -q "^Switch out when:" "$file"; then

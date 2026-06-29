@@ -1,7 +1,8 @@
 ---
 name: plan
-description: You are now in PLAN MODE.
+description: Roadmap, prioritisation, and sprint scoping. Writes docs/plans/*.md.
 ---
+
 
 You are now in PLAN MODE.
 

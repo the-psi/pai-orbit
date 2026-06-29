@@ -1,7 +1,8 @@
 ---
 name: build
-description: You are now in BUILD MODE.
+description: Implement features and fixes. Code + updated docs. No architecture debate, no requirements writing.
 ---
+
 
 You are now in BUILD MODE.
 

@@ -21,10 +21,24 @@ case "$DIST_ROOT" in
   *) echo "cursor-plugin adapter: DIST_ROOT '$DIST_ROOT' is outside PLUGIN_DIR — refusing rm -rf" >&2; exit 1 ;;
 esac
 
-# First non-empty line of a mode file → human-readable description for frontmatter.
+# Read the canonical `description:` from a mode file's YAML frontmatter. Falls
+# back to the first non-empty body line for any future mode that lacks
+# frontmatter, preserving the old behaviour as a safety net.
 mode_description() {
   local file="$1"
-  grep -m1 -v '^[[:space:]]*$' "$file" | sed 's/^#\+ *//' | sed 's/"/\\"/g'
+  local desc
+  desc=$(awk '/^---/{p++;next} p==1 && /^description:/{sub(/^description: */,""); print; exit}' "$file" | sed 's/"/\\"/g')
+  if [ -z "$desc" ]; then
+    desc=$(awk 'p>=2 && NF>0 {print; exit} /^---/{p++}' "$file" | sed 's/^#\+ *//' | sed 's/"/\\"/g')
+  fi
+  printf '%s' "$desc"
+}
+
+# Strip the leading YAML frontmatter block from a mode file (between the first
+# two `---` lines). Prints the body. Used so mode bodies don't carry source
+# frontmatter into Cursor's rule / command files (which add their own).
+strip_frontmatter() {
+  awk '/^---/{p++; next} p>=2{print}' "$1"
 }
 
 # Rewrite Claude Code project paths/names to Cursor-native paths in built artifacts.
@@ -82,7 +96,7 @@ for mode_file in "$CORE_DIR"/modes/*.md; do
     echo "alwaysApply: false"
     echo "---"
     echo ""
-    cat "$mode_file"
+    strip_frontmatter "$mode_file"
   } > "$DIST_DIR/rules/${mode_name}.mdc"
 
   {
@@ -91,7 +105,7 @@ for mode_file in "$CORE_DIR"/modes/*.md; do
     echo "description: ${description}"
     echo "---"
     echo ""
-    cat "$mode_file"
+    strip_frontmatter "$mode_file"
   } > "$DIST_DIR/commands/${mode_name}.md"
 done
 

@@ -12,6 +12,7 @@ description: "[mode] Capture expert domain knowledge. Writes docs/domain/*.md."
 >
 > If the user explicitly says "switch to /<other>" or types another slash command, drop this block.
 
+
 You are now in DOMAIN MODE.
 
 This is a domain knowledge production session. Output saved to `docs/domain/`.

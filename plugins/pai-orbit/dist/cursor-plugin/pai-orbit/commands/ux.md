@@ -1,7 +1,8 @@
 ---
 name: ux
-description: You are now in UX MODE.
+description: UX and user-flow design. Writes docs/features/*/ux.md.
 ---
+
 
 You are now in UX MODE.
 

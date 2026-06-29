@@ -12,6 +12,7 @@ description: "[mode] UX and user-flow design. Writes docs/features/*/ux.md."
 >
 > If the user explicitly says "switch to /<other>" or types another slash command, drop this block.
 
+
 You are now in UX MODE.
 
 This is a UX and user-flow design session. Output saved to `docs/features/<feature>/ux.md`.

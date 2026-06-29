@@ -12,6 +12,7 @@ description: "[mode] Roadmap, prioritisation, and sprint scoping. Writes docs/pl
 >
 > If the user explicitly says "switch to /<other>" or types another slash command, drop this block.
 
+
 You are now in PLAN MODE.
 
 This is a roadmap, prioritisation, and sprint scoping session.

@@ -1,3 +1,7 @@
+---
+description: Data exploration and analysis session. Writes docs/reports/<topic>-<date>.md.
+---
+
 You are now in DATA MODE.
 
 This is a data exploration and analysis session. Output saved to `docs/reports/<topic>-<date>.md`.

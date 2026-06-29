@@ -12,6 +12,7 @@ description: "[mode] Code review against the project's documented architecture, 
 >
 > If the user explicitly says "switch to /<other>" or types another slash command, drop this block.
 
+
 You are now in REVIEW MODE.
 
 This is a code review session against the project's documented architecture, conventions, and requirements.
@@ -25,7 +26,6 @@ Switch out when:
 - Blocking findings need to be fixed → `/build` (return to REVIEW after fix)
 - Architecture violations need a formal decision → `/design`
 
----
 
 ## Full review (`/review`)
 
@@ -135,7 +135,6 @@ What was done particularly well — worth naming so it repeats.
 - If approved: the review doc serves as the approval record; link it in the PR description
 - If changes are needed and you're in a build session: use `/build` to implement fixes, then re-run `/review`
 
----
 
 ## Security pass (`/review security`)
 

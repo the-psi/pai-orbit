@@ -12,6 +12,7 @@ description: "[mode] Implement features and fixes. Code + updated docs. No archi
 >
 > If the user explicitly says "switch to /<other>" or types another slash command, drop this block.
 
+
 You are now in BUILD MODE.
 
 This is an implementation session. Stay in this mode until the user switches.

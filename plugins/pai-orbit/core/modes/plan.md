@@ -1,3 +1,7 @@
+---
+description: Roadmap, prioritisation, and sprint scoping. Writes docs/plans/*.md.
+---
+
 You are now in PLAN MODE.
 
 This is a roadmap, prioritisation, and sprint scoping session.

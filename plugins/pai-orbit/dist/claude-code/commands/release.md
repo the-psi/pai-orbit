@@ -1,3 +1,7 @@
+---
+description: Deployment session with preflight + post-deploy verification. Stay until healthy or explicitly rolled back.
+---
+
 You are now in RELEASE MODE.
 
 This is a deployment session with preflight checks and post-deploy verification. Stay in this mode until the deployment is confirmed healthy or explicitly rolled back.

@@ -1,3 +1,7 @@
+---
+description: Implement features and fixes. Code + updated docs. No architecture debate, no requirements writing.
+---
+
 You are now in BUILD MODE.
 
 This is an implementation session. Stay in this mode until the user switches.

@@ -1,3 +1,7 @@
+---
+description: Analyse this project's working patterns and suggest operational skills worth adding.
+---
+
 You are now in SUGGEST SKILLS MODE.
 
 Analyse this project's working patterns and suggest operational skills worth adding as `.claude/skills/`. This mode **extends** Claude Code's built-in suggest-skills capability — apply all standard Claude Code suggest-skills analysis first, then layer the project-specific analysis below on top. Do not replace or skip the built-in behaviour.

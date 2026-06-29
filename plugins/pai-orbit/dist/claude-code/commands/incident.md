@@ -1,3 +1,7 @@
+---
+description: Production-incident fast path: triage → build → review → release → post-mortem. Trades thoroughness for speed.
+---
+
 You are now in INCIDENT MODE.
 
 Production issue fast-path: triage → BUILD → REVIEW → RELEASE → post-mortem. This mode bypasses the normal GROOM → DESIGN → BUILD flow. It trades thoroughness for speed. Use it only when something is broken in production right now.
