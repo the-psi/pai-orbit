@@ -100,29 +100,39 @@ verify_prompt_file() {
       ;;
   esac
 
-  # Mode/skill prompts: agent: agent. Service-builder prompts: mode: agent + tools.
-  if [ "$kind" = "agent" ]; then
-    local mode_field tools_field
-    mode_field=$(yaml_value "$file" "mode")
-    if [ "$mode_field" != "agent" ]; then
-      fail "$rel: agent prompt must declare 'mode: agent' (got: '$mode_field')"
-    fi
-    tools_field=$(yaml_value "$file" "tools")
+  # Read the runtime shape from frontmatter fields (independent of prefix kind):
+  #   - `mode: agent` + `tools:` → agent-mode prompt (Copilot Business multi-step
+  #     agent). Used by service-builder prompts and by /setup.
+  #   - `agent: agent` → standard prompt-following (mode or skill).
+  local mode_field agent_field tools_field
+  mode_field=$(yaml_value "$file" "mode")
+  agent_field=$(yaml_value "$file" "agent")
+  tools_field=$(yaml_value "$file" "tools")
+
+  local is_agent_runtime="false"
+  if [ "$mode_field" = "agent" ]; then
+    is_agent_runtime="true"
     if [ -z "$tools_field" ]; then
-      fail "$rel: agent prompt must declare a 'tools:' field"
+      fail "$rel: 'mode: agent' prompt must declare a 'tools:' field"
     fi
+  elif [ "$agent_field" = "agent" ]; then
+    is_agent_runtime="false"
   else
-    local agent_field
-    agent_field=$(yaml_value "$file" "agent")
-    if [ "$agent_field" != "agent" ]; then
-      fail "$rel: $kind prompt must declare 'agent: agent' (got: '$agent_field')"
-    fi
+    fail "$rel: prompt must declare either 'mode: agent' + tools (agent runtime) or 'agent: agent' (standard). Got mode='$mode_field' agent='$agent_field'"
+    return
   fi
 
-  # Mode prompts: anti-drift block must appear near the top (D28). The block
-  # lives in the first ~13 lines after frontmatter; we scan the first 25 lines
-  # of the whole file for the required markers.
-  if [ "$kind" = "mode" ]; then
+  # Prefix-kind sanity: `[agent]` prefix implies agent runtime. `[mode]` or
+  # `[skill]` prefix can use either runtime (setup mode uses agent runtime).
+  if [ "$kind" = "agent" ] && [ "$is_agent_runtime" = "false" ]; then
+    fail "$rel: '[agent]' prefix must pair with 'mode: agent' frontmatter"
+  fi
+
+  # Anti-drift block check: applies to mode prompts using the STANDARD runtime
+  # (agent: agent). Agent-runtime prompts like /setup are one-shot workflows,
+  # not persistent headspaces — anti-drift is inapplicable and must not be
+  # required.
+  if [ "$kind" = "mode" ] && [ "$is_agent_runtime" = "false" ]; then
     local head_block
     head_block=$(head -25 "$file")
     if ! printf '%s' "$head_block" | grep -q 'Do NOT'; then
@@ -197,8 +207,14 @@ for f in "$DIST_DIR"/.github/instructions/*.instructions.md; do
   instructions_count=$((instructions_count + 1))
 done
 
-# Counts must match design §1: 25 prompts (12 mode + 6 skill + 7 agent) and 4 instructions.
-expected_prompts=25
+# Counts must match the target layout:
+#   13 mode prompts (12 standard + /setup which uses agent runtime)
+# +  6 skill prompts
+# +  7 service-builder agent prompts
+# = 26 total prompts. D13 originally dropped /setup (giving 12 modes = 25 prompts);
+#   superseded 2026-07-04 — /setup is emitted as an agent-runtime mode prompt
+#   for Copilot Business tier. /suggest-skills stays dropped.
+expected_prompts=26
 expected_instructions=4
 
 if [ "$prompt_count" -ne "$expected_prompts" ]; then

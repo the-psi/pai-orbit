@@ -61,10 +61,27 @@ rewrite_paths() {
     -e 's|`\.claude/`|`.copilot/`|g'
 }
 
-# Modes dropped on the Copilot adapter (D13).
+# Modes dropped on the Copilot adapter.
+# D13 originally dropped both setup and suggest-skills. Superseded 2026-07-04:
+# /setup is now emitted as an agent-mode prompt (see needs_agent_mode) so
+# Copilot Business teams can re-configure inside Chat without leaving the
+# editor. On Copilot Free the prompt degrades to advisory text (Copilot
+# describes the setup steps; user runs `npx ... init copilot` in a terminal).
+# /suggest-skills stays dropped — it introspects Claude Code's plugin runtime,
+# which has no Copilot analogue.
 is_skipped_mode() {
   case "$1" in
-    setup|suggest-skills) return 0 ;;
+    suggest-skills) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# Modes that require Copilot agent mode (mode: agent frontmatter + tools).
+# /setup drives file writes and shell commands, so it needs agent capability.
+# Other modes are pure prompt-following and use the default agent: agent shape.
+needs_agent_mode() {
+  case "$1" in
+    setup) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -104,6 +121,7 @@ mode_description() {
     review)   echo "Code review against the project's documented architecture, conventions, and requirements." ;;
     test)     echo "Test planning and QA. Writes docs/features/*/test-plan.md." ;;
     ux)       echo "UX and user-flow design. Writes docs/features/*/ux.md." ;;
+    setup)    echo "Configure pai-orbit for this project (interactive interview — Business tier agentic; Free tier advisory only)." ;;
     *)        echo "pai-orbit $1 mode." ;;
   esac
 }
@@ -274,25 +292,44 @@ emit_mode_prompts() {
     donot=$(mode_donot_line "$mode_name")
     prefixed=$(truncate_description "[mode] $desc")
 
-    {
-      printf -- '---\n'
-      printf 'agent: agent\n'
-      printf 'description: "%s"\n' "$(yaml_escape "$prefixed")"
-      printf -- '---\n'
-      printf '\n'
-      # Anti-drift block (D28, design §3.2). The `[<MODE>]` marker is on a
-      # bullet line so verify-dist.sh can grep for it within the head of the file.
-      printf '> **Mode discipline — read before answering.**\n'
-      printf '>\n'
-      printf '> You are now in **%s** mode. Until the user explicitly switches modes:\n' "$token"
-      printf '> - %s\n' "$donot"
-      printf '> - Redirect off-scope requests to the right mode and name it explicitly (e.g. "That'\''s a `/design` question — switch modes?").\n'
-      printf '> - Begin every reply with the literal prefix `[%s]` so mode drift is visible to the user.\n' "$token"
-      printf '>\n'
-      printf '> If the user explicitly says "switch to /<other>" or types another slash command, drop this block.\n'
-      printf '\n'
-      rewrite_paths < "$mode_file"
-    } > "$DIST_DIR/.github/prompts/${mode_name}.prompt.md"
+    if needs_agent_mode "$mode_name"; then
+      # Agent-mode prompts (currently only /setup): emit `mode: agent` frontmatter
+      # + tools so Copilot Business can read files, run shell commands, and propose
+      # file edits. No anti-drift block — setup is a one-shot workflow, not a
+      # persistent headspace.
+      {
+        printf -- '---\n'
+        printf 'mode: agent\n'
+        printf 'description: "%s"\n' "$(yaml_escape "$prefixed")"
+        printf 'tools: ["codebase", "editFiles", "runCommands", "search"]\n'
+        printf -- '---\n'
+        printf '\n'
+        printf '> **Agent-mode prompt.** On Copilot Pro/Business this runs as a multi-step agent that reads project files, asks questions in Chat, runs shell commands (e.g. `glab api`, `gh project field-list`, `chmod`), and proposes file edits you accept. On Copilot Free it degrades to advisory text — Copilot describes the steps and you run them manually. The equivalent terminal path is `npx github:the-psi/pai-orbit init copilot`.\n'
+        printf '\n'
+        rewrite_paths < "$mode_file"
+      } > "$DIST_DIR/.github/prompts/${mode_name}.prompt.md"
+    else
+      # Standard mode prompts: agent: agent + anti-drift block (D28).
+      {
+        printf -- '---\n'
+        printf 'agent: agent\n'
+        printf 'description: "%s"\n' "$(yaml_escape "$prefixed")"
+        printf -- '---\n'
+        printf '\n'
+        # Anti-drift block (D28, design §3.2). The `[<MODE>]` marker is on a
+        # bullet line so verify-dist.sh can grep for it within the head of the file.
+        printf '> **Mode discipline — read before answering.**\n'
+        printf '>\n'
+        printf '> You are now in **%s** mode. Until the user explicitly switches modes:\n' "$token"
+        printf '> - %s\n' "$donot"
+        printf '> - Redirect off-scope requests to the right mode and name it explicitly (e.g. "That'\''s a `/design` question — switch modes?").\n'
+        printf '> - Begin every reply with the literal prefix `[%s]` so mode drift is visible to the user.\n' "$token"
+        printf '>\n'
+        printf '> If the user explicitly says "switch to /<other>" or types another slash command, drop this block.\n'
+        printf '\n'
+        rewrite_paths < "$mode_file"
+      } > "$DIST_DIR/.github/prompts/${mode_name}.prompt.md"
+    fi
 
     count=$((count + 1))
   done
