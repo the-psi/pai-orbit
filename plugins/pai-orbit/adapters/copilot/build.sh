@@ -62,26 +62,40 @@ rewrite_paths() {
 }
 
 # Modes dropped on the Copilot adapter.
-# D13 originally dropped both setup and suggest-skills. Superseded 2026-07-04:
-# /setup is now emitted as an agent-mode prompt (see needs_agent_mode) so
-# Copilot Business teams can re-configure inside Chat without leaving the
-# editor. On Copilot Free the prompt degrades to advisory text (Copilot
-# describes the setup steps; user runs `npx ... init copilot` in a terminal).
-# /suggest-skills stays dropped — it introspects Claude Code's plugin runtime,
-# which has no Copilot analogue.
+# D13 originally dropped both /setup and /suggest-skills. Superseded 2026-07-04
+# in two steps:
+#   - /setup un-dropped: emitted as agent-mode prompt so Copilot Business can
+#     re-configure inside Chat (Free degrades to advisory text).
+#   - /suggest-skills un-dropped: emitted as agent-mode prompt with a Copilot-
+#     adapted preamble that redirects skill scaffolding from `.claude/skills/`
+#     to `.github/prompts/` (Copilot's user-prompt surface). The mode's
+#     analysis workflow (CLAUDE.md, docs/, git log, docs/wip/, docs/ops/) is
+#     portable; only the output target differs per adapter.
+# Nothing is currently skipped for Copilot — every mode in core/modes/ emits.
 is_skipped_mode() {
   case "$1" in
-    suggest-skills) return 0 ;;
     *) return 1 ;;
   esac
 }
 
 # Modes that require Copilot agent mode (mode: agent frontmatter + tools).
-# /setup drives file writes and shell commands, so it needs agent capability.
+# /setup drives file writes and shell commands. /suggest-skills scaffolds a
+# suggested skill file at the end of its run (also needs editFiles + codebase).
 # Other modes are pure prompt-following and use the default agent: agent shape.
 needs_agent_mode() {
   case "$1" in
-    setup) return 0 ;;
+    setup|suggest-skills) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# Modes whose Claude-specific target directory needs a Copilot-specific
+# rewrite: `.claude/skills/` → `.github/prompts/`. Applied on top of the
+# standard rewrite_paths (which maps to `.copilot/skills/` — the wrong target
+# for suggest-skills scaffolding on Copilot).
+needs_skills_target_rewrite() {
+  case "$1" in
+    suggest-skills) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -122,6 +136,7 @@ mode_description() {
     test)     echo "Test planning and QA. Writes docs/features/*/test-plan.md." ;;
     ux)       echo "UX and user-flow design. Writes docs/features/*/ux.md." ;;
     setup)    echo "Configure pai-orbit for this project (interactive interview — Business tier agentic; Free tier advisory only)." ;;
+    suggest-skills) echo "Analyse this project's workflows and propose invokable skills (git log + docs review). Scaffolds to .github/prompts/." ;;
     *)        echo "pai-orbit $1 mode." ;;
   esac
 }
@@ -244,7 +259,7 @@ The path-scoped detail lives in `.github/instructions/arch-drift.instructions.md
 
 All mode and skill prompts live in `.github/prompts/`. Invoke them by typing `/<name>` in Copilot Chat. The slash-command picker prefixes them so kind is visible:
 
-- `[mode]` — pai-orbit working modes (12): `/arch`, `/build`, `/data`, `/design`, `/domain`, `/groom`, `/incident`, `/plan`, `/release`, `/review`, `/test`, `/ux`
+- `[mode]` — pai-orbit working modes (14): `/arch`, `/build`, `/data`, `/design`, `/domain`, `/groom`, `/incident`, `/plan`, `/release`, `/review`, `/setup`, `/suggest-skills`, `/test`, `/ux` (`/setup` and `/suggest-skills` run in agent mode on Business tier)
 - `[skill]` — invokable procedures (6): `/analysis`, `/board`, `/data-model`, `/epic`, `/git`, `/simplify`
 - `[agent]` — service-builder prompts (7, Pro/Business agentic; Free regular): `/django-builder`, `/express-builder`, `/fastapi-builder`, `/generic-service-builder`, `/infra-builder`, `/nextjs-builder`, `/react-vite-builder`
 
@@ -293,10 +308,10 @@ emit_mode_prompts() {
     prefixed=$(truncate_description "[mode] $desc")
 
     if needs_agent_mode "$mode_name"; then
-      # Agent-mode prompts (currently only /setup): emit `mode: agent` frontmatter
-      # + tools so Copilot Business can read files, run shell commands, and propose
-      # file edits. No anti-drift block — setup is a one-shot workflow, not a
-      # persistent headspace.
+      # Agent-mode prompts (/setup, /suggest-skills): emit `mode: agent`
+      # frontmatter + tools so Copilot Business can read files, run shell
+      # commands, and propose file edits. No anti-drift block — these are
+      # one-shot workflows, not persistent headspaces.
       {
         printf -- '---\n'
         printf 'mode: agent\n'
@@ -304,9 +319,51 @@ emit_mode_prompts() {
         printf 'tools: ["codebase", "editFiles", "runCommands", "search"]\n'
         printf -- '---\n'
         printf '\n'
-        printf '> **Agent-mode prompt.** On Copilot Pro/Business this runs as a multi-step agent that reads project files, asks questions in Chat, runs shell commands (e.g. `glab api`, `gh project field-list`, `chmod`), and proposes file edits you accept. On Copilot Free it degrades to advisory text — Copilot describes the steps and you run them manually. The equivalent terminal path is `npx github:the-psi/pai-orbit init copilot`.\n'
-        printf '\n'
-        rewrite_paths < "$mode_file"
+        # Per-mode preamble: setup and suggest-skills need different framings
+        # because their Claude-Code-native workflows scaffold to different
+        # targets (.claude/ vs .github/prompts/) and one has a "Claude Code
+        # built-in" step that doesn't exist for Copilot.
+        case "$mode_name" in
+          setup)
+            printf '> **Agent-mode prompt.** On Copilot Pro/Business this runs as a multi-step agent that reads project files, asks questions in Chat, runs shell commands (e.g. `glab api`, `gh project field-list`, `chmod`), and proposes file edits you accept. On Copilot Free it degrades to advisory text — Copilot describes the steps and you run them manually. The equivalent terminal path is `npx github:the-psi/pai-orbit init copilot`.\n'
+            printf '\n'
+            rewrite_paths < "$mode_file"
+            ;;
+          suggest-skills)
+            printf '> **Agent-mode prompt (Copilot-adapted).** On Copilot Pro/Business this runs as a multi-step agent that reads `CLAUDE.md`, `docs/`, `git log`, `.github/prompts/`, `docs/wip/`, and `docs/ops/` to identify workflow patterns worth encoding as skills. On Copilot Free it degrades to advisory text.\n'
+            printf '>\n'
+            printf '> **Copilot-adapted target:** when scaffolding a suggested skill, write it as a Copilot prompt file at `.github/prompts/<suggested-name>.prompt.md` (NOT `.claude/skills/<name>/SKILL.md` — that is the Claude Code target). Use Copilot prompt frontmatter:\n'
+            printf '>\n'
+            printf '> ```yaml\n'
+            printf '> ---\n'
+            printf '> agent: agent\n'
+            printf '> description: "[skill] <one-line description of what this skill does>"\n'
+            printf '> ---\n'
+            printf '> ```\n'
+            printf '>\n'
+            printf '> **When scanning existing skills to avoid duplicates,** look in `.github/prompts/*.prompt.md`. Ignore prompt files whose `description:` starts with `[mode]` or `[agent]` (those are pai-orbit modes/agent prompts, not skills). Also ignore user-authored prompts without pai-orbit prefixes only if their names clearly overlap with a suggestion.\n'
+            printf '>\n'
+            printf '> **Skip the "Claude Code built-in suggest-skills" step** — Copilot has no equivalent introspection surface. Do the file-based analysis directly.\n'
+            printf '\n'
+            # The default rewrite_paths maps .claude/skills/ to .copilot/skills/
+            # (a symmetric metadata folder). For /suggest-skills specifically we
+            # want .claude/skills/ → .github/prompts/ so the mode body points at
+            # Copilot's real prompt directory. Apply additional rewrites after
+            # the standard one:
+            #   - Any residual .copilot/skills/ or .claude/skills/ → .github/prompts/
+            #   - Claude's `<name>/SKILL.md` file convention → Copilot's flat
+            #     `<name>.prompt.md` convention. Otherwise the mode body would
+            #     still tell Copilot to write into a subdirectory (wrong shape).
+            rewrite_paths < "$mode_file" | sed \
+              -e 's|\.copilot/skills/|.github/prompts/|g' \
+              -e 's|`\.claude/skills/`|`.github/prompts/`|g' \
+              -e 's|\.claude/skills/|.github/prompts/|g' \
+              -e 's|\.github/prompts/\([^/ `]*\)/SKILL\.md|.github/prompts/\1.prompt.md|g'
+            ;;
+          *)
+            rewrite_paths < "$mode_file"
+            ;;
+        esac
       } > "$DIST_DIR/.github/prompts/${mode_name}.prompt.md"
     else
       # Standard mode prompts: agent: agent + anti-drift block (D28).

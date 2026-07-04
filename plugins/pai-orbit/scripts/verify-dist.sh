@@ -208,13 +208,14 @@ for f in "$DIST_DIR"/.github/instructions/*.instructions.md; do
 done
 
 # Counts must match the target layout:
-#   13 mode prompts (12 standard + /setup which uses agent runtime)
+#   14 mode prompts (12 standard + /setup + /suggest-skills; last two use agent runtime)
 # +  6 skill prompts
 # +  7 service-builder agent prompts
-# = 26 total prompts. D13 originally dropped /setup (giving 12 modes = 25 prompts);
-#   superseded 2026-07-04 — /setup is emitted as an agent-runtime mode prompt
-#   for Copilot Business tier. /suggest-skills stays dropped.
-expected_prompts=26
+# = 27 total prompts. D13 originally dropped both /setup and /suggest-skills;
+#   superseded 2026-07-04 in two steps — both now emitted as agent-runtime
+#   mode prompts. /suggest-skills is Copilot-adapted (scaffolds to
+#   .github/prompts/ rather than the Claude-Code .claude/skills/ target).
+expected_prompts=27
 expected_instructions=4
 
 if [ "$prompt_count" -ne "$expected_prompts" ]; then
