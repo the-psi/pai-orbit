@@ -52,7 +52,7 @@ Ask all unresolved questions in a single block — do not ask one at a time. Cov
     - `multiple` — write config for two or more of the above (the Copilot, Cursor, and Claude folders are independent and may coexist in the same repo)
 
     If unanswered, default to `claude` (today's behaviour). If `copilot` is one of the selections, additionally ask:
-    - **"Install the optional `.husky/pre-commit` hook for git-level bash-guard enforcement?"** Default: `yes` if the project has `.git/`, `no` otherwise.
+    - **"Install the optional `.husky/pre-commit` hook (commit-time lint + weak secret tripwire; does NOT block `git push --force` or `git add -A`)?"** Default: `yes` if the project has `.git/`, `no` otherwise.
     - **"Choose pre-commit installer: husky / pre-commit framework / both / neither"** (per D29). Detection-driven defaults: `husky` if `.husky/` exists or `package.json` has a husky dep; `pre-commit` if `.pre-commit-config.yaml` already exists; `husky` otherwise.
 
 ## Step 2b — Board Column Discovery (after Step 2 answers arrive)
@@ -425,17 +425,17 @@ Methodology surfaces (always written):
 - ✅ Generated — `.copilot/team.md` — team members, owners, default assignees
 - ✅ Generated — `.copilot/settings.json` — version, target, install timestamp, husky opt-in, detected languages, pre-commit installer choice (per D19)
 
-Pre-commit enforcement (D29 — depends on the user's Step 2 answer):
+Pre-commit hooks (D29 — commit-time lint + weak secret tripwire, depends on the user's Step 2 answer):
 - ✅ Generated — `.husky/pre-commit.template` — inert template; rename to `.husky/pre-commit` + `chmod +x` to activate (D21 also sets the git-tracked exec bit)
 - ✅ Generated — `.pre-commit-config.yaml.template` — inert template; rename to `.pre-commit-config.yaml` + run `pre-commit install` to activate
-- If user opted into `husky`: ✅ Active — `.husky/pre-commit` is in place, executable, and the exec bit is tracked in git
-- If user opted into `pre-commit framework`: ✅ Active — `.pre-commit-config.yaml` is in place; remind the user to run `pre-commit install`
+- If user opted into `husky`: ✅ Active — `.husky/pre-commit` is in place, executable, and the exec bit is tracked in git. **Scope:** runs `ruff` / `eslint` on staged files (blocks on lint failure) plus a weak regex secret tripwire. **Does NOT** block `git push --force`, `git add -A`, `--no-verify`, or `rm -rf` — those are pre-push / staging-phase / shell operations that no pre-commit hook can see.
+- If user opted into `pre-commit framework`: ✅ Active — `.pre-commit-config.yaml` is in place; remind the user to run `pre-commit install`. Same scope caveats as husky.
 - If user picked `both`: both active paths above
 - If user picked `neither`: both inert templates only; user can opt in later
 
 **Explicit non-emissions (per D33):**
 - ❌ No `.vscode/`, no `.idea/`, no editor-specific folders. Editor settings are owned by the team. VS Code users follow the 4-line lint-on-save recipe in `docs/copilot-install-and-usage.md`.
 
-**Honest gap statement (read aloud to the user):** Copilot has no runtime hook system. The `bash-guard` intent is delivered as advisory text in `.github/copilot-instructions.md` and as the optional `.husky/pre-commit` (or `.pre-commit-config.yaml`). The `arch-drift` intent is split between `.github/copilot-instructions.md` and `.github/instructions/arch-drift.instructions.md`. Lint hooks rely on the project's own linter config invoked at commit time. Service-builder prompts emit with `mode: agent` (D30): on Copilot Pro/Business they run as multi-step agents; on Free they degrade to regular prompts. Full agent-runtime parity with Claude Code is out of scope.
+**Honest gap statement (read aloud to the user):** Copilot has no runtime hook system. The `bash-guard` intent is delivered **as advisory text only** in `.github/copilot-instructions.md` — Copilot is instructed to refuse `git push --force`, `git add -A`, `--no-verify`, and destructive `rm`, and usually obeys, but this is not enforced. The optional `.husky/pre-commit` (or `.pre-commit-config.yaml`) adds real enforcement **at commit time only**, and its scope is narrow: lint failures block the commit and a weak regex catches obvious credential patterns — it does NOT and cannot block `git push --force` (wrong git phase), `git add -A` (staging happens before the hook), or shell commands like `rm -rf`. For hard enforcement of those patterns, use Claude Code, a separate pre-push hook, or server-side branch protection. The `arch-drift` intent is split between `.github/copilot-instructions.md` and `.github/instructions/arch-drift.instructions.md` (advisory). Lint at commit time runs the project's own linter config. Service-builder prompts emit with `mode: agent` (D30): on Copilot Pro/Business they run as multi-step agents; on Free they degrade to regular prompts. Full agent-runtime parity with Claude Code is out of scope.
 
 End with: "Run `/suggest-skills` after a few sessions to discover operational skills worth adding." (Note: `/suggest-skills` is a Claude Code feature — Copilot-only teams should skip this line.)

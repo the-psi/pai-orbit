@@ -152,15 +152,26 @@ See [`docs/cursor-plugin-install-and-usage.md`](docs/cursor-plugin-install-and-u
 
 **Do not** use the legacy copy-rules install and the plugin together — duplicate mode rules will conflict.
 
-### Other coding assistants (lossy)
+### GitHub Copilot (VS Code)
 
-The same plugin source is compiled to per-tool bundles under `plugins/pai-orbit/dist/`. Copilot and Codex bundles are **lossy** reference instructions only.
+Copilot users get real invokable slash commands (`/groom`, `/design`, `/build`, `/git`, …) — 25 mode + skill + service-builder prompts, plus 4 auto-attaching instructions files. Install with one command from the project root:
+
+```bash
+npx github:the-psi/pai-orbit init copilot
+```
+
+The CLI runs an interactive interview (board, branch model, docs home, optional pre-commit hooks), copies the built adapter output, renders `.copilot/pai-orbit-config.md`, and scaffolds `docs/` + `CLAUDE.md`. Full adoption guide: [`docs/copilot-install-and-usage.md`](docs/copilot-install-and-usage.md).
+
+**Enforcement is honest:** Copilot has no runtime hook system, so `bash-guard` intent lives as advisory text in `.github/copilot-instructions.md` (Copilot usually obeys); the optional `.husky/pre-commit` adds commit-time lint + weak secret detection, but cannot block `git push --force` or `git add -A`. Details in the adoption page's Hook coverage matrix.
+
+### Other coding assistants
+
+The same plugin source is compiled to per-tool bundles under `plugins/pai-orbit/dist/`.
 
 | Tool | Path | How to install |
 |------|------|----------------|
 | Cursor (legacy) | [`plugins/pai-orbit/dist/cursor/`](plugins/pai-orbit/dist/cursor/) | Copy `.cursor/` into your project root — use only if you cannot install the plugin |
-| GitHub Copilot | [`plugins/pai-orbit/dist/copilot/`](plugins/pai-orbit/dist/copilot/) | Copy `.github/copilot-instructions.md` into your project |
-| OpenAI Codex CLI (experimental) | [`plugins/pai-orbit/dist/codex/`](plugins/pai-orbit/dist/codex/) | Copy `AGENTS.md` to your project root |
+| OpenAI Codex CLI (experimental) | [`plugins/pai-orbit/dist/codex/`](plugins/pai-orbit/dist/codex/) | Copy `AGENTS.md` to your project root (lossy — reference instructions only) |
 
 See [`plugins/pai-orbit/README.md`](plugins/pai-orbit/README.md) for adapter internals and how to rebuild the bundles.
 

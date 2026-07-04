@@ -64,7 +64,7 @@ Flags (init / update / migrate, where relevant):
 Examples:
   pai-orbit init copilot
   npx github:the-psi/pai-orbit init copilot
-  npx github:the-psi/pai-orbit#v1.4.0 init copilot
+  npx github:the-psi/pai-orbit#<release-tag> init copilot   (pin a released tag; see repo Releases)
   npx github:the-psi/pai-orbit init copilot --board=gitlab --branch=trunk --yes`;
 }
 

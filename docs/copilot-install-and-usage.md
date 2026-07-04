@@ -43,10 +43,10 @@ After the CLI finishes:
 
 ### Version pinning (recommended for client projects)
 
-Track a release tag instead of `main` so updates are deliberate, not surprise:
+Track a release tag instead of `main` so updates are deliberate, not surprise. Substitute `<tag>` with the tag your team has decided to pin — pai-orbit maintains release tags in the format `vMAJOR.MINOR.PATCH` (see the [Releases page](https://github.com/the-psi/pai-orbit/releases)):
 
 ```bash
-npx github:the-psi/pai-orbit#v1.4.0 init copilot
+npx github:the-psi/pai-orbit#<tag> init copilot
 ```
 
 For full reproducibility, pin a specific commit:
@@ -204,16 +204,16 @@ Plus two instructions files that are not skill-derived:
 
 Copilot has **no tool-use event triggers** — prompt files only fire when the user types `/<name>`, instructions files only activate when matching files are open. So pai-orbit's `.sh` hooks **cannot be ported as-is**. Each hook's intent lands in a different layer:
 
-| Hook intent | Where it lives | Enforced? |
-|-------------|---------------|-----------|
-| Block dangerous bash patterns | `.github/copilot-instructions.md` (always-loaded text) | **Advisory** — Copilot usually obeys |
-| Block dangerous bash patterns — real | `.husky/pre-commit` (opt-in) or `.pre-commit-config.yaml` (opt-in, D29) | **Enforced** at commit time |
-| Lint Python at commit | Pre-commit hook + project's `pyproject.toml` (existing) | **Enforced** every editor |
-| Lint TypeScript/JS at commit | Pre-commit hook + project's `.eslintrc.json` (existing) | **Enforced** every editor |
+| Hook intent | Where it lives | Coverage |
+|-------------|---------------|----------|
+| Block dangerous bash patterns (`git push --force`, `git add -A`, `--no-verify`, destructive `rm`) | `.github/copilot-instructions.md` (always-loaded text) | **Advisory only** — Copilot is instructed to refuse these; usually obeys, no guarantee |
+| Secret / credential tripwire on staged files | `.husky/pre-commit` (opt-in) | **Enforced at commit time** — weak regex heuristic (`AWS_SECRET_ACCESS_KEY`, `PRIVATE KEY-----`); blocks the commit if matched |
+| Lint Python at commit | `.husky/pre-commit` + project's `pyproject.toml` (existing) | **Enforced at commit time** if `ruff` is on PATH — every editor |
+| Lint TypeScript/JS at commit | `.husky/pre-commit` + project's `.eslintrc.json` (existing) | **Enforced at commit time** if `eslint` is available — every editor |
 | Lint at save (VS Code users only, optional) | User's own VS Code settings (recipe below) | **Convenience**, user opts in |
 | Warn on architectural drift | `.github/copilot-instructions.md` + `.github/instructions/arch-drift.instructions.md` | **Advisory** |
 
-**Honest restatement:** enforcement is preserved for linting and for git-level guards via the pre-commit hook. Advisory-only for in-Chat bash safety, because Copilot doesn't offer a real interception point.
+**Honest restatement:** Copilot's Chat surface is advisory only — no real interception point. The `.husky/pre-commit` hook adds real enforcement at commit time, but its scope is **narrow**: lint failures block the commit and the light secret tripwire blocks known credential patterns. **The husky hook does NOT block `git push --force` (wrong git phase — pre-commit runs on `git commit`, not `git push`), does NOT block `git add -A` (staging happens before the hook fires), and cannot intercept destructive shell commands like `rm -rf`.** Those live only as advisory text in `copilot-instructions.md`. For hard enforcement of those patterns, use Claude Code or a separate pre-push hook. If your team needs `git push --force` blocked, consider a server-side branch protection rule instead.
 
 ### Linting across editors
 
@@ -252,7 +252,7 @@ If you pinned a version (e.g., `#v1.4.0`), bump the tag in your install command 
 If you tracked `main` and the result feels stale, npx's GitHub-install cache may be the cause:
 
 - Add `--ignore-existing` to force a fresh fetch.
-- Or bump or change the ref (`#v1.4.1`, `#<commit-sha>`) — a different ref always fetches fresh.
+- Or bump or change the ref (`#<newer-tag>`, `#<commit-sha>`) — a different ref always fetches fresh.
 
 ### File-ownership table (re-run behaviour)
 
@@ -296,7 +296,7 @@ Future work: a `pai-orbit uninstall copilot` subcommand may be added later. For 
 
 pai-orbit's Copilot adapter delivers **~85% of the methodology benefit on Free, ~90% on Pro/Business**. The honest gap list:
 
-- **No native hooks** — Copilot has no tool-use event system. Hook intent is split between always-loaded instruction text (advisory) and the optional pre-commit hook (enforced at commit time). See the Hook coverage matrix above.
+- **No native hooks** — Copilot has no tool-use event system. Hook intent is split between always-loaded instruction text (**advisory** — Copilot usually obeys, no guarantee) and the optional `.husky/pre-commit` (enforces lint failures + a weak secret tripwire at commit time). Force-push, `git add -A`, `--no-verify`, and destructive shell commands cannot be blocked by any pre-commit hook — they require Claude Code's PreToolUse blocking, a pre-push hook, or server-side branch protection. See the Hook coverage matrix above.
 - **Agents work only on Pro/Business** — service-builder prompts emit with `mode: agent` (D30). Pro/Business runs them as multi-step agents; Free degrades them to regular prompts that still give correct manual scaffolding guidance.
 - **Mode discipline is text-based, not runtime-enforced** — the anti-drift block (D28) tightens but does not enforce. Copilot Free tier may drift on some replies; check for the `[<MODE>]` prefix and re-issue the mode command if missing.
 - **No `/setup` or `/suggest-skills`** — replaced by the `npx ... init copilot` CLI. `/suggest-skills` is a Claude Code introspection feature with no Copilot equivalent.
