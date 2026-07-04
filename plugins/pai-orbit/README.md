@@ -41,7 +41,7 @@ Each adapter clears its own `dist/<adapter>/` subdir and rebuilds from `core/`. 
 | claude-code | ✅ as `/commands/` | ✅ | ✅ | ✅ | ✅ |
 | cursor-plugin | ✅ rules + commands | ✅ | ✅ | ⚠️ mapped | ✅ |
 | cursor (legacy) | ⚠️ as rules (`.cursor/rules/*.mdc`) | ⚠️ as one rule | ❌ | ❌ | ✅ (verbatim) |
-| copilot | ✅ as `.github/prompts/*.prompt.md` (invokable) | ✅ `/prompts/` + `/instructions/` auto-attach for `git`+`data-model` | ⚠️ `mode: agent` prompts (Pro/Business agentic; Free = regular prompt) | ⚠️ advisory in Chat + opt-in `.husky/pre-commit` (lint + weak secret tripwire; NOT force-push / `git add -A`) | ✅ (rendered via `pai-orbit init copilot` CLI) |
+| copilot | ✅ as `.github/prompts/*.prompt.md` (invokable — includes `/setup` as agent-mode prompt, D13 partially reversed 2026-07-04) | ✅ `/prompts/` + `/instructions/` auto-attach for `git`+`data-model` | ⚠️ `mode: agent` prompts (Pro/Business agentic; Free = regular prompt) — also `/setup` runs agentic | ⚠️ advisory in Chat + opt-in `.husky/pre-commit` (lint + weak secret tripwire; NOT force-push / `git add -A`) | ✅ (rendered via `pai-orbit init copilot` CLI; full parity with `/setup` — all 11 Step 2 questions incl. live board discovery) |
 | codex       | ⚠️ as instructions | ⚠️ as appendix | ❌ | ❌ | ❌ |
 
 `⚠️` means either "carried over as reference text only" (cursor legacy, codex) or "partial — see cell text" (copilot agents/hooks; cursor-plugin hooks). The receiving tool's runtime capabilities determine fidelity. See each `dist/<adapter>/README.md` for specifics.

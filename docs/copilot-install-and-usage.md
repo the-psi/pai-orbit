@@ -82,6 +82,14 @@ Available flags:
 
 If your team already uses Claude Code or Cursor, run `/setup` inside the host tool and select `copilot` (or `multiple`) as a target. The same templates and same `dist/copilot/` output land in the project. The `npx` CLI exists for **Copilot-only teams** that have neither tool installed.
 
+### `/setup` inside Copilot Chat — for re-configuration after first install
+
+**Copilot Business:** once pai-orbit is installed via the npx CLI, `/setup` appears in Copilot Chat's slash-command picker as a **`[mode]`** entry with `mode: agent` frontmatter. Invoking it runs the same 11-question interview inside Chat — Copilot reads project files, asks questions, runs shell commands via `runCommands` (e.g. `glab api` for live board column discovery), and proposes file edits you accept. Useful when you need to re-configure the board, team, deploy targets, etc. without switching to a terminal.
+
+**Copilot Free:** `/setup` still appears in the picker but degrades to advisory text — Copilot describes the steps and points you at the terminal command `npx github:the-psi/pai-orbit init copilot` (or `update copilot`) which does the same job with atomic writes and reliable API queries.
+
+**Why both entry points?** First-time install has to happen from a terminal (the `.prompt.md` files that make `/setup` invokable don't exist yet). Once they do, either entry point works — pick whichever fits the moment.
+
 ---
 
 ## Joining a team that already has pai-orbit installed (every other dev)
@@ -299,7 +307,8 @@ pai-orbit's Copilot adapter delivers **~85% of the methodology benefit on Free, 
 - **No native hooks** — Copilot has no tool-use event system. Hook intent is split between always-loaded instruction text (**advisory** — Copilot usually obeys, no guarantee) and the optional `.husky/pre-commit` (enforces lint failures + a weak secret tripwire at commit time). Force-push, `git add -A`, `--no-verify`, and destructive shell commands cannot be blocked by any pre-commit hook — they require Claude Code's PreToolUse blocking, a pre-push hook, or server-side branch protection. See the Hook coverage matrix above.
 - **Agents work only on Pro/Business** — service-builder prompts emit with `mode: agent` (D30). Pro/Business runs them as multi-step agents; Free degrades them to regular prompts that still give correct manual scaffolding guidance.
 - **Mode discipline is text-based, not runtime-enforced** — the anti-drift block (D28) tightens but does not enforce. Copilot Free tier may drift on some replies; check for the `[<MODE>]` prefix and re-issue the mode command if missing.
-- **No `/setup` or `/suggest-skills`** — replaced by the `npx ... init copilot` CLI. `/suggest-skills` is a Claude Code introspection feature with no Copilot equivalent.
+- **`/suggest-skills` not available** — it introspects Claude Code's plugin runtime, which has no Copilot analogue. Not a gap in the setup story; just a Claude-Code-specific feature.
+- **`/setup` availability** — `/setup` IS emitted for Copilot as of 2026-07-04 (D13 partially superseded), as an agent-mode prompt. First-time install still starts from the terminal (`npx ... init copilot`) because the prompt files don't exist yet at first-run. On subsequent runs, `/setup` in Copilot Chat gives Copilot Business teams a reconfiguration UX equal to Claude Code's. Copilot Free degrades to advisory text.
 - **No editor-specific files** — pai-orbit never authors editor config (D33). VS Code lint-on-save is the 4-line recipe above; JetBrains/Visual Studio use their own editor settings.
 
 ---
