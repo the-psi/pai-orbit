@@ -247,7 +247,7 @@ npx github:the-psi/pai-orbit init copilot
 
 The CLI detects your existing install, refreshes pai-orbit-owned files (prompts, instructions, rule book) to the latest version, and **preserves your team's customisations** (`.copilot/pai-orbit-config.md`, `.copilot/team.md`, `CLAUDE.md`).
 
-If you pinned a version (e.g., `#v1.4.0`), bump the tag in your install command before re-running.
+If you pinned a version (e.g., `#<tag>`), bump to the newer tag in your install command before re-running.
 
 If you tracked `main` and the result feels stale, npx's GitHub-install cache may be the cause:
 
@@ -318,7 +318,7 @@ pai-orbit's Copilot adapter delivers **~85% of the methodology benefit on Free, 
 - Node version: ensure `node -v` is ≥ 18.
 - `git` on PATH: `git --version` must succeed (npx clones via git).
 - Firewall: npx hits `github.com`. PSI firewalled environments may need allowlisting.
-- Stale cache: pass `--ignore-existing` or pin a different ref (`#v1.4.1`, `#<commit-sha>`).
+- Stale cache: pass `--ignore-existing` or pin a different ref (`#<newer-tag>`, `#<commit-sha>`).
 
 ### A re-run unexpectedly overwrote something
 

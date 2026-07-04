@@ -35,7 +35,7 @@ No npm publishing. Users invoke via:
 
 ```bash
 npx github:the-psi/pai-orbit init copilot
-npx github:the-psi/pai-orbit#v1.4.0 init copilot
+npx github:the-psi/pai-orbit#<release-tag> init copilot   # pin a released tag (see repo Releases)
 npx github:the-psi/pai-orbit#<commit-sha> init copilot
 ```
 

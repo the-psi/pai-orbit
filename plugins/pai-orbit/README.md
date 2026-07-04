@@ -15,7 +15,7 @@ plugins/pai-orbit/
 │   ├── claude-code/build.sh    # full-fidelity; emits Claude Code plugin layout
 │   ├── cursor-plugin/build.sh  # Cursor plugin; emits dist/cursor-plugin/pai-orbit/
 │   ├── cursor/build.sh         # lossy legacy; emits .cursor/rules/*.mdc
-│   ├── copilot/build.sh        # lossy; emits .github/copilot-instructions.md
+│   ├── copilot/build.sh        # full: emits .github/{copilot-instructions.md, prompts/, instructions/} + husky/pre-commit templates
 │   └── codex/build.sh          # experimental; emits AGENTS.md
 ├── dist/                       # built outputs (committed)
 │   ├── claude-code/
@@ -41,10 +41,10 @@ Each adapter clears its own `dist/<adapter>/` subdir and rebuilds from `core/`. 
 | claude-code | ✅ as `/commands/` | ✅ | ✅ | ✅ | ✅ |
 | cursor-plugin | ✅ rules + commands | ✅ | ✅ | ⚠️ mapped | ✅ |
 | cursor (legacy) | ⚠️ as rules (`.cursor/rules/*.mdc`) | ⚠️ as one rule | ❌ | ❌ | ✅ (verbatim) |
-| copilot     | ⚠️ as instructions | ⚠️ as appendix | ❌ | ❌ | ❌ |
+| copilot | ✅ as `.github/prompts/*.prompt.md` (invokable) | ✅ `/prompts/` + `/instructions/` auto-attach for `git`+`data-model` | ⚠️ `mode: agent` prompts (Pro/Business agentic; Free = regular prompt) | ⚠️ advisory in Chat + opt-in `.husky/pre-commit` (lint + weak secret tripwire; NOT force-push / `git add -A`) | ✅ (rendered via `pai-orbit init copilot` CLI) |
 | codex       | ⚠️ as instructions | ⚠️ as appendix | ❌ | ❌ | ❌ |
 
-`⚠️` means "carried over as reference text only" — the receiving tool has no command/skill/agent invocation system. See each `dist/<adapter>/README.md` for specifics.
+`⚠️` means either "carried over as reference text only" (cursor legacy, codex) or "partial — see cell text" (copilot agents/hooks; cursor-plugin hooks). The receiving tool's runtime capabilities determine fidelity. See each `dist/<adapter>/README.md` for specifics.
 
 ## Adding a new adapter
 
