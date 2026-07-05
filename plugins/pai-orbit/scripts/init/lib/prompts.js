@@ -32,13 +32,21 @@ function onCancel() {
 // ---------------------------------------------------------------------------
 
 function serviceStackGuess(disc) {
-  // Map discovered frameworks/languages to a stack label that lines up with
-  // core/templates/agents/*.md filenames.
+  // Map discovered frameworks/languages to a stack label. Values match the
+  // STACK_CATALOG keys and (where a service-builder template exists)
+  // core/templates/agents/*.md filenames. Frameworks without a matching
+  // template (vue, svelte, angular, nestjs, flask, fastify) still surface
+  // as accurate documentation values.
   if (disc.frameworks.includes('nextjs')) return 'nextjs';
   if (disc.frameworks.includes('fastapi')) return 'fastapi';
   if (disc.frameworks.includes('django')) return 'django';
+  if (disc.frameworks.includes('flask')) return 'flask';
   if (disc.frameworks.includes('express')) return 'express';
-  if (disc.frameworks.includes('nestjs')) return 'express';
+  if (disc.frameworks.includes('nestjs')) return 'nestjs';
+  if (disc.frameworks.includes('fastify')) return 'express';   // closest bucket
+  if (disc.frameworks.includes('svelte')) return 'svelte';
+  if (disc.frameworks.includes('angular')) return 'angular';
+  if (disc.frameworks.includes('vue')) return 'vue';
   if (disc.frameworks.includes('react') || disc.frameworks.includes('vite')) return 'react-vite';
   if (disc.languages.includes('python')) return 'fastapi';
   if (disc.languages.includes('typescript') || disc.languages.includes('javascript')) return 'express';
@@ -152,29 +160,62 @@ async function askRepoStructure(promptsLib, disc) {
   return { is_monorepo: answers.is_monorepo, services };
 }
 
+// Service-name heuristic — decides which category of stacks appears first
+// in the picker. Full list is always shown so a mis-guess is easy to correct
+// (e.g. a service named "frontend" that is actually a Django app can still
+// pick django from lower in the list).
+function guessCategory(serviceName) {
+  const n = (serviceName || '').toLowerCase();
+  if (/frontend|client|web|ui|app|mobile/.test(n)) return 'frontend';
+  if (/backend|api|server|worker/.test(n)) return 'backend';
+  if (/infra|deploy|ops|cicd|terraform|k8s|iac/.test(n)) return 'infra';
+  return 'any';
+}
+
+// Stack categorisation — one place to grow the list as new templates land in
+// core/templates/agents/. Values that don't have a matching agent template
+// still show up in the picker (users get accurate documentation; scaffolding
+// help degrades to generic — same trade-off as picking "generic").
+const STACK_CATALOG = {
+  backend: ['fastapi', 'django', 'flask', 'express', 'nestjs'],
+  frontend: ['nextjs', 'react-vite', 'vue', 'svelte', 'angular'],
+  infra: ['infra'],
+  fallback: ['generic'],
+};
+const OTHER_SENTINEL = '__other__';
+
+function stackChoicesForCategory(cat) {
+  const { backend, frontend, infra, fallback } = STACK_CATALOG;
+  let ordered;
+  switch (cat) {
+    case 'frontend': ordered = [...frontend, ...backend, ...infra, ...fallback]; break;
+    case 'backend':  ordered = [...backend, ...frontend, ...infra, ...fallback]; break;
+    case 'infra':    ordered = [...infra, ...fallback, ...backend, ...frontend]; break;
+    default:         ordered = [...backend, ...frontend, ...infra, ...fallback];
+  }
+  return [
+    ...ordered.map((s) => ({ title: s, value: s })),
+    { title: 'other (type in — e.g. rails, dotnet, go, phoenix, rust, swift)', value: OTHER_SENTINEL },
+  ];
+}
+
 async function askTechStack(promptsLib, services) {
-  // Common stacks that pai-orbit has service-builder templates for.
-  // Picking "other" lets the user type in a free-text stack name (e.g. rails,
-  // dotnet, go, phoenix) — recorded verbatim in the config + CLAUDE.md + docs
-  // for accurate documentation, even if there is no matching service-builder
-  // agent template. Same fallback as picking "generic", just documented properly.
-  const stacks = ['fastapi', 'django', 'express', 'nextjs', 'react-vite', 'infra', 'generic'];
-  const otherSentinel = '__other__';
   const refined = [];
   for (const svc of services) {
+    const category = guessCategory(svc.name);
+    const choices = stackChoicesForCategory(category);
+    // Position the cursor on the discovered stack if it's in the list, else 0.
+    const initialIdx = Math.max(0, choices.findIndex((c) => c.value === svc.stack));
     const ans = await promptsLib([
       {
         type: 'select',
         name: 'stack',
-        message: `Tech stack for service "${svc.name}"`,
-        choices: [
-          ...stacks.map((s) => ({ title: s, value: s })),
-          { title: 'other (type in — e.g. rails, dotnet, go, phoenix, rust, swift)', value: otherSentinel },
-        ],
-        initial: Math.max(0, stacks.indexOf(svc.stack)),
+        message: `Tech stack for service "${svc.name}" (detected: ${category})`,
+        choices,
+        initial: initialIdx,
       },
       {
-        type: (prev) => (prev === otherSentinel ? 'text' : null),
+        type: (prev) => (prev === OTHER_SENTINEL ? 'text' : null),
         name: 'custom_stack',
         message: 'Enter stack name (lowercase letters, numbers, dashes only — e.g. rails, dotnet, phoenix)',
         validate: (value) => {
@@ -185,7 +226,7 @@ async function askTechStack(promptsLib, services) {
         },
       },
     ], { onCancel });
-    const chosen = ans.stack === otherSentinel ? (ans.custom_stack || '').trim() : ans.stack;
+    const chosen = ans.stack === OTHER_SENTINEL ? (ans.custom_stack || '').trim() : ans.stack;
     refined.push({ ...svc, stack: chosen || svc.stack });
   }
   return refined;

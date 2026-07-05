@@ -44,8 +44,10 @@ function detectFrameworks(cwd) {
     if (deps.next) frameworks.add('nextjs');
     if (deps.express) frameworks.add('express');
     if (deps.react && !deps.next) frameworks.add('react');
-    if (deps['@nestjs/core']) frameworks.add('nestjs');
+    if (deps['@nestjs/core'] || deps['@nestjs/common']) frameworks.add('nestjs');
     if (deps.vue) frameworks.add('vue');
+    if (deps.svelte || deps['@sveltejs/kit']) frameworks.add('svelte');
+    if (deps['@angular/core']) frameworks.add('angular');
     if (deps.vite) frameworks.add('vite');
     if (deps.fastify) frameworks.add('fastify');
   }
