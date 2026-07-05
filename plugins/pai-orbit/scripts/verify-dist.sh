@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # verify-dist.sh — dist/copilot/ frontmatter and anti-drift gate.
 #
-# Phase 2 of the Copilot adapter upgrade
-#   docs/plans/copilot-adapter-upgrade-2026-06-28.md
-# Spec:
-#   docs/features/copilot-adapter-prompt-files/design.md (§9)
+# Working plan + design spec (D1..D36) kept locally by the implementing team.
+# Comments below still reference plan / design section numbers as provenance.
 #
 # Checks every *.prompt.md and *.instructions.md under dist/copilot/:
 #   - Frontmatter starts at line 1 with `---` and closes with `---`.

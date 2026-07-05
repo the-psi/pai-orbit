@@ -1,13 +1,14 @@
 name: dist-freshness
 
-# Phase 2 freshness gate for the pai-orbit plugin build outputs.
-#
-# Source: docs/plans/copilot-adapter-upgrade-2026-06-28.md (Phase 2)
-#         docs/features/copilot-adapter-prompt-files/design.md (§9)
+# Freshness gate for the pai-orbit plugin build outputs.
 #
 # Rebuilds every adapter on PRs that touch plugins/pai-orbit/ and fails the
 # check if the committed dist/ tree drifts from a fresh build. Prevents the
 # "contributor edits core/ but forgets to rebuild" silent-failure mode.
+#
+# Companion local script: plugins/pai-orbit/scripts/verify-dist.sh — same
+# pass/fail signal. CI runs `build.sh` (which also invokes verify-dist as its
+# final step for the Copilot adapter) so local and CI stay in sync.
 
 on:
   pull_request:

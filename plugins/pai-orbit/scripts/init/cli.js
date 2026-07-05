@@ -1,8 +1,9 @@
 #!/usr/bin/env node
-// pai-orbit install CLI — Phase 3b of the Copilot adapter upgrade.
+// pai-orbit install CLI — standalone installer for the Copilot adapter.
 //
-// Plan:  docs/plans/copilot-adapter-upgrade-2026-06-28.md (Phase 3b)
-// Spec:  docs/features/copilot-adapter-prompt-files/design.md
+// Working plan + design spec (D1..D36) kept locally by the implementing team.
+// This file is the runnable artefact; end-user docs live in
+// `docs/copilot-install-and-usage.md`.
 //
 // Subcommands:
 //   pai-orbit init <target>      first-run or re-run install
