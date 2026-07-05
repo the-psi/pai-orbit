@@ -45,7 +45,9 @@ All mode and skill prompts live in `.github/prompts/`. Invoke them by typing `/<
 
 - `[mode]` — pai-orbit working modes (14): `/arch`, `/build`, `/data`, `/design`, `/domain`, `/groom`, `/incident`, `/plan`, `/release`, `/review`, `/setup`, `/suggest-skills`, `/test`, `/ux` (`/setup` and `/suggest-skills` run in agent mode on Business tier)
 - `[skill]` — invokable procedures (6): `/analysis`, `/board`, `/data-model`, `/epic`, `/git`, `/simplify`
-- `[agent]` — service-builder prompts (7, Pro/Business agentic; Free regular): `/django-builder`, `/express-builder`, `/fastapi-builder`, `/generic-service-builder`, `/infra-builder`, `/nextjs-builder`, `/react-vite-builder`
+- `[agent]` — agent-mode prompts (9, Pro/Business agentic; Free regular):
+  - Service builders (7): `/django-builder`, `/express-builder`, `/fastapi-builder`, `/generic-service-builder`, `/infra-builder`, `/nextjs-builder`, `/react-vite-builder`
+  - Named sub-agents (2): `/docs-writer` (writes documentation; edits files in `docs/`), `/cross-repo-impact` (read-only cross-repo analysis; no file edits)
 
 Auto-attaching instructions files in `.github/instructions/`:
 
@@ -53,6 +55,7 @@ Auto-attaching instructions files in `.github/instructions/`:
 - `data-model.instructions.md` — SQL and migration conventions
 - `arch-drift.instructions.md` — structural-file warnings
 - `context-discovery.instructions.md` — fall-back duplicate of the Context discovery directives above
+- `decisions.instructions.md` — ADR obligation rules (when to write one, how) — always attached
 
 ## Mode discipline
 

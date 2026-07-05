@@ -186,6 +186,7 @@ required_present ".github/instructions/git.instructions.md"
 required_present ".github/instructions/data-model.instructions.md"
 required_present ".github/instructions/arch-drift.instructions.md"
 required_present ".github/instructions/context-discovery.instructions.md"
+required_present ".github/instructions/decisions.instructions.md"
 required_present ".husky/pre-commit.template"
 required_present ".pre-commit-config.yaml.template"
 
@@ -208,15 +209,16 @@ for f in "$DIST_DIR"/.github/instructions/*.instructions.md; do
 done
 
 # Counts must match the target layout:
-#   14 mode prompts (12 standard + /setup + /suggest-skills; last two use agent runtime)
+#   14 mode prompts (12 standard + /setup + /suggest-skills; last two agent-runtime)
 # +  6 skill prompts
 # +  7 service-builder agent prompts
-# = 27 total prompts. D13 originally dropped both /setup and /suggest-skills;
-#   superseded 2026-07-04 in two steps — both now emitted as agent-runtime
-#   mode prompts. /suggest-skills is Copilot-adapted (scaffolds to
-#   .github/prompts/ rather than the Claude-Code .claude/skills/ target).
-expected_prompts=27
-expected_instructions=4
+# +  2 named sub-agents (docs-writer, cross-repo-impact) — added 2026-07-05
+# = 29 total prompts.
+# +  5 instructions files (git, data-model, arch-drift, context-discovery, decisions)
+#   — decisions.instructions.md added 2026-07-05 to mirror the always-on ADR
+#   obligation rule that Cursor and Claude adapters already provide.
+expected_prompts=29
+expected_instructions=5
 
 if [ "$prompt_count" -ne "$expected_prompts" ]; then
   fail "expected $expected_prompts prompt files, found $prompt_count"
