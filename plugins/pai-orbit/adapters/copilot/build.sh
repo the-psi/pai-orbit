@@ -335,33 +335,100 @@ emit_mode_prompts() {
           suggest-skills)
             printf '> **Agent-mode prompt (Copilot-adapted).** On Copilot Pro/Business this runs as a multi-step agent that reads `CLAUDE.md`, `docs/`, `git log`, `.github/prompts/`, `docs/wip/`, and `docs/ops/` to identify workflow patterns worth encoding as skills. On Copilot Free it degrades to advisory text.\n'
             printf '>\n'
-            printf '> **Copilot-adapted target:** when scaffolding a suggested skill, write it as a Copilot prompt file at `.github/prompts/<suggested-name>.prompt.md` (NOT `.claude/skills/<name>/SKILL.md` — that is the Claude Code target). Use Copilot prompt frontmatter:\n'
-            printf '>\n'
-            printf '> ```yaml\n'
-            printf '> ---\n'
-            printf '> agent: agent\n'
-            printf '> description: "[skill] <one-line description of what this skill does>"\n'
-            printf '> ---\n'
-            printf '> ```\n'
+            printf '> **Copilot-adapted target:** when scaffolding a suggested skill, write it as a Copilot prompt file at `.github/prompts/<suggested-name>.prompt.md` (NOT `.claude/skills/<name>/SKILL.md` — that is the Claude Code target).\n'
             printf '>\n'
             printf '> **When scanning existing skills to avoid duplicates,** look in `.github/prompts/*.prompt.md`. Ignore prompt files whose `description:` starts with `[mode]` or `[agent]` (those are pai-orbit modes/agent prompts, not skills). Also ignore user-authored prompts without pai-orbit prefixes only if their names clearly overlap with a suggestion.\n'
             printf '>\n'
             printf '> **Skip the "Claude Code built-in suggest-skills" step** — Copilot has no equivalent introspection surface. Do the file-based analysis directly.\n'
             printf '\n'
+            # Copilot-adapted skill template — inlined from
+            # core/templates/skills/domain-operational.template.md with the
+            # frontmatter converted from Claude Code's `name: / description:`
+            # shape to Copilot's `agent: agent / description: "[skill] ..."`
+            # shape. Copilot uses this as the base pattern when scaffolding a
+            # suggested skill (Gap 3, 2026-07-05 fix).
+            printf '## Skill template (base pattern for scaffolding)\n'
+            printf '\n'
+            printf 'When the user picks a suggestion to scaffold, use this template shape. Substitute each `{{PLACEHOLDER}}` with the real value inferred from your analysis; leave `<!-- TODO -->` markers only where the team genuinely needs to fill in project-specific detail.\n'
+            printf '\n'
+            printf '````markdown\n'
+            printf -- '---\n'
+            printf 'agent: agent\n'
+            printf 'description: "[skill] {{SKILL_DESCRIPTION}} TRIGGER when {{TRIGGER_CONDITIONS}}. SKIP {{SKIP_CONDITIONS}}."\n'
+            printf -- '---\n'
+            printf '\n'
+            printf '# {{SKILL_TITLE}}\n'
+            printf '\n'
+            printf '<!-- Domain-operational skill. Multi-step procedure too specific for a generic mode\n'
+            printf '     but recurring enough to deserve its own invokable prompt. Examples: data backfill,\n'
+            printf '     seed data insertion, schema migration, domain review, incident response. -->\n'
+            printf '\n'
+            printf '{{CONTEXT_PARAGRAPH}}\n'
+            printf '<!-- One paragraph: what the procedure is, when it is needed, what it produces. -->\n'
+            printf '\n'
+            printf '## Prerequisites\n'
+            printf '\n'
+            printf '<!-- What must be true before running this skill? -->\n'
+            printf '%s\n' '- {{PREREQ_1}}'
+            printf '<!-- e.g.: Authenticated with gcloud | Database connection active | Tests passing -->\n'
+            printf '\n'
+            printf '## Steps\n'
+            printf '\n'
+            printf '### 1. {{STEP_1_NAME}}\n'
+            printf '\n'
+            printf '<!-- What to do, and why. Include commands where applicable. -->\n'
+            printf '{{STEP_1_DETAIL}}\n'
+            printf '\n'
+            printf '```bash\n'
+            printf '# Example command\n'
+            printf '{{EXAMPLE_CMD_1}}\n'
+            printf '```\n'
+            printf '\n'
+            printf '### 2. {{STEP_2_NAME}}\n'
+            printf '\n'
+            printf '{{STEP_2_DETAIL}}\n'
+            printf '\n'
+            printf '### 3. Verify\n'
+            printf '\n'
+            printf '<!-- What does success look like? How do you confirm the procedure completed correctly? -->\n'
+            printf '{{VERIFICATION_DETAIL}}\n'
+            printf '\n'
+            printf '```bash\n'
+            printf '# Verification command\n'
+            printf '{{VERIFY_CMD}}\n'
+            printf '```\n'
+            printf '\n'
+            printf '## Dry run\n'
+            printf '\n'
+            printf '<!-- If applicable: how to test this procedure without committing changes. -->\n'
+            printf '{{DRY_RUN_INSTRUCTIONS}}\n'
+            printf '\n'
+            printf '## Rollback\n'
+            printf '\n'
+            printf '<!-- What to do if something goes wrong mid-procedure. -->\n'
+            printf '{{ROLLBACK_INSTRUCTIONS}}\n'
+            printf '\n'
+            printf '## Notes\n'
+            printf '\n'
+            printf '<!-- Gotchas, edge cases, or constraints the engineer must know. -->\n'
+            printf '%s\n' '- {{NOTE_1}}'
+            printf '````\n'
+            printf '\n'
             # The default rewrite_paths maps .claude/skills/ to .copilot/skills/
             # (a symmetric metadata folder). For /suggest-skills specifically we
             # want .claude/skills/ → .github/prompts/ so the mode body points at
-            # Copilot's real prompt directory. Apply additional rewrites after
-            # the standard one:
+            # Copilot's real prompt directory. Apply additional rewrites:
             #   - Any residual .copilot/skills/ or .claude/skills/ → .github/prompts/
-            #   - Claude's `<name>/SKILL.md` file convention → Copilot's flat
-            #     `<name>.prompt.md` convention. Otherwise the mode body would
-            #     still tell Copilot to write into a subdirectory (wrong shape).
+            #   - Claude's `<name>/SKILL.md` convention → flat `<name>.prompt.md`
+            #   - "using templates/skills/domain-operational.template.md" →
+            #     "using the skill template above" (Gap 3: template is now
+            #     inlined in the preamble, no need to reference an external file)
             rewrite_paths < "$mode_file" | sed \
               -e 's|\.copilot/skills/|.github/prompts/|g' \
               -e 's|`\.claude/skills/`|`.github/prompts/`|g' \
               -e 's|\.claude/skills/|.github/prompts/|g' \
-              -e 's|\.github/prompts/\([^/ `]*\)/SKILL\.md|.github/prompts/\1.prompt.md|g'
+              -e 's|\.github/prompts/\([^/ `]*\)/SKILL\.md|.github/prompts/\1.prompt.md|g' \
+              -e 's|using `templates/skills/domain-operational\.template\.md` as the base pattern|using the skill template shown in the preamble above|g'
             ;;
           *)
             rewrite_paths < "$mode_file"
