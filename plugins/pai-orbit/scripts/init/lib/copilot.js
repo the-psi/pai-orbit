@@ -142,8 +142,18 @@ function activateHusky(cwd, opts) {
     execFileSync('git', ['update-index', '--add', '--chmod=+x', '.husky/pre-commit'], {
       cwd, stdio: 'ignore',
     });
-  } catch { /* D21 note: user may need to `git add` first */ }
-  return { activated: true };
+    return { activated: true };
+  } catch {
+    // Common causes: file not yet `git add`-ed, not inside a git repo, or
+    // Windows git without core.fileMode. Surface it so teammates who pull the
+    // branch aren't silently missing the exec bit on their pre-commit hook.
+    process.stderr.write(
+      'pai-orbit: could not record exec bit for `.husky/pre-commit` in the git index.\n' +
+      '  Run this manually before committing so teammates get an executable hook:\n' +
+      '    git add .husky/pre-commit && git update-index --chmod=+x .husky/pre-commit\n',
+    );
+    return { activated: true, exec_bit_recorded: false };
+  }
 }
 
 function activatePrecommitFramework(cwd, opts) {

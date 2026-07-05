@@ -30,7 +30,7 @@ function detectLanguages(cwd) {
   if (fileExists(cwd, 'Gemfile')) langs.add('ruby');
   if (fileExists(cwd, 'composer.json')) langs.add('php');
   if (fileExists(cwd, 'Package.swift')) langs.add('swift');
-  if (fileExists(cwd, '*.csproj') || fileExists(cwd, '*.sln') || fs.readdirSync(cwd, { withFileTypes: true }).some((e) => e.name.endsWith('.csproj'))) {
+  if (fs.readdirSync(cwd, { withFileTypes: true }).some((e) => e.name.endsWith('.csproj') || e.name.endsWith('.sln'))) {
     langs.add('csharp');
   }
   return Array.from(langs);
