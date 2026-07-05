@@ -39,34 +39,70 @@ function readPackageVersion() {
 function usage() {
   return `pai-orbit — install CLI
 
-Usage:
-  pai-orbit init <target>       Set up pai-orbit in the current project
-                                <target>: copilot | claude | cursor
-                                          (claude/cursor are stubs in v1 — D9)
-  pai-orbit update <target>     Refresh pai-orbit-owned files; preserves user config
-                                (Alias for \`init <target>\` re-run mode.)
-  pai-orbit migrate <target>    Force migration from the OLD .github/pai-orbit/ layout
-                                (Per D25 — init auto-detects; this is the escape hatch.)
-  pai-orbit --help              Show this help
-  pai-orbit --version           Show CLI version
+Two ways to use this:
 
-Flags (init / update / migrate, where relevant):
-  --yes, --no-interactive       Skip all prompts; use defaults plus other flags
-  --board=<value>               gitlab | github | linear | jira | none
-  --branch=<value>               github-flow | gitflow | trunk
-  --re-interview                 Force a fresh interview on re-run (rewrites .copilot/*)
-  --re-init-claude-md            Force rewrite of CLAUDE.md
-  --install-husky                Install the .husky/pre-commit hook even if previously opted out
-  --reinstall-husky              Overwrite an existing .husky/pre-commit
-  --install-precommit-framework  Install .pre-commit-config.yaml even if previously opted out (D29)
-  --reinstall-precommit-framework  Overwrite an existing .pre-commit-config.yaml
-  --ignore-existing              Hint for npx caching — no in-CLI effect
+  pai-orbit init <target>
+      Install pai-orbit files only. No interview asked.
+      Auto-activates .husky/pre-commit if .git/ exists.
+      Recommended for Copilot Business/Pro users — run \`/setup\` in
+      Copilot Chat afterwards to configure the project agentically
+      (Copilot Business proposes file edits you accept).
 
-Examples:
-  pai-orbit init copilot
+  pai-orbit init <target> --setup
+      Install files AND run the 11-question interview from the terminal.
+      Renders .copilot/pai-orbit-config.md, .copilot/team.md, CLAUDE.md,
+      and docs/architecture/*.md with your answers. Nothing to hand-edit.
+      Recommended for Copilot Free users — Free tier's /setup in Chat only
+      renders advisory text, not file-edit proposals.
+
+Subcommands:
+  pai-orbit init <target>            First-time install (files only by default).
+  pai-orbit init <target> --setup    First-time install + run interview.
+  pai-orbit update <target>          Refresh pai-orbit-owned files; preserves
+                                     your .copilot/*, CLAUDE.md, docs/.
+  pai-orbit update <target> --setup  Refresh files + re-run interview,
+                                     overwriting .copilot/pai-orbit-config.md
+                                     and .copilot/team.md with new answers.
+  pai-orbit migrate <target>         Force migration from OLD .github/pai-orbit/
+                                     layout (init also auto-detects).
+  pai-orbit --help                   Show this help.
+  pai-orbit --version                Show CLI version.
+
+  <target>: copilot | claude | cursor  (claude/cursor are stubs in v1 — D9)
+
+Flags:
+  --setup                            Run the 11-question interview after files
+                                     install. Required for Copilot Free users
+                                     who do not want to hand-edit config files.
+  --yes, --no-interactive            Auto-answer interview questions with
+                                     defaults. Only meaningful with --setup.
+                                     Use for CI or fastest install.
+  --board=<value>                    gitlab | github | linear | jira | none
+                                     (interview answer — implies --setup)
+  --branch=<value>                   github-flow | gitflow | trunk
+                                     (interview answer — implies --setup)
+  --install-husky                    Install .husky/pre-commit even if
+                                     previously opted out.
+  --reinstall-husky                  Overwrite an existing .husky/pre-commit.
+  --install-precommit-framework      Install .pre-commit-config.yaml even if
+                                     previously opted out (D29).
+  --reinstall-precommit-framework    Overwrite an existing .pre-commit-config.yaml.
+  --re-init-claude-md                Force rewrite of CLAUDE.md (implies --setup).
+  --ignore-existing                  Forces npx to re-fetch from GitHub.
+
+Examples — Copilot Business/Pro (recommended):
   npx github:the-psi/pai-orbit init copilot
-  npx github:the-psi/pai-orbit#<release-tag> init copilot   (pin a released tag; see repo Releases)
-  npx github:the-psi/pai-orbit init copilot --board=gitlab --branch=trunk --yes`;
+      Then in Copilot Chat: /setup
+
+Examples — Copilot Free:
+  npx github:the-psi/pai-orbit init copilot --setup
+      Full 11-question interview from terminal. Nothing to hand-edit after.
+
+  npx github:the-psi/pai-orbit init copilot --setup --yes
+      Same but auto-answered with defaults. Fast install; hand-edit later.
+
+Examples — CI / non-interactive:
+  npx github:the-psi/pai-orbit init copilot --setup --yes --board=gitlab`;
 }
 
 function parseArgs(argv) {

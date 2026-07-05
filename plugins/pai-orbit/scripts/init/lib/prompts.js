@@ -641,13 +641,14 @@ async function askCopilotExtras(promptsLib, ctx) {
 // Top-level entry
 // ---------------------------------------------------------------------------
 
+// Only invoked from lib/copilot.js when --setup (or an implying flag) is
+// present. Caller controls whether the interview runs at all — this module
+// no longer gates on lifecycle. On re-run, --setup means "re-interview and
+// overwrite the answers"; that's the caller's decision.
 async function runInterview(ctx, lifecycle) {
   const disc = discover(ctx.cwd);
   process.stdout.write('\n' + summarise(disc) + '\n\n');
 
-  if (lifecycle === 're-run' && !ctx.flags['re-interview']) {
-    return null; // caller falls back to prior settings.json
-  }
   if (ctx.flags.yes) {
     return { ...defaultsFor(ctx, disc, lifecycle), _discovery: disc };
   }

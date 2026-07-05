@@ -17,10 +17,10 @@ paths converge on the same templates and the same built `dist/copilot/` tree.
 | File | Purpose |
 |------|---------|
 | `cli.js` | Entry point — arg parser + subcommand router. Wired through the root `package.json`'s `bin` field. |
-| `lib/copilot.js` | Full Copilot install flow — lifecycle detection (first-run / re-run / migration), file copy from `dist/copilot/`, template rendering, husky / pre-commit activation. |
+| `lib/copilot.js` | Full Copilot install flow — lifecycle detection (first-run / re-run / migration), file copy from `dist/copilot/`, template rendering, husky / pre-commit activation. Branches on `--setup`: without the flag, installs files only; with the flag, runs the full interview and renders `.copilot/*` + `CLAUDE.md` + `docs/architecture/*`. |
 | `lib/claude.js` | Stub per D9 — points users at `/setup` inside Claude Code. |
 | `lib/cursor.js` | Stub per D9 — points users at `/setup` inside Cursor. |
-| `lib/prompts.js` | Interview Q&A via the `prompts` npm package; falls back to defaults when `--yes` / `--no-interactive` is set or the package is unavailable. |
+| `lib/prompts.js` | Interview Q&A via the `prompts` npm package. Only invoked when `--setup` is set (or an implying flag like `--board=`, `--branch=`, `--re-init-claude-md`). Falls back to defaults when `--yes` / `--no-interactive` is set or the package is unavailable. |
 | `lib/render.js` | Template placeholder substitution + directory copy + `.gitignore` line ensuring. |
 
 ## Requirements

@@ -21,24 +21,43 @@ Companion docs: [Cursor install and usage](cursor-plugin-install-and-usage.md) |
 
 ## Install (team lead, first time)
 
-One command, no clone required, from the project root:
+pai-orbit's Copilot install has **two flows** — pick based on your Copilot licence tier.
+
+### Copilot Pro / Business (recommended)
 
 ```bash
+# 1. Install pai-orbit files (no interview)
 npx github:the-psi/pai-orbit init copilot
+
+# 2. Reload VS Code (Ctrl+Shift+P → Developer: Reload Window)
+
+# 3. In Copilot Chat:
+#    /setup
 ```
 
-The CLI:
+The CLI drops pai-orbit files into the project (`.github/copilot-instructions.md`, `.github/prompts/`, `.github/instructions/`, `.husky/pre-commit.template`, `.pre-commit-config.yaml.template`) — no questions asked. Auto-activates `.husky/pre-commit` if the project has `.git/`.
 
-1. Detects whether this is a first-run, re-run, or migration (see "Updating pai-orbit later" below).
-2. Asks a short interview (board, branch model, docs home, pre-commit installer).
-3. Copies `dist/copilot/.github/` + `.husky/pre-commit.template` + `.pre-commit-config.yaml.template` into the project.
-4. Renders `.copilot/pai-orbit-config.md`, `.copilot/team.md`, `.copilot/settings.json` from the interview answers.
-5. Scaffolds `docs/` if absent, writes `CLAUDE.md`, and prints a report.
+Then `/setup` in Copilot Chat runs the **11-question interview agentically** — Copilot Business reads project files, asks questions, runs shell commands (`glab api`, `gh project field-list`) for live board column discovery, and proposes file edits (`.copilot/pai-orbit-config.md`, `.copilot/team.md`, `CLAUDE.md`, `docs/architecture/*.md`) which you accept.
 
-After the CLI finishes:
+### Copilot Free
+
+```bash
+# Install files AND run the interview from the terminal in one command
+npx github:the-psi/pai-orbit init copilot --setup
+```
+
+`--setup` triggers the full 11-question interview + rendering. Nothing to hand-edit afterwards. Free tier's `/setup` in Chat only renders advisory text (not file-edit proposals), so running the CLI with `--setup` is the fastest path to a fully-configured project.
+
+For the fastest install with placeholder configs (edit later by hand):
+
+```bash
+npx github:the-psi/pai-orbit init copilot --setup --yes
+```
+
+### After either flow
 
 1. Reload VS Code (`Ctrl+Shift+P` → "Developer: Reload Window") so Copilot Chat picks up the new prompts.
-2. Open Copilot Chat. Type `/` — you should see 25 pai-orbit entries with `[mode]`, `[skill]`, or `[agent]` prefixes.
+2. Open Copilot Chat. Type `/` — you should see 29 pai-orbit entries with `[mode]`, `[skill]`, or `[agent]` prefixes.
 3. Commit the new files. Suggested message: `feat(copilot): install pai-orbit Copilot adapter`.
 
 ### Version pinning (recommended for client projects)
@@ -60,23 +79,25 @@ Your team's wiki should record the version the team is tracking; updates become 
 ### Non-interactive / CI
 
 ```bash
-npx github:the-psi/pai-orbit init copilot --yes --board=gitlab --branch=github-flow
+npx github:the-psi/pai-orbit init copilot --setup --yes --board=gitlab --branch=github-flow
 ```
 
 Available flags:
 
 | Flag | Purpose |
 |------|---------|
-| `--yes` / `--no-interactive` | Skip the interview; use defaults plus other flags |
-| `--board=<value>` | `gitlab` / `github` / `linear` / `jira` / `none` |
-| `--branch=<value>` | `github-flow` / `gitflow` / `trunk` |
-| `--re-interview` | Force a fresh interview on re-run (rewrites `.copilot/*`) |
-| `--re-init-claude-md` | Force rewrite of `CLAUDE.md` |
+| `--setup` | **Run the 11-question interview** after files install. Without this flag the CLI installs files only (recommended for Copilot Business/Pro — configure via `/setup` in Chat afterwards). Required for Copilot Free users who don't want to hand-edit config files. |
+| `--yes` / `--no-interactive` | Auto-answer interview questions with defaults. **Only meaningful with `--setup`** (no-op without it). Use for CI or fastest install. |
+| `--board=<value>` | `gitlab` / `github` / `linear` / `jira` / `none` — implies `--setup` |
+| `--branch=<value>` | `github-flow` / `gitflow` / `trunk` — implies `--setup` |
+| `--re-init-claude-md` | Force rewrite of `CLAUDE.md` — implies `--setup` |
 | `--install-husky` | Install the `.husky/pre-commit` hook even if previously opted out |
 | `--reinstall-husky` | Overwrite an existing `.husky/pre-commit` |
 | `--install-precommit-framework` | Install `.pre-commit-config.yaml` even if previously opted out (D29) |
 | `--reinstall-precommit-framework` | Overwrite an existing `.pre-commit-config.yaml` |
 | `--ignore-existing` | Forces npx to re-fetch from GitHub (bypasses the npx cache) |
+
+**Re-run behaviour:** `pai-orbit update copilot` (no `--setup`) refreshes pai-orbit-owned files and preserves your `.copilot/*` + `CLAUDE.md`. `pai-orbit update copilot --setup` refreshes files **and** re-runs the interview, overwriting `.copilot/pai-orbit-config.md` and `.copilot/team.md` with new answers.
 
 ### Alternative: use `/setup` inside Claude Code or Cursor
 

@@ -509,66 +509,60 @@ function pickPrecommitInstaller(answers, ctx) {
 }
 
 // ---------------------------------------------------------------------------
-// Top-level entry
+// Install-only mode (no --setup) — minimal defaults for husky opt-in state.
+// Used when the CLI is asked to install pai-orbit files without running the
+// interview. Values here only affect husky/pre-commit activation; NOT written
+// to .copilot/pai-orbit-config.md, .copilot/team.md, or CLAUDE.md (those
+// files stay unwritten in install-only mode).
 // ---------------------------------------------------------------------------
 
-async function run(ctx) {
-  const lifecycle = detectLifecycle(ctx.cwd, ctx);
-  logLifecycleBanner(lifecycle, ctx);
+function minimalDefaults(ctx) {
+  const huskyDefault = fs.existsSync(path.join(ctx.cwd, '.git'));
+  const prior = readJsonIfExists(path.join(ctx.cwd, '.copilot', 'settings.json')) || {};
+  return {
+    install_husky: ctx.flags['install-husky'] === true || prior.husky_opted_in === true || huskyDefault,
+    precommit_installer: prior.precommit_installer || 'husky',
+    _discovery: { languages: prior.detected_languages || promptsModule.detectLanguages(ctx.cwd) || [], frameworks: [] },
+  };
+}
 
-  if (lifecycle === 'migration') {
-    performMigration(ctx.cwd, lifecycle, ctx);
-  }
+// ---------------------------------------------------------------------------
+// Report messaging — two paths depending on whether --setup ran.
+// ---------------------------------------------------------------------------
 
-  let answers = await promptsModule.runInterview(ctx, lifecycle === 'migration' ? 'first-run' : lifecycle);
+function reportInstallOnly(ctx, lifecycle, huskyResult, pcResult) {
+  process.stdout.write('\nReport (install-only mode — no interview):\n');
+  process.stdout.write(`  lifecycle:           ${lifecycle}\n`);
+  process.stdout.write(`  target:              copilot\n`);
+  process.stdout.write(`  pai_orbit_version:   ${ctx.version}\n`);
+  process.stdout.write('  files written:\n');
+  process.stdout.write('    ✓ .github/copilot-instructions.md\n');
+  process.stdout.write('    ✓ .github/prompts/          (29 files)\n');
+  process.stdout.write('    ✓ .github/instructions/     (5 files)\n');
+  process.stdout.write('    ✓ .husky/pre-commit.template + .pre-commit-config.yaml.template\n');
+  process.stdout.write(`  husky activated:     ${huskyResult.activated ? 'yes' : `no (${huskyResult.reason || 'opted out'})`}\n`);
+  process.stdout.write(`  pre-commit yaml:     ${pcResult.activated ? 'yes — run \`pre-commit install\` to wire the git hook' : `no (${pcResult.reason || 'opted out'})`}\n`);
+  process.stdout.write('\n  files NOT written (deferred — configure via /setup in Chat or re-run with --setup):\n');
+  process.stdout.write('    ⚠  .copilot/pai-orbit-config.md   ← board, branch, deploy, docs conventions\n');
+  process.stdout.write('    ⚠  .copilot/team.md                 ← team members + roles + handles\n');
+  process.stdout.write('    ⚠  CLAUDE.md                        ← project stack, services, key files\n');
+  process.stdout.write('    ⚠  docs/architecture/*.md           ← system, constraints, stack (starter docs)\n');
+  process.stdout.write('\nNext steps — pick ONE based on your Copilot tier:\n');
+  process.stdout.write('\n  ★ Copilot Pro / Business (recommended):\n');
+  process.stdout.write('      1. Reload VS Code (Ctrl+Shift+P → Developer: Reload Window)\n');
+  process.stdout.write('      2. Open Copilot Chat and type:  /setup\n');
+  process.stdout.write('         Copilot runs the 11-question interview agentically and proposes\n');
+  process.stdout.write('         file edits for you to accept.\n');
+  process.stdout.write('\n  ★ Copilot Free:\n');
+  process.stdout.write('      Re-run this CLI with --setup to run the interview from the terminal:\n');
+  process.stdout.write('        npx github:the-psi/pai-orbit init copilot --setup\n');
+  process.stdout.write('      (Free tier\'s /setup in Chat only renders advisory text, not\n');
+  process.stdout.write('       file-edit proposals — the CLI does the same work directly.)\n');
+  process.stdout.write('\n');
+}
 
-  // Re-run without --re-interview: reuse prior settings.json where possible.
-  if (!answers) {
-    const prior = readJsonIfExists(path.join(ctx.cwd, '.copilot', 'settings.json')) || {};
-    answers = {
-      is_monorepo: prior.is_monorepo || false,
-      services: [{ name: 'app', path: '.', stack: 'generic' }],
-      board: { type: prior.board_type || 'none', url: '', columns: [] },
-      branch: { model: prior.branch_model || 'github-flow', main: 'main', protected: 'main', pr_merge_strategy: 'squash merge' },
-      deploy: { provider: 'other', services: [], auth_check_cmd: '' },
-      docs: { home: prior.docs_home || 'local', path: 'docs/' },
-      system_docs: { has_multi_repo: false, repo: '', path: './docs' },
-      architecture: { has_answered: false, services_description: '', constraints: [] },
-      team: [],
-      mcp: { git: 'none', board: 'none', docs: 'none' },
-      install_husky:
-        ctx.flags['install-husky'] === true || prior.husky_opted_in === true,
-      precommit_installer: prior.precommit_installer || 'husky',
-      _discovery: { languages: prior.detected_languages || [], frameworks: [] },
-    };
-  }
-
-  const distDir = findDistDir(ctx);
-  copyCopilotDist(ctx.cwd, distDir);
-
-  renderCopilotConfig(ctx.cwd, ctx, answers);
-  renderTeam(ctx.cwd, ctx, answers);
-  renderClaudeMd(ctx.cwd, ctx, answers);
-  renderSettingsJson(ctx.cwd, ctx, answers);
-  const docsCreated = scaffoldDocs(ctx.cwd, ctx);
-  const archCreated = renderArchitectureScaffold(ctx.cwd, ctx, answers);
-
-  const installer = pickPrecommitInstaller(answers, ctx);
-  const huskyOpts = { reinstall: ctx.flags['reinstall-husky'] === true };
-  const pcOpts = { reinstall: ctx.flags['reinstall-precommit-framework'] === true };
-
-  const huskyResult =
-    answers.install_husky === true || installer === 'husky' || installer === 'both'
-      ? activateHusky(ctx.cwd, huskyOpts)
-      : { activated: false, reason: 'opted out' };
-
-  const pcResult =
-    installer === 'pre-commit' || installer === 'both'
-      ? activatePrecommitFramework(ctx.cwd, pcOpts)
-      : { activated: false, reason: 'opted out' };
-
-  // ---- report ------------------------------------------------------------
-  process.stdout.write('\nReport:\n');
+function reportFullSetup(ctx, lifecycle, answers, huskyResult, pcResult, docsCreated, archCreated) {
+  process.stdout.write('\nReport (full setup — files + interview):\n');
   process.stdout.write(`  lifecycle:           ${lifecycle}\n`);
   process.stdout.write(`  target:              copilot\n`);
   process.stdout.write(`  pai_orbit_version:   ${ctx.version}\n`);
@@ -587,14 +581,102 @@ async function run(ctx) {
     [
       'Next steps:',
       '  1. Reload VS Code (Developer: Reload Window) so Copilot Chat picks up the prompts.',
-      '  2. Try `/groom` in Copilot Chat — the slash picker should list 26 pai-orbit prompts (including /setup for re-configuration).',
+      '  2. Try `/groom` in Copilot Chat — the slash picker should list 29 pai-orbit prompts.',
       '  3. Commit the new files. Suggested commit message:',
       '       feat(copilot): install pai-orbit Copilot adapter',
-      '  4. Fill in TODO markers in CLAUDE.md and docs/architecture/*.md (or run /arch init).',
+      '  4. Fill in remaining TODO markers in CLAUDE.md and docs/architecture/*.md.',
       '  5. Manual edits welcome — .copilot/pai-orbit-config.md and .copilot/team.md are yours to refine.',
       '',
     ].join('\n'),
   );
+}
+
+// ---------------------------------------------------------------------------
+// Top-level entry — branches on --setup
+// ---------------------------------------------------------------------------
+
+async function run(ctx) {
+  const lifecycle = detectLifecycle(ctx.cwd, ctx);
+  logLifecycleBanner(lifecycle, ctx);
+
+  if (lifecycle === 'migration') {
+    performMigration(ctx.cwd, lifecycle, ctx);
+  }
+
+  // Flags that imply --setup (user provided interview-answer flags; they clearly
+  // want the interview to run so those answers land somewhere).
+  const setupImpliedByFlag =
+    ctx.flags.board !== undefined ||
+    ctx.flags.branch !== undefined ||
+    ctx.flags['re-init-claude-md'] === true;
+  const runFullSetup = ctx.flags.setup === true || setupImpliedByFlag;
+
+  const distDir = findDistDir(ctx);
+  copyCopilotDist(ctx.cwd, distDir);
+
+  const huskyOpts = { reinstall: ctx.flags['reinstall-husky'] === true };
+  const pcOpts = { reinstall: ctx.flags['reinstall-precommit-framework'] === true };
+
+  if (!runFullSetup) {
+    // Install-only mode. Skip interview + skip config/CLAUDE.md/docs rendering.
+    // Auto-activate husky using minimal defaults (respects prior settings.json
+    // if this is a re-run + honours --install-husky / --install-precommit-framework flags).
+    const minimal = minimalDefaults(ctx);
+    const installer = pickPrecommitInstaller(minimal, ctx);
+    const huskyResult =
+      minimal.install_husky === true || installer === 'husky' || installer === 'both'
+        ? activateHusky(ctx.cwd, huskyOpts)
+        : { activated: false, reason: 'opted out (--install-husky to enable)' };
+    const pcResult =
+      installer === 'pre-commit' || installer === 'both'
+        ? activatePrecommitFramework(ctx.cwd, pcOpts)
+        : { activated: false, reason: 'opted out (--install-precommit-framework to enable)' };
+
+    // Write / update .copilot/settings.json with minimal state (version,
+    // husky opt-in, precommit choice, install timestamp). Config file itself
+    // is NOT written — user creates it via /setup in Chat or re-run with --setup.
+    const settingsTarget = path.join(ctx.cwd, '.copilot', 'settings.json');
+    fs.mkdirSync(path.dirname(settingsTarget), { recursive: true });
+    fs.writeFileSync(
+      settingsTarget,
+      `${JSON.stringify({
+        pai_orbit_version: ctx.version,
+        target: 'copilot',
+        installed_at: new Date().toISOString(),
+        install_mode: 'install-only',
+        husky_opted_in: huskyResult.activated,
+        detected_languages: minimal._discovery.languages,
+        precommit_installer: installer,
+      }, null, 2)}\n`,
+      'utf8',
+    );
+
+    reportInstallOnly(ctx, lifecycle, huskyResult, pcResult);
+    return;
+  }
+
+  // --setup mode: run the interview + render all config/CLAUDE.md/docs files.
+  const answers = await promptsModule.runInterview(ctx, lifecycle === 'migration' ? 'first-run' : lifecycle);
+  // In --setup mode, runInterview always returns a full answers object.
+
+  renderCopilotConfig(ctx.cwd, ctx, answers);
+  renderTeam(ctx.cwd, ctx, answers);
+  renderClaudeMd(ctx.cwd, ctx, answers);
+  renderSettingsJson(ctx.cwd, ctx, answers);
+  const docsCreated = scaffoldDocs(ctx.cwd, ctx);
+  const archCreated = renderArchitectureScaffold(ctx.cwd, ctx, answers);
+
+  const installer = pickPrecommitInstaller(answers, ctx);
+  const huskyResult =
+    answers.install_husky === true || installer === 'husky' || installer === 'both'
+      ? activateHusky(ctx.cwd, huskyOpts)
+      : { activated: false, reason: 'opted out' };
+  const pcResult =
+    installer === 'pre-commit' || installer === 'both'
+      ? activatePrecommitFramework(ctx.cwd, pcOpts)
+      : { activated: false, reason: 'opted out' };
+
+  reportFullSetup(ctx, lifecycle, answers, huskyResult, pcResult, docsCreated, archCreated);
 }
 
 module.exports = { run };
