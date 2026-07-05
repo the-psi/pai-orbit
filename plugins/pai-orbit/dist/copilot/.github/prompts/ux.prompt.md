@@ -1,6 +1,7 @@
 ---
-agent: agent
+mode: agent
 description: "[mode] UX and user-flow design. Writes docs/features/*/ux.md."
+tools: ["codebase", "editFiles", "runCommands", "search"]
 ---
 
 > **Mode discipline — read before answering.**

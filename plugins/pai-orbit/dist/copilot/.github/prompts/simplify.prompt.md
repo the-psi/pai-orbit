@@ -1,6 +1,7 @@
 ---
-agent: agent
+mode: agent
 description: "[skill] Code simplification pass — review recently changed or new code for over-engineering, dead code, unnecessary abstractions, and…"
+tools: ["codebase", "editFiles", "runCommands", "search"]
 ---
 
 

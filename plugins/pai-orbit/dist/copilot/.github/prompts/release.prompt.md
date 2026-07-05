@@ -1,6 +1,7 @@
 ---
-agent: agent
+mode: agent
 description: "[mode] Deployment session with preflight + post-deploy verification. Stay until healthy or explicitly rolled back."
+tools: ["codebase", "editFiles", "runCommands", "search"]
 ---
 
 > **Mode discipline — read before answering.**

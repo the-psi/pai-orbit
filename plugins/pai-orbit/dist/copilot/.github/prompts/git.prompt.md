@@ -1,6 +1,7 @@
 ---
-agent: agent
+mode: agent
 description: "[skill] Git operations — commit, branch, PR, push — following the project's configured branching model and conventions. TRIGGER when…"
+tools: ["codebase", "editFiles", "runCommands", "search"]
 ---
 
 

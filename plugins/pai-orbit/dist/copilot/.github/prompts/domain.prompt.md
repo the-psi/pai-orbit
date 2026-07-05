@@ -1,6 +1,7 @@
 ---
-agent: agent
+mode: agent
 description: "[mode] Capture expert domain knowledge. Writes docs/domain/*.md."
+tools: ["codebase", "editFiles", "runCommands", "search"]
 ---
 
 > **Mode discipline — read before answering.**

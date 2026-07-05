@@ -1,6 +1,7 @@
 ---
-agent: agent
+mode: agent
 description: "[mode] Technical design and trade-offs. Writes docs/features/*/design.md + ADRs. No implementation."
+tools: ["codebase", "editFiles", "runCommands", "search"]
 ---
 
 > **Mode discipline — read before answering.**

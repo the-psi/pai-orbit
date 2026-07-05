@@ -1,6 +1,7 @@
 ---
-agent: agent
+mode: agent
 description: "[mode] Roadmap, prioritisation, and sprint scoping. Writes docs/plans/*.md."
+tools: ["codebase", "editFiles", "runCommands", "search"]
 ---
 
 > **Mode discipline — read before answering.**

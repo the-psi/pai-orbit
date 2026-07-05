@@ -121,7 +121,9 @@ is_skipped_mode() {
 # Modes that require Copilot agent mode (mode: agent frontmatter + tools).
 # /setup drives file writes and shell commands. /suggest-skills scaffolds a
 # suggested skill file at the end of its run (also needs editFiles + codebase).
-# Other modes are pure prompt-following and use the default agent: agent shape.
+# Other modes use the standard `mode: agent` shape too (D38) but with an
+# anti-drift block instead of a workflow preamble — they are persistent
+# headspaces, not one-shot workflows.
 needs_agent_mode() {
   case "$1" in
     setup|suggest-skills) return 0 ;;
@@ -389,17 +391,18 @@ emit_mode_prompts() {
             # Copilot-adapted skill template — inlined from
             # core/templates/skills/domain-operational.template.md with the
             # frontmatter converted from Claude Code's `name: / description:`
-            # shape to Copilot's `agent: agent / description: "[skill] ..."`
+            # shape to Copilot's `mode: agent / description: "[skill] ..." / tools: [...]`
             # shape. Copilot uses this as the base pattern when scaffolding a
-            # suggested skill (Gap 3, 2026-07-05 fix).
+            # suggested skill (Gap 3, 2026-07-05 fix; frontmatter updated D38).
             printf '## Skill template (base pattern for scaffolding)\n'
             printf '\n'
             printf 'When the user picks a suggestion to scaffold, use this template shape. Substitute each `{{PLACEHOLDER}}` with the real value inferred from your analysis; leave `<!-- TODO -->` markers only where the team genuinely needs to fill in project-specific detail.\n'
             printf '\n'
             printf '````markdown\n'
             printf -- '---\n'
-            printf 'agent: agent\n'
+            printf 'mode: agent\n'
             printf 'description: "[skill] {{SKILL_DESCRIPTION}} TRIGGER when {{TRIGGER_CONDITIONS}}. SKIP {{SKIP_CONDITIONS}}."\n'
+            printf 'tools: ["codebase", "editFiles", "runCommands", "search"]\n'
             printf -- '---\n'
             printf '\n'
             printf '# {{SKILL_TITLE}}\n'
@@ -481,11 +484,20 @@ emit_mode_prompts() {
         esac
       } > "$DIST_DIR/.github/prompts/${mode_name}.prompt.md"
     else
-      # Standard mode prompts: agent: agent + anti-drift block (D28).
+      # Standard mode prompts: mode: agent + tools + anti-drift block (D28).
+      # (D38, 2026-07-05) Frontmatter uses documented Copilot key `mode: agent`
+      # with an explicit `tools:` array — the earlier `agent: agent` shape was
+      # not recognised by VS Code and silently downgraded these prompts to ask
+      # mode with no tool access. Mode prompts (arch, build, design, groom,
+      # review, …) write docs/features/*, docs/architecture/*, docs/decisions/*,
+      # so they need editFiles + runCommands access to actually perform edits.
+      # The anti-drift block below still runs as prompt text — Copilot still
+      # prefixes `[<MODE>]` and refuses off-scope requests.
       {
         printf -- '---\n'
-        printf 'agent: agent\n'
+        printf 'mode: agent\n'
         printf 'description: "%s"\n' "$(yaml_escape "$prefixed")"
+        printf 'tools: ["codebase", "editFiles", "runCommands", "search"]\n'
         printf -- '---\n'
         printf '\n'
         # Anti-drift block (D28, design §3.2). The `[<MODE>]` marker is on a
@@ -517,10 +529,14 @@ emit_skill_prompts() {
     raw_desc=$(awk '/^---/{p++} p==1 && /^description:/{sub(/^description: /,""); print; exit}' "$skill_md")
     prefixed=$(truncate_description "[skill] $raw_desc")
 
+    # (D38, 2026-07-05) Skill prompts use `mode: agent` + tools like modes and
+    # service-builders. Skills like /git and /board run shell commands; /board
+    # queries live APIs; /data-model edits SQL migrations. All need tool access.
     {
       printf -- '---\n'
-      printf 'agent: agent\n'
+      printf 'mode: agent\n'
       printf 'description: "%s"\n' "$(yaml_escape "$prefixed")"
+      printf 'tools: ["codebase", "editFiles", "runCommands", "search"]\n'
       printf -- '---\n'
       printf '\n'
       strip_frontmatter "$skill_md" | rewrite_paths | rewrite_agents_md

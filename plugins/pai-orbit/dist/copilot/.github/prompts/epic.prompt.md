@@ -1,6 +1,7 @@
 ---
-agent: agent
+mode: agent
 description: "[skill] Epic lifecycle management — create, load, update, and list epics in docs/epics/. TRIGGER when creating a new epic, loading epic…"
+tools: ["codebase", "editFiles", "runCommands", "search"]
 ---
 
 

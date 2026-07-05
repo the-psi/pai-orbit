@@ -1,6 +1,7 @@
 ---
-agent: agent
+mode: agent
 description: "[mode] Data exploration and analysis session. Writes docs/reports/<topic>-<date>.md."
+tools: ["codebase", "editFiles", "runCommands", "search"]
 ---
 
 > **Mode discipline — read before answering.**

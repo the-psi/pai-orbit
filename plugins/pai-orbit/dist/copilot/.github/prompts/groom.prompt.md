@@ -1,6 +1,7 @@
 ---
-agent: agent
+mode: agent
 description: "[mode] Groom feature requirements — purpose, scenarios, then acceptance criteria. Writes docs/features/*/requirements.md."
+tools: ["codebase", "editFiles", "runCommands", "search"]
 ---
 
 > **Mode discipline — read before answering.**

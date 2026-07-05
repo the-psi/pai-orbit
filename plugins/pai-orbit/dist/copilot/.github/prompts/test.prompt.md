@@ -1,6 +1,7 @@
 ---
-agent: agent
+mode: agent
 description: "[mode] Test planning and QA. Writes docs/features/*/test-plan.md."
+tools: ["codebase", "editFiles", "runCommands", "search"]
 ---
 
 > **Mode discipline — read before answering.**

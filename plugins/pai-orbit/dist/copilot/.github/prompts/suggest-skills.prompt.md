@@ -18,8 +18,9 @@ When the user picks a suggestion to scaffold, use this template shape. Substitut
 
 ````markdown
 ---
-agent: agent
+mode: agent
 description: "[skill] {{SKILL_DESCRIPTION}} TRIGGER when {{TRIGGER_CONDITIONS}}. SKIP {{SKIP_CONDITIONS}}."
+tools: ["codebase", "editFiles", "runCommands", "search"]
 ---
 
 # {{SKILL_TITLE}}

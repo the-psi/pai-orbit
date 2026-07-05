@@ -1,6 +1,7 @@
 ---
-agent: agent
+mode: agent
 description: "[mode] Code review against the project's documented architecture, conventions, and requirements."
+tools: ["codebase", "editFiles", "runCommands", "search"]
 ---
 
 > **Mode discipline — read before answering.**

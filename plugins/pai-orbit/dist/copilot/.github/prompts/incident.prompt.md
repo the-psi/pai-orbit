@@ -1,6 +1,7 @@
 ---
-agent: agent
+mode: agent
 description: "[mode] Production-incident fast path: triage → build → review → release → post-mortem. Trades thoroughness for speed."
+tools: ["codebase", "editFiles", "runCommands", "search"]
 ---
 
 > **Mode discipline — read before answering.**

@@ -1,6 +1,7 @@
 ---
-agent: agent
+mode: agent
 description: "[skill] Data model reference and schema change management — document the current schema, propose and validate schema changes, plan…"
+tools: ["codebase", "editFiles", "runCommands", "search"]
 ---
 
 

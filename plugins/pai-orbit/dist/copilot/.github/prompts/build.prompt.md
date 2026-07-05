@@ -1,6 +1,7 @@
 ---
-agent: agent
+mode: agent
 description: "[mode] Implement features and fixes. Code + updated docs. No architecture debate, no requirements writing."
+tools: ["codebase", "editFiles", "runCommands", "search"]
 ---
 
 > **Mode discipline — read before answering.**

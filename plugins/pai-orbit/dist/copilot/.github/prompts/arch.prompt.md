@@ -1,6 +1,7 @@
 ---
-agent: agent
+mode: agent
 description: "[mode] Declare and maintain system architecture — services, boundaries, data flow, constraints. Writes docs/architecture/ + ADRs."
+tools: ["codebase", "editFiles", "runCommands", "search"]
 ---
 
 > **Mode discipline — read before answering.**

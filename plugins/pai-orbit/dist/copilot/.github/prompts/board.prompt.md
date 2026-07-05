@@ -1,6 +1,7 @@
 ---
-agent: agent
+mode: agent
 description: "[skill] Task management — create issues, move cards, assign work, close on ship — using the project's configured board. Reads board…"
+tools: ["codebase", "editFiles", "runCommands", "search"]
 ---
 
 

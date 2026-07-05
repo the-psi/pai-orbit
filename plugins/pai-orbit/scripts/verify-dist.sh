@@ -98,47 +98,49 @@ verify_prompt_file() {
       ;;
   esac
 
-  # Read the runtime shape from frontmatter fields (independent of prefix kind):
-  #   - `mode: agent` + `tools:` → agent-mode prompt (Copilot Business multi-step
-  #     agent). Used by service-builder prompts and by /setup.
-  #   - `agent: agent` → standard prompt-following (mode or skill).
+  # Read the runtime shape from frontmatter (D38, 2026-07-05):
+  # All Copilot prompts must declare `mode: agent` + a `tools:` array. The
+  # earlier `agent: agent` shape was not a recognised Copilot key and silently
+  # downgraded prompts to ask mode — fail loudly if it appears.
   local mode_field agent_field tools_field
   mode_field=$(yaml_value "$file" "mode")
   agent_field=$(yaml_value "$file" "agent")
   tools_field=$(yaml_value "$file" "tools")
 
-  local is_agent_runtime="false"
-  if [ "$mode_field" = "agent" ]; then
-    is_agent_runtime="true"
-    if [ -z "$tools_field" ]; then
-      fail "$rel: 'mode: agent' prompt must declare a 'tools:' field"
-    fi
-  elif [ "$agent_field" = "agent" ]; then
-    is_agent_runtime="false"
-  else
-    fail "$rel: prompt must declare either 'mode: agent' + tools (agent runtime) or 'agent: agent' (standard). Got mode='$mode_field' agent='$agent_field'"
+  if [ -n "$agent_field" ]; then
+    fail "$rel: 'agent:' frontmatter key is not a valid Copilot prompt field (D38). Use 'mode: agent' with a 'tools:' array."
+    return
+  fi
+  if [ "$mode_field" != "agent" ]; then
+    fail "$rel: prompt must declare 'mode: agent' (got mode='$mode_field'). All 29 prompts run agentically on Copilot Business — mode prompts need tool access to write docs/features/*, skills need shell for /git and /board, etc."
+    return
+  fi
+  if [ -z "$tools_field" ]; then
+    fail "$rel: 'mode: agent' prompt must declare a 'tools:' field"
     return
   fi
 
-  # Prefix-kind sanity: `[agent]` prefix implies agent runtime. `[mode]` or
-  # `[skill]` prefix can use either runtime (setup mode uses agent runtime).
-  if [ "$kind" = "agent" ] && [ "$is_agent_runtime" = "false" ]; then
-    fail "$rel: '[agent]' prefix must pair with 'mode: agent' frontmatter"
-  fi
-
-  # Anti-drift block check: applies to mode prompts using the STANDARD runtime
-  # (agent: agent). Agent-runtime prompts like /setup are one-shot workflows,
-  # not persistent headspaces — anti-drift is inapplicable and must not be
-  # required.
-  if [ "$kind" = "mode" ] && [ "$is_agent_runtime" = "false" ]; then
-    local head_block
-    head_block=$(head -25 "$file")
-    if ! printf '%s' "$head_block" | grep -q 'Do NOT'; then
-      fail "$rel: mode prompt missing 'Do NOT' marker in anti-drift block (D28)"
-    fi
-    if ! printf '%s' "$head_block" | grep -qE '\[[A-Z]+\]'; then
-      fail "$rel: mode prompt missing '[<MODE>]' marker in anti-drift block (D28)"
-    fi
+  # Anti-drift block check: applies to persistent-headspace mode prompts (arch,
+  # build, design, groom, review, plan, data, domain, ux, test, incident,
+  # release). /setup and /suggest-skills are one-shot workflows that use a
+  # Copilot-adapter-specific preamble instead — anti-drift is inapplicable.
+  if [ "$kind" = "mode" ]; then
+    local prompt_base
+    prompt_base=$(basename "$file" .prompt.md)
+    case "$prompt_base" in
+      setup|suggest-skills)
+        : ;;  # preamble-based, no anti-drift block required
+      *)
+        local head_block
+        head_block=$(head -25 "$file")
+        if ! printf '%s' "$head_block" | grep -q 'Do NOT'; then
+          fail "$rel: mode prompt missing 'Do NOT' marker in anti-drift block (D28)"
+        fi
+        if ! printf '%s' "$head_block" | grep -qE '\[[A-Z]+\]'; then
+          fail "$rel: mode prompt missing '[<MODE>]' marker in anti-drift block (D28)"
+        fi
+        ;;
+    esac
   fi
 }
 
