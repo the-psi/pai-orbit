@@ -153,7 +153,13 @@ async function askRepoStructure(promptsLib, disc) {
 }
 
 async function askTechStack(promptsLib, services) {
+  // Common stacks that pai-orbit has service-builder templates for.
+  // Picking "other" lets the user type in a free-text stack name (e.g. rails,
+  // dotnet, go, phoenix) — recorded verbatim in the config + CLAUDE.md + docs
+  // for accurate documentation, even if there is no matching service-builder
+  // agent template. Same fallback as picking "generic", just documented properly.
   const stacks = ['fastapi', 'django', 'express', 'nextjs', 'react-vite', 'infra', 'generic'];
+  const otherSentinel = '__other__';
   const refined = [];
   for (const svc of services) {
     const ans = await promptsLib([
@@ -161,11 +167,26 @@ async function askTechStack(promptsLib, services) {
         type: 'select',
         name: 'stack',
         message: `Tech stack for service "${svc.name}"`,
-        choices: stacks.map((s) => ({ title: s, value: s })),
+        choices: [
+          ...stacks.map((s) => ({ title: s, value: s })),
+          { title: 'other (type in — e.g. rails, dotnet, go, phoenix, rust, swift)', value: otherSentinel },
+        ],
         initial: Math.max(0, stacks.indexOf(svc.stack)),
       },
+      {
+        type: (prev) => (prev === otherSentinel ? 'text' : null),
+        name: 'custom_stack',
+        message: 'Enter stack name (lowercase letters, numbers, dashes only — e.g. rails, dotnet, phoenix)',
+        validate: (value) => {
+          const trimmed = (value || '').trim();
+          if (!trimmed) return 'stack name required';
+          if (!/^[a-z0-9][a-z0-9-]*$/.test(trimmed)) return 'lowercase letters/numbers/dashes only';
+          return true;
+        },
+      },
     ], { onCancel });
-    refined.push({ ...svc, stack: ans.stack || svc.stack });
+    const chosen = ans.stack === otherSentinel ? (ans.custom_stack || '').trim() : ans.stack;
+    refined.push({ ...svc, stack: chosen || svc.stack });
   }
   return refined;
 }
