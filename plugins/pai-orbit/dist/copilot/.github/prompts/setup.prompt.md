@@ -54,7 +54,7 @@ Ask all unresolved questions in a single block — do not ask one at a time. Cov
     - `copilot` — GitHub Copilot Chat (emits `.copilot/` + `.github/copilot-instructions.md` + `.github/prompts/` + `.github/instructions/`)
     - `multiple` — write config for two or more of the above (the Copilot, Cursor, and Claude folders are independent and may coexist in the same repo)
 
-    If unanswered, default to `claude` (today's behaviour). If `copilot` is one of the selections, additionally ask:
+    **This is a required answer — there is no default. Ask the user explicitly which tool(s) they use before proceeding to Step 2b.** A wrong answer here writes the wrong scaffold into their project (`.copilot/` when they meant `.cursor/`, etc.), so do not guess or infer from the environment. If `copilot` is one of the selections, additionally ask:
     - **"Install the optional `.husky/pre-commit` hook (commit-time lint + weak secret tripwire; does NOT block `git push --force` or `git add -A`)?"** Default: `yes` if the project has `.git/`, `no` otherwise.
     - **"Choose pre-commit installer: husky / pre-commit framework / both / neither"** (per D29). Detection-driven defaults: `husky` if `.husky/` exists or `package.json` has a husky dep; `pre-commit` if `.pre-commit-config.yaml` already exists; `husky` otherwise.
 
