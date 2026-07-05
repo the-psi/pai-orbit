@@ -10,7 +10,7 @@ At session start, read each of the following that exists. If absent, proceed wit
 
 1. `.copilot/pai-orbit-config.md` — board, branch model, deploy targets, docs home, team conventions
 2. `.copilot/team.md` — team members, owners, default assignees
-3. `CLAUDE.md` — project description, stack, key files, data model, auth
+3. `AGENTS.md` — project description, stack, key files, data model, auth (fall back to `CLAUDE.md` if `AGENTS.md` is absent — legacy installs)
 4. `docs/architecture/constraints.md` — architectural rules
 5. `docs/architecture/system.md` — service inventory and inter-service communication
 6. `docs/architecture/stack.md` — language and framework choices

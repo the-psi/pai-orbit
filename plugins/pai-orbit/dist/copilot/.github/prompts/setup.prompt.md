@@ -22,7 +22,7 @@ Before asking anything, read what already exists:
 
 - Scan the repo root for `package.json`, `pyproject.toml`, `requirements.txt`, `go.mod`, `Cargo.toml`, `pom.xml` — infer languages and frameworks
 - Check for `docker-compose.yml`, `Makefile`, cloud config files (`fly.toml`, `vercel.json`, `app.yaml`) — infer deployment
-- Look for existing `CLAUDE.md`, `.copilot/pai-orbit-config.md`, `.copilot/team.md` — note what is already configured
+- Look for existing `AGENTS.md`, `.copilot/pai-orbit-config.md`, `.copilot/team.md` — note what is already configured
 - Count top-level directories that look like services (api/, frontend/, backend/, app/, etc.)
 - Check if this is a monorepo or multi-repo workspace
 - Look for `.github/`, `.gitlab/`, `linear.json`, `jira-config` — infer task management platform
@@ -145,172 +145,15 @@ No API query needed. Ask the user to provide their workflow stages (column names
 
 ## Step 3 — Generate
 
-Create the following files based on the assistant target(s) chosen in Step 2 question 11. The Claude Code path (default) is documented first; the Cursor and Copilot paths follow as additive blocks. When multiple targets are selected, run each block in turn — the resulting folders coexist in the same repo without conflict.
-
-> **Regression discipline.** The pre-existing Claude Code and Cursor outputs are frozen. Running `/setup` with target `claude` (or `cursor`) on a scratch repo must produce a byte-identical tree to the pre-Copilot-upgrade behaviour. Do not opportunistically refactor either path during this run.
+Create the following files for the Copilot target. If the user also selected Claude Code or Cursor in Step 2 question 11, run `/setup` inside that tool separately — the Copilot `/setup` prompt only handles the Copilot scaffolding.
 
 ---
 
-### Target: Claude Code (`.copilot/` path)
 
-Run this block when `claude` is one of the selected assistant targets.
-
-### `.copilot/pai-orbit-config.md`
-
-Use the template at `templates/pai-orbit-config.md.template`. Fill all sections from the answers above and the board discovery in Step 2b.
-
-For the `## Agile Board → columns` table, use **only** the column names and labels confirmed in Step 2b — never write placeholder or example values. Delete the tool-specific comment blocks that don't apply to the chosen board type.
-
-For the `## System Docs` section:
-- If the user answered **no** to the multi-repo question: omit the `## System Docs` section entirely from the generated file (do not write it with blank values).
-- If the user answered **yes** and provided a **relative path**: check whether that directory exists before writing. If it does not exist, warn the user ("System docs path not found — writing the pointer anyway; ensure the repo is cloned before running commands") and write it as given.
-- If the user answered **yes** and provided a **git URL**: write it as-is. Do not attempt to clone or validate — note that the user must clone the repo locally before commands can read from it.
-
-### `.copilot/team.md`
-
-Use the template at `templates/team.md.template`. Populate from team answers.
-
-### `CLAUDE.md`
-
-Use the template at `templates/CLAUDE.md.template`. Fill in:
-- Project name and one-line description
-- Sub-projects / services table (name, path, stack, purpose)
-- Commands section (dev server, build, test for each service)
-- Leave architecture section with clear `<!-- TODO: fill in by hand -->` markers
-
-### Stack agents
-
-For each service, pick the closest agent template from `templates/agents/`:
-- FastAPI → `fastapi-builder.md`
-- Next.js → `nextjs-builder.md`
-- Django → `django-builder.md`
-- Express/Node → `express-builder.md`
-- React/Vite (frontend only) → `react-vite-builder.md`
-- Anything else → `generic-service-builder.md`
-
-Write the generated agent to `.copilot/agents/<service>-builder.md`. Replace all `{{PLACEHOLDER}}` markers with actual values.
-
-### Project rules
-
-Copy `templates/rules/decisions.md` to `.copilot/rules/decisions.md`.
-
-This file defines when an ADR is required and how to create one. It is read by every session via the rules directory so the obligation applies regardless of which skill or agent is active.
-
-### Hooks
-
-**Step A — Create the hooks directory:**
-
-```bash
-mkdir -p .claude/hooks
-```
-
-**Step B — Write the safety hooks.** Use the Write tool to create each file with the exact content from the plugin's `hooks/` directory:
-
-- Write `.claude/hooks/bash-guard.sh` — content from `hooks/bash-guard.sh`
-- Write `.claude/hooks/arch-drift-guard.sh` — content from `hooks/arch-drift-guard.sh`
-
-For each language detected, write the linting hooks:
-- Python detected → write `.claude/hooks/lint-python.sh` from `hooks/lint-python.sh`; update any repo-specific paths
-- TypeScript/JavaScript detected → write `.claude/hooks/lint-ts.sh` from `hooks/lint-ts.sh`; update any repo-specific paths
-
-**Step C — Set exec bit on all hooks:**
-
-```bash
-chmod +x .claude/hooks/*.sh
-```
-
-**Step D — Generate `.claude/settings.json`.**
-
-First, resolve the absolute path to the project root so that hook paths in `settings.json` are not relative (relative paths break when Claude runs from a subdirectory):
-
-```bash
-git rev-parse --show-toplevel 2>/dev/null || pwd
-```
-
-Use the output as `<PROJECT_ROOT>` in the hook commands below.
-
-If `.claude/settings.json` already exists, read it first and merge the `hooks` key in — do not overwrite unrelated keys. If it does not exist, create it. The hooks block to write (replace `<PROJECT_ROOT>` with the resolved absolute path):
-
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "<PROJECT_ROOT>/.claude/hooks/bash-guard.sh", "timeout": 10 }] }
-    ],
-    "PostToolUse": [
-      { "matcher": "Edit|Write", "hooks": [
-        { "type": "command", "command": "<PROJECT_ROOT>/.claude/hooks/lint-python.sh", "timeout": 30, "async": true },
-        { "type": "command", "command": "<PROJECT_ROOT>/.claude/hooks/lint-ts.sh", "timeout": 60, "async": true },
-        { "type": "command", "command": "<PROJECT_ROOT>/.claude/hooks/arch-drift-guard.sh", "timeout": 5, "async": true }
-      ]}
-    ]
-  }
-}
-```
-
-Omit `lint-python.sh` from the PostToolUse array if Python was not detected. Omit `lint-ts.sh` if TypeScript/JavaScript was not detected.
-
-**Step E — Validate hook paths.** Run the following and warn if any hook is missing or not executable (use the absolute path resolved in Step D):
-
-```bash
-PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-for hook in bash-guard.sh arch-drift-guard.sh; do
-  [ -x "$PROJECT_ROOT/.claude/hooks/$hook" ] \
-    && echo "✅ $PROJECT_ROOT/.claude/hooks/$hook" \
-    || echo "⚠️  $PROJECT_ROOT/.claude/hooks/$hook — not found or not executable"
-done
-```
-
-If any hook is missing, re-run Steps B–C before proceeding. Do not continue to Step 4 with a broken hook configuration — a missing `bash-guard.sh` will cause a non-blocking error on every Bash tool call.
-
-### MCP configuration
-
-If the user provided MCP server answers in Step 2, write an `## MCP` section to `.copilot/pai-orbit-config.md`:
-
-```markdown
-## MCP
-
-git: {{GIT_MCP_SERVER}}
-<!-- Choose one: github | gitlab | none -->
-
-board: {{BOARD_MCP_SERVER}}
-<!-- Choose one: github | linear | jira | none -->
-
-docs: {{DOCS_MCP_SERVER}}
-<!-- Choose one: confluence | notion | none -->
-```
-
-Omit the `## MCP` section entirely if all three answers are "none" — do not write a section with all-none values.
-
-### Docs scaffold
-
-If `docs/` does not exist, copy the scaffold from `templates/docs/` to the configured docs path.
-If a dedicated docs repo path was given, create the scaffold there.
-If Confluence or Notion: skip the scaffold, note the MCP setup required (see Getting Started).
-
-### Architecture scaffold
-
-Copy `templates/docs/architecture/system.md`, `constraints.md`, and `stack.md` to `docs/architecture/` (replacing `{{PROJECT_NAME}}` and `{{DATE}}`).
-
-Populate `stack.md` from the language and framework info discovered in Step 1.
-
-If the user answered the architecture question (Step 2, item 8), pre-populate the service table in `system.md` and the rules in `constraints.md` from those answers. Otherwise leave as stubs.
-
-Tell the user: "Run `/arch init` to complete your architecture declaration. Once declared, `/build` and `/review` will read `constraints.md` to enforce architectural rules automatically."
-
----
-
-### Target: Cursor (`.cursor/` path)
-
-Run this block when `cursor` is one of the selected targets. No changes to the Cursor path were made for the Copilot upgrade — the pre-existing Cursor scaffolding behaviour applies unchanged. Sources are emitted from `plugins/pai-orbit/dist/cursor-plugin/pai-orbit/` (or `dist/cursor/` for the legacy `.cursor/rules/` consumers).
-
-The exact files written here are owned by `dist/cursor-plugin/` and `dist/cursor/`; running `/setup` with `cursor` as the only target on a fresh repo must produce the same output as before this upgrade.
-
----
 
 ### Target: Copilot (`.copilot/` + `.github/` path)
 
-Run this block when `copilot` is one of the selected targets. The Copilot adapter output lives in `plugins/pai-orbit/dist/copilot/` and is copied verbatim into the project, then `.copilot/` config files are rendered from the Step 2 interview answers.
+The Copilot adapter output lives in `plugins/pai-orbit/dist/copilot/` and is copied verbatim into the project, then `.copilot/` config files are rendered from the Step 2 interview answers.
 
 #### Files to write
 
@@ -355,7 +198,7 @@ Generate per D19. Write the following JSON, replacing placeholders:
 
 This file is read on subsequent re-runs (`/setup` or `npx … init copilot`) to know what was previously installed and to drive the diff report.
 
-##### `CLAUDE.md` (tool-agnostic; kept under that name per D26)
+##### `AGENTS.md`
 
 Use the template at `templates/CLAUDE.md.template`. Fill in:
 - Project name and one-line description
@@ -363,7 +206,7 @@ Use the template at `templates/CLAUDE.md.template`. Fill in:
 - Commands section (dev server, build, test for each service)
 - Leave architecture section with clear `<!-- TODO: fill in by hand -->` markers
 
-`CLAUDE.md` is tool-agnostic project documentation. The Copilot adapter's `.github/copilot-instructions.md` references it explicitly under `## Context discovery`. Do not rename it per-tool; Claude / Cursor / Copilot all read the same file.
+If a `AGENTS.md` already exists at repo root, do not overwrite it. Preserve the user's content and leave any per-tool rename to the adapter's install path.
 
 ##### Docs scaffold
 
@@ -375,7 +218,7 @@ If `docs/` does not exist, copy the scaffold from `templates/docs/`. Same behavi
 - **No `.cursor/` folder.** That is the Cursor path.
 - **No native hooks (`.claude/hooks/`).** Copilot has no hook event surface. `bash-guard` intent lives in `.github/copilot-instructions.md` as always-loaded advisory text plus the optional `.husky/pre-commit` (or `.pre-commit-config.yaml`). `arch-drift` intent lives in `.github/copilot-instructions.md` and `.github/instructions/arch-drift.instructions.md`. Lint hooks rely on the project's own linter config invoked at commit time by the pre-commit hook — the linter config (`pyproject.toml`, `.eslintrc.json`) is owned by the project, never authored by pai-orbit (D31).
 - **No editor-specific files (`.vscode/`, `.idea/`, etc.)** per D33. Editor settings are owned by the team. VS Code users who want lint-on-save follow the 4-line copy-paste recipe in `docs/copilot-install-and-usage.md`.
-- **Service-builder prompts already ship as `.github/prompts/<stack>-builder.prompt.md`** under the Copilot adapter (D30). On Pro/Business Copilot they run as multi-step agents (read `CLAUDE.md`, detect the service, propose file edits); on Free they degrade to regular prompts that still give correct manual scaffolding guidance.
+- **Service-builder prompts already ship as `.github/prompts/<stack>-builder.prompt.md`** under the Copilot adapter (D30). On Pro/Business Copilot they run as multi-step agents (read `AGENTS.md`, detect the service, propose file edits); on Free they degrade to regular prompts that still give correct manual scaffolding guidance.
 
 #### Standalone install alternative
 
@@ -422,8 +265,8 @@ If any hook shows ⚠️ in the Step 3 validation output, surface it here with i
 
 Methodology surfaces (always written):
 - ✅ Generated — `.github/copilot-instructions.md` — slim rule book + Context discovery + prompt-library pointer
-- ✅ Generated — `.github/prompts/` — 25 invokable slash commands (12 modes, 6 skills, 7 service-builder agent prompts)
-- ✅ Generated — `.github/instructions/` — 4 auto-attaching guidance files (`git`, `data-model`, `arch-drift`, `context-discovery`)
+- ✅ Generated — `.github/prompts/` — 29 invokable slash commands (14 modes, 6 skills, 7 service-builder agent prompts, 2 named agents: `docs-writer`, `cross-repo-impact`)
+- ✅ Generated — `.github/instructions/` — 5 auto-attaching guidance files (`git`, `data-model`, `arch-drift`, `context-discovery`, `decisions`)
 - ✅ Generated — `.copilot/pai-orbit-config.md` — board, branch model, deploy targets, docs home, team conventions
 - ✅ Generated — `.copilot/team.md` — team members, owners, default assignees
 - ✅ Generated — `.copilot/settings.json` — version, target, install timestamp, husky opt-in, detected languages, pre-commit installer choice (per D19)
@@ -441,4 +284,4 @@ Pre-commit hooks (D29 — commit-time lint + weak secret tripwire, depends on th
 
 **Honest gap statement (read aloud to the user):** Copilot has no runtime hook system. The `bash-guard` intent is delivered **as advisory text only** in `.github/copilot-instructions.md` — Copilot is instructed to refuse `git push --force`, `git add -A`, `--no-verify`, and destructive `rm`, and usually obeys, but this is not enforced. The optional `.husky/pre-commit` (or `.pre-commit-config.yaml`) adds real enforcement **at commit time only**, and its scope is narrow: lint failures block the commit and a weak regex catches obvious credential patterns — it does NOT and cannot block `git push --force` (wrong git phase), `git add -A` (staging happens before the hook), or shell commands like `rm -rf`. For hard enforcement of those patterns, use Claude Code, a separate pre-push hook, or server-side branch protection. The `arch-drift` intent is split between `.github/copilot-instructions.md` and `.github/instructions/arch-drift.instructions.md` (advisory). Lint at commit time runs the project's own linter config. Service-builder prompts emit with `mode: agent` (D30): on Copilot Pro/Business they run as multi-step agents; on Free they degrade to regular prompts. Full agent-runtime parity with Claude Code is out of scope.
 
-End with: "Run `/suggest-skills` after a few sessions to discover operational skills worth adding." (Note: `/suggest-skills` is a Claude Code feature — Copilot-only teams should skip this line.)
+End with: "Run `/suggest-skills` after a few sessions to discover operational skills worth adding." (`/suggest-skills` is emitted for all three targets — Claude Code, Cursor, and Copilot — so this recommendation applies regardless of the selected adapter.)

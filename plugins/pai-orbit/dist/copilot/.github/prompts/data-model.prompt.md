@@ -9,7 +9,7 @@ description: "[skill] Data model reference and schema change management — docu
 Schema reference and change management for the project's data stores.
 
 Reads from:
-- `CLAUDE.md` — primary data stores, key tables, natural keys, and known gotchas
+- `AGENTS.md` — primary data stores, key tables, natural keys, and known gotchas
 - Live schema (via introspection commands or migration files)
 - `docs/decisions/` — ADRs that record past schema decisions
 
@@ -37,7 +37,7 @@ ls migrations/ | tail -5
 
 When asked "what's in table X" or "how do X and Y join":
 1. Read the schema
-2. Check `CLAUDE.md` for documented natural keys and gotchas
+2. Check `AGENTS.md` for documented natural keys and gotchas
 3. Answer with: columns + types, natural key, notable nullable columns, known join path
 
 
@@ -90,7 +90,7 @@ Use `/analysis` if the blast radius is non-trivial.
 
 ### 5. Document
 
-After the change lands, update `CLAUDE.md` → Data Model section with:
+After the change lands, update `AGENTS.md` → Data Model section with:
 - New table or column
 - Natural key (if new table)
 - Any gotchas (e.g., STRUCT fields returned as dicts, nullable semantics)

@@ -10,7 +10,7 @@ Review changed code for unnecessary complexity and fix what's found.
 
 Reads from:
 - Branch diff or specified files
-- `CLAUDE.md` — established patterns; deviations from these are candidates for simplification
+- `AGENTS.md` — established patterns; deviations from these are candidates for simplification
 
 
 ## Principles
@@ -80,4 +80,4 @@ Simplified <N> items:
 No behaviour changes. Tests still pass.
 ```
 
-Run the test suite after simplification: `<test command from CLAUDE.md>`. If tests fail, the simplification changed behaviour — revert the specific change and investigate.
+Run the test suite after simplification: `<test command from AGENTS.md>`. If tests fail, the simplification changed behaviour — revert the specific change and investigate.

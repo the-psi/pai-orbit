@@ -33,7 +33,7 @@ Switch out when:
   - If `system_docs_repo` is a relative path: check whether the directory exists. If yes, add `<system_docs_repo>/<system_docs_path>` to the doc read set. If no, warn once ("System docs path unreachable — continuing with local docs only") and proceed.
   - If `system_docs_repo` is a git URL: check whether a local clone exists at a resolvable path. If yes, add it. If no, warn once and proceed.
   - Read docs from all resolved paths before starting the session.
-- Read `CLAUDE.md` for project context before any planning session
+- Read `AGENTS.md` for project context before any planning session
 - Check the task board for current state before making prioritisation calls
 - Present 2–3 options with explicit tradeoffs before recommending — the user decides
 - Ground recommendations in what is actually shipped and what is actually blocking

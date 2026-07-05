@@ -37,7 +37,7 @@ npx github:the-psi/pai-orbit init copilot
 
 The CLI drops pai-orbit files into the project (`.github/copilot-instructions.md`, `.github/prompts/`, `.github/instructions/`, `.husky/pre-commit.template`, `.pre-commit-config.yaml.template`) — no questions asked. Auto-activates `.husky/pre-commit` if the project has `.git/`.
 
-Then `/setup` in Copilot Chat runs the **11-question interview agentically** — Copilot Business reads project files, asks questions, runs shell commands (`glab api`, `gh project field-list`) for live board column discovery, and proposes file edits (`.copilot/pai-orbit-config.md`, `.copilot/team.md`, `CLAUDE.md`, `docs/architecture/*.md`) which you accept.
+Then `/setup` in Copilot Chat runs the **11-question interview agentically** — Copilot Business reads project files, asks questions, runs shell commands (`glab api`, `gh project field-list`) for live board column discovery, and proposes file edits (`.copilot/pai-orbit-config.md`, `.copilot/team.md`, `AGENTS.md`, `docs/architecture/*.md`) which you accept.
 
 ### Copilot Free
 
@@ -90,14 +90,14 @@ Available flags:
 | `--yes` / `--no-interactive` | Auto-answer interview questions with defaults. **Only meaningful with `--setup`** (no-op without it). Use for CI or fastest install. |
 | `--board=<value>` | `gitlab` / `github` / `linear` / `jira` / `none` — implies `--setup` |
 | `--branch=<value>` | `github-flow` / `gitflow` / `trunk` — implies `--setup` |
-| `--re-init-claude-md` | Force rewrite of `CLAUDE.md` — implies `--setup` |
+| `--re-init-agents-md` | Force rewrite of `AGENTS.md` — implies `--setup`. Alias: `--re-init-claude-md` (kept for backward compat). |
 | `--install-husky` | Install the `.husky/pre-commit` hook even if previously opted out |
 | `--reinstall-husky` | Overwrite an existing `.husky/pre-commit` |
 | `--install-precommit-framework` | Install `.pre-commit-config.yaml` even if previously opted out (D29) |
 | `--reinstall-precommit-framework` | Overwrite an existing `.pre-commit-config.yaml` |
 | `--ignore-existing` | Forces npx to re-fetch from GitHub (bypasses the npx cache) |
 
-**Re-run behaviour:** `pai-orbit update copilot` (no `--setup`) refreshes pai-orbit-owned files and preserves your `.copilot/*` + `CLAUDE.md`. `pai-orbit update copilot --setup` refreshes files **and** re-runs the interview, overwriting `.copilot/pai-orbit-config.md` and `.copilot/team.md` with new answers.
+**Re-run behaviour:** `pai-orbit update copilot` (no `--setup`) refreshes pai-orbit-owned files and preserves your `.copilot/*` + `AGENTS.md`. `pai-orbit update copilot --setup` refreshes files **and** re-runs the interview, overwriting `.copilot/pai-orbit-config.md` and `.copilot/team.md` with new answers.
 
 ### Alternative: use `/setup` inside Claude Code or Cursor
 
@@ -115,7 +115,7 @@ If your team already uses Claude Code or Cursor, run `/setup` inside the host to
 
 ## Joining a team that already has pai-orbit installed (every other dev)
 
-When pai-orbit's files are already committed to the repo (`.github/copilot-instructions.md`, `.github/prompts/`, `.github/instructions/`, `.copilot/`, `CLAUDE.md`), new team members **do NOT run the npx command**. They:
+When pai-orbit's files are already committed to the repo (`.github/copilot-instructions.md`, `.github/prompts/`, `.github/instructions/`, `.copilot/`, `AGENTS.md`), new team members **do NOT run the npx command**. They:
 
 1. `git pull` to get the latest files.
 2. Open the project in VS Code.
@@ -135,26 +135,29 @@ Re-running the npx install is unnecessary and would only matter if the team lead
 | `.github/prompts/*.prompt.md` | pai-orbit | 25 invokable slash commands (12 modes + 6 skills + 7 service-builder agents). Refreshed on every re-run. |
 | `.github/instructions/*.instructions.md` | pai-orbit | 4 auto-attaching guidance files. Refreshed on every re-run. |
 | `.husky/` and `.pre-commit-config.yaml(.template)` | pai-orbit (templates) / user (active files) | Inert templates are owned by pai-orbit and refreshed on re-run. The active `.husky/pre-commit` or `.pre-commit-config.yaml` is **preserved** once installed. |
-| `CLAUDE.md` | user (after first scaffold) | **Tool-agnostic** project documentation. Named historically — read by Claude, Cursor, and Copilot. **Do not rename per-tool.** (D26) |
+| `AGENTS.md` | user (after first scaffold) | Project documentation for Copilot: stack, services, key files, data model, auth. **Same content shape** as Claude Code's `CLAUDE.md` — only the filename differs to match each tool's convention. (D37 supersedes D26 for the Copilot target.) |
 | `docs/` | user | Methodology output (requirements, design, ADRs, plans). Never overwritten on re-run. |
 
 **Note on `.github/`:** Copilot reads from `.github/copilot-instructions.md`, `.github/prompts/`, and `.github/instructions/` regardless of where the repo is hosted. `.github/` is a Copilot product path — it works on GitHub, GitLab, Bitbucket, Azure DevOps, and self-hosted git equally.
 
-**Note on `CLAUDE.md`:** The file's content describes the project itself (stack, services, key files, data model, auth) — none of which is Claude-specific. Copilot's `.github/copilot-instructions.md` references it under `## Context discovery`. Renaming it would break every adoption doc across pai-orbit's adapters. Keep the name as-is.
+**Note on `AGENTS.md`:** The file's content describes the project itself (stack, services, key files, data model, auth) — none of which is Copilot-specific. Copilot's `.github/copilot-instructions.md` references it under `## Context discovery`, with a fall-back to `CLAUDE.md` for legacy installs. Claude Code and Cursor adapters continue to emit `CLAUDE.md` — the content shape is identical across tools; only the root filename differs.
 
 ---
 
-## AGENTS.md disambiguation
+## AGENTS.md, CLAUDE.md, and multi-tool projects
 
-pai-orbit does **NOT** emit `AGENTS.md` for Copilot. `AGENTS.md` is the file format read by **OpenAI Codex CLI**, not GitHub Copilot Chat.
+The Copilot adapter emits `AGENTS.md` at repo root. The Claude Code and Cursor adapters emit `CLAUDE.md` at repo root. The Codex adapter also uses `AGENTS.md` (its native convention).
 
-Copilot Chat in VS Code reads:
+- **Single-tool project (Copilot only):** `AGENTS.md` is your project-context file. `CLAUDE.md` is not created.
+- **Multi-tool project (Claude + Copilot in the same repo):** Both files exist side-by-side, holding the same content. Keep them in sync by hand, or maintain one and add a one-line import (e.g., `@AGENTS.md` inside `CLAUDE.md`) so Claude Code auto-attaches the AGENTS content.
+- **Migrating from a Copilot-only install that pre-dates D37:** Existing `CLAUDE.md` is left in place. Re-running the installer creates `AGENTS.md` alongside — you can hand-migrate the content or leave both.
+
+Copilot Chat in VS Code reads its usual four surfaces:
 
 - `.github/copilot-instructions.md` (always-loaded baseline)
 - `.github/prompts/*.prompt.md` (invokable slash commands)
 - `.github/instructions/*.instructions.md` (auto-attaching guidance)
-
-Nothing else. If you see references to `AGENTS.md` in pai-orbit's repo, those belong to the Codex adapter (`plugins/pai-orbit/adapters/codex/`) and ship under `plugins/pai-orbit/dist/codex/`. Safe to ignore for Copilot-only teams.
+- `AGENTS.md` at repo root (via the pointer in `copilot-instructions.md` — Copilot does not auto-load it by convention, so the pointer is what makes it discoverable)
 
 ---
 
@@ -164,8 +167,8 @@ pai-orbit supports it. A single project can have `.claude/`, `.cursor/`, and `.c
 
 The tool-agnostic surface is shared:
 
-- `CLAUDE.md` — every assistant reads this.
 - `docs/` — every assistant writes here.
+- Project-context file — Claude and Cursor read `CLAUDE.md`; Copilot reads `AGENTS.md`. Content is identical; only the filename differs.
 
 To set up multiple assistants:
 
@@ -274,7 +277,7 @@ npx github:the-psi/pai-orbit init copilot
 
 (Or the explicit `update copilot` subcommand — same code path, re-run-specific status messages.)
 
-The CLI detects your existing install, refreshes pai-orbit-owned files (prompts, instructions, rule book) to the latest version, and **preserves your team's customisations** (`.copilot/pai-orbit-config.md`, `.copilot/team.md`, `CLAUDE.md`).
+The CLI detects your existing install, refreshes pai-orbit-owned files (prompts, instructions, rule book) to the latest version, and **preserves your team's customisations** (`.copilot/pai-orbit-config.md`, `.copilot/team.md`, `AGENTS.md`).
 
 If you pinned a version (e.g., `#<tag>`), bump to the newer tag in your install command before re-running.
 
@@ -290,10 +293,10 @@ If you tracked `main` and the result feels stale, npx's GitHub-install cache may
 | `.github/copilot-instructions.md` | Write | **Overwrite** — pai-orbit owns it |
 | `.github/prompts/*.prompt.md` | Write | **Overwrite** — pai-orbit owns them |
 | `.github/instructions/*.instructions.md` | Write | **Overwrite** — pai-orbit owns them |
-| `.copilot/pai-orbit-config.md` | Create from interview | **Preserve** by default; `--re-interview` forces rewrite |
-| `.copilot/team.md` | Create from interview | **Preserve** by default — team rosters drift |
-| `.copilot/settings.json` | Write | **Preserve** by default |
-| `CLAUDE.md` | Create from template | **Preserve** — `--re-init-claude-md` to reset |
+| `.copilot/pai-orbit-config.md` | Create from interview | **Preserve** when re-running without `--setup`; **overwrite** when `--setup` is passed (that flag is an explicit re-interview gesture) |
+| `.copilot/team.md` | Create from interview | Same as above — preserve without `--setup`, overwrite with `--setup` |
+| `.copilot/settings.json` | Write | Same as above — refreshed on every `--setup` re-run to reflect the latest answers |
+| `AGENTS.md` | Create from template | **Preserve** — `--re-init-agents-md` (or legacy `--re-init-claude-md`) to reset |
 | `docs/` scaffold | Create empty folders | **Skip if exists** — never touch user docs |
 | `.husky/pre-commit` (active) | Optional install | **Preserve** unless `--reinstall-husky` |
 | `.husky/pre-commit.template` (inert) | Write | **Overwrite** — latest wins |
@@ -313,7 +316,7 @@ If a team decides to remove pai-orbit, delete these paths from the repo and comm
 - `.husky/pre-commit` (only if it is the pai-orbit-emitted version) and `.husky/pre-commit.template`
 - `.pre-commit-config.yaml.template` (and the active `.pre-commit-config.yaml` if it was the pai-orbit version)
 
-`CLAUDE.md` is **NOT** auto-removed — it is your project's tool-agnostic documentation. Decide separately whether to keep it.
+`AGENTS.md` (and any legacy `CLAUDE.md`) is **NOT** auto-removed — it is your project's documentation. Decide separately whether to keep it.
 
 `docs/` is **NOT** auto-removed — your team's documentation lives there. Decide separately.
 
@@ -329,7 +332,7 @@ pai-orbit's Copilot adapter delivers **~85% of the methodology benefit on Free, 
 - **Agents work only on Pro/Business** — service-builder prompts emit with `mode: agent` (D30). Pro/Business runs them as multi-step agents; Free degrades them to regular prompts that still give correct manual scaffolding guidance.
 - **Mode discipline is text-based, not runtime-enforced** — the anti-drift block (D28) tightens but does not enforce. Copilot Free tier may drift on some replies; check for the `[<MODE>]` prefix and re-issue the mode command if missing.
 - **`/setup` availability** — `/setup` IS emitted for Copilot as of 2026-07-04 (D13 fully superseded), as an agent-mode prompt. First-time install still starts from the terminal (`npx ... init copilot`) because the prompt files don't exist yet at first-run. On subsequent runs, `/setup` in Copilot Chat gives Copilot Business teams a reconfiguration UX equal to Claude Code's. Copilot Free degrades to advisory text.
-- **`/suggest-skills` availability** — also emitted for Copilot as of 2026-07-04, as an agent-mode prompt with a Copilot-adapted preamble. Analysis inputs (`CLAUDE.md`, `docs/`, `git log`, existing `.github/prompts/`, `docs/wip/`, `docs/ops/`) are portable; the preamble redirects scaffold output from Claude's `.claude/skills/<name>/SKILL.md` target to Copilot's `.github/prompts/<name>.prompt.md` target and skips the "Claude Code built-in" step (no equivalent). Business tier scaffolds files agentically; Free tier produces the ranked suggestion list as text.
+- **`/suggest-skills` availability** — also emitted for Copilot as of 2026-07-04, as an agent-mode prompt with a Copilot-adapted preamble. Analysis inputs (`AGENTS.md` — legacy `CLAUDE.md` as fall-back, `docs/`, `git log`, existing `.github/prompts/`, `docs/wip/`, `docs/ops/`) are portable; the preamble redirects scaffold output from Claude's `.claude/skills/<name>/SKILL.md` target to Copilot's `.github/prompts/<name>.prompt.md` target and skips the "Claude Code built-in" step (no equivalent). Business tier scaffolds files agentically; Free tier produces the ranked suggestion list as text.
 - **Named sub-agents `/docs-writer` and `/cross-repo-impact`** — emitted for Copilot as of 2026-07-05 as agent-mode prompts. `/docs-writer` runs with `editFiles` capability (writes documentation into `docs/`); `/cross-repo-impact` runs with **read-only tools** (`codebase` + `search`, no `editFiles` / `runCommands`) — matching the source agent's read-only contract. Business tier runs both multi-step; Free tier renders as advisory text.
 - **ADR obligation rules** — `.github/instructions/decisions.instructions.md` with `applyTo: "**/*"` (always attached). Mirrors the Cursor plugin's `rules/decisions.mdc` (alwaysApply: true) and Claude Code's `rules/decisions.md`. Copilot now reads the "when to write an ADR" rules on every turn — same behaviour as the other adapters.
 - **No editor-specific files** — pai-orbit never authors editor config (D33). VS Code lint-on-save is the 4-line recipe above; JetBrains/Visual Studio use their own editor settings.

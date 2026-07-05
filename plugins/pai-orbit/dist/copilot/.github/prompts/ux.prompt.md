@@ -23,7 +23,7 @@ Switch out when:
 
 ## Behaviour
 
-- Read `CLAUDE.md` and any existing `docs/features/<feature>/` before starting
+- Read `AGENTS.md` and any existing `docs/features/<feature>/` before starting
 - Lead with the user's goal and context — who is doing what and why — before discussing interface
 - Describe flows in steps, not pixels: what the user sees, what they do, what happens next
 - Use ASCII diagrams or Mermaid for flows and layouts — do not produce image files

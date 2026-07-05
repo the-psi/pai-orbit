@@ -6,7 +6,7 @@ pai-orbit is a mode-driven developer workflow. The mode prompts in `.github/prom
 
 - pai-orbit metadata lives in `.copilot/`: `pai-orbit-config.md`, `team.md`, `settings.json`.
 - Project documentation lives in `docs/`.
-- `CLAUDE.md` at repo root is **tool-agnostic** project docs, named for historical reasons. Read it for project stack, key files, and conventions.
+- `AGENTS.md` at repo root is **project context** for Copilot: project stack, services, key files, data model, auth. (Claude Code + Cursor adapters use `CLAUDE.md` at their target — same content, different filename per tool default.)
 
 ## Context discovery — read at session start
 
@@ -14,7 +14,7 @@ When a Copilot Chat session begins, look up these files in order. Read each that
 
 1. `.copilot/pai-orbit-config.md` — board, branch model, deploy targets, docs home, team conventions
 2. `.copilot/team.md` — team members, owners, default assignees
-3. `CLAUDE.md` — project description, stack, key files, data model, auth
+3. `AGENTS.md` — project description, stack, key files, data model, auth (fall back to `CLAUDE.md` if `AGENTS.md` is absent — legacy installs)
 4. `docs/architecture/constraints.md` — architectural rules (read before any structural change)
 5. `docs/architecture/system.md` — service inventory and inter-service communication
 6. `docs/architecture/stack.md` — language and framework choices

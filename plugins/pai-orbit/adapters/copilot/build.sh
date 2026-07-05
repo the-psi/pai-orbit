@@ -60,6 +60,47 @@ rewrite_paths() {
     -e 's|`\.claude/`|`.copilot/`|g'
 }
 
+# D37: rewrite standalone `CLAUDE.md` references → `AGENTS.md` for the Copilot
+# target. Applied on top of `rewrite_paths` for mode/skill/agent bodies where
+# inline "Read CLAUDE.md" pointers should redirect to the Copilot filename.
+# For setup.md, applied AFTER `strip_non_copilot_targets` removes the Claude
+# Code and Cursor target blocks — the surviving Copilot-target block uses only
+# single-filename wording, so the blanket rewrite is safe.
+# The `.template` filename is preserved (source-of-truth still lives under
+# `templates/CLAUDE.md.template`).
+rewrite_agents_md() {
+  sed \
+    -e 's|`CLAUDE\.md`|`AGENTS.md`|g' \
+    -e 's|\([^-a-zA-Z0-9_]\)CLAUDE\.md\b|\1AGENTS.md|g' \
+    -e 's|^CLAUDE\.md\b|AGENTS.md|g' \
+    -e 's|AGENTS\.md\.template|CLAUDE.md.template|g'
+}
+
+# D37: Copilot-only view of setup.md. Strips the Claude Code and Cursor target
+# subsections from Step 3 so a Copilot user reading `/setup` in Chat sees only
+# shared steps (1, 2, 2b) and the Copilot target block. Boundaries are marked
+# by `### Target: <name>` headings and closing `---` separators, so this filter
+# is structural — no per-line text edits leak into the Claude/Cursor sources.
+# Also retargets Step 3's intro so it doesn't advertise the removed blocks.
+strip_non_copilot_targets() {
+  awk '
+    BEGIN { skip = 0 }
+    /^### Target: Claude Code/ { skip = 1; next }
+    /^### Target: Cursor/      { skip = 1; next }
+    /^### Target: Copilot/     { skip = 0 }
+    skip == 1 && /^---$/       { skip = 0; next }
+    # Drop the "Regression discipline" blockquote — it is an implementation
+    # directive to maintainers about Claude Code / Cursor paths, meaningless
+    # to a Copilot reader of /setup.
+    /^> \*\*Regression discipline/ { skip_bq = 1; next }
+    skip_bq == 1 && /^$/           { skip_bq = 0; next }
+    skip_bq == 1                   { next }
+    skip == 0                      { print }
+  ' | sed \
+    -e 's|^Create the following files based on the assistant target(s) chosen in Step 2 question 11\. The Claude Code path (default) is documented first; the Cursor and Copilot paths follow as additive blocks\. When multiple targets are selected, run each block in turn — the resulting folders coexist in the same repo without conflict\.|Create the following files for the Copilot target. If the user also selected Claude Code or Cursor in Step 2 question 11, run `/setup` inside that tool separately — the Copilot `/setup` prompt only handles the Copilot scaffolding.|' \
+    -e 's|^Run this block when `copilot` is one of the selected targets\. The Copilot adapter output|The Copilot adapter output|'
+}
+
 # Modes dropped on the Copilot adapter.
 # D13 originally dropped both /setup and /suggest-skills. Superseded 2026-07-04
 # in two steps:
@@ -68,7 +109,7 @@ rewrite_paths() {
 #   - /suggest-skills un-dropped: emitted as agent-mode prompt with a Copilot-
 #     adapted preamble that redirects skill scaffolding from `.claude/skills/`
 #     to `.github/prompts/` (Copilot's user-prompt surface). The mode's
-#     analysis workflow (CLAUDE.md, docs/, git log, docs/wip/, docs/ops/) is
+#     analysis workflow (AGENTS.md, docs/, git log, docs/wip/, docs/ops/) is
 #     portable; only the output target differs per adapter.
 # Nothing is currently skipped for Copilot — every mode in core/modes/ emits.
 is_skipped_mode() {
@@ -221,7 +262,7 @@ pai-orbit is a mode-driven developer workflow. The mode prompts in `.github/prom
 
 - pai-orbit metadata lives in `.copilot/`: `pai-orbit-config.md`, `team.md`, `settings.json`.
 - Project documentation lives in `docs/`.
-- `CLAUDE.md` at repo root is **tool-agnostic** project docs, named for historical reasons. Read it for project stack, key files, and conventions.
+- `AGENTS.md` at repo root is **project context** for Copilot: project stack, services, key files, data model, auth. (Claude Code + Cursor adapters use `CLAUDE.md` at their target — same content, different filename per tool default.)
 
 ## Context discovery — read at session start
 
@@ -229,7 +270,7 @@ When a Copilot Chat session begins, look up these files in order. Read each that
 
 1. `.copilot/pai-orbit-config.md` — board, branch model, deploy targets, docs home, team conventions
 2. `.copilot/team.md` — team members, owners, default assignees
-3. `CLAUDE.md` — project description, stack, key files, data model, auth
+3. `AGENTS.md` — project description, stack, key files, data model, auth (fall back to `CLAUDE.md` if `AGENTS.md` is absent — legacy installs)
 4. `docs/architecture/constraints.md` — architectural rules (read before any structural change)
 5. `docs/architecture/system.md` — service inventory and inter-service communication
 6. `docs/architecture/stack.md` — language and framework choices
@@ -329,10 +370,15 @@ emit_mode_prompts() {
           setup)
             printf '> **Agent-mode prompt.** On Copilot Pro/Business this runs as a multi-step agent that reads project files, asks questions in Chat, runs shell commands (e.g. `glab api`, `gh project field-list`, `chmod`), and proposes file edits you accept. On Copilot Free it degrades to advisory text — Copilot describes the steps and you run them manually. The equivalent terminal path is `npx github:the-psi/pai-orbit init copilot`.\n'
             printf '\n'
-            rewrite_paths < "$mode_file"
+            # Apply rewrite_agents_md after stripping non-Copilot target blocks.
+            # Safe now that the source uses single-filename wording only — the
+            # blanket rewrite converts CLAUDE.md → AGENTS.md throughout the
+            # Copilot-target block without garbling cross-adapter narrative
+            # (there is none left to garble in the surviving text).
+            strip_non_copilot_targets < "$mode_file" | rewrite_paths | rewrite_agents_md
             ;;
           suggest-skills)
-            printf '> **Agent-mode prompt (Copilot-adapted).** On Copilot Pro/Business this runs as a multi-step agent that reads `CLAUDE.md`, `docs/`, `git log`, `.github/prompts/`, `docs/wip/`, and `docs/ops/` to identify workflow patterns worth encoding as skills. On Copilot Free it degrades to advisory text.\n'
+            printf '> **Agent-mode prompt (Copilot-adapted).** On Copilot Pro/Business this runs as a multi-step agent that reads `AGENTS.md` (or `CLAUDE.md` on legacy installs), `docs/`, `git log`, `.github/prompts/`, `docs/wip/`, and `docs/ops/` to identify workflow patterns worth encoding as skills. On Copilot Free it degrades to advisory text.\n'
             printf '>\n'
             printf '> **Copilot-adapted target:** when scaffolding a suggested skill, write it as a Copilot prompt file at `.github/prompts/<suggested-name>.prompt.md` (NOT `.claude/skills/<name>/SKILL.md` — that is the Claude Code target).\n'
             printf '>\n'
@@ -422,7 +468,7 @@ emit_mode_prompts() {
             #   - "using templates/skills/domain-operational.template.md" →
             #     "using the skill template above" (Gap 3: template is now
             #     inlined in the preamble, no need to reference an external file)
-            rewrite_paths < "$mode_file" | sed \
+            rewrite_paths < "$mode_file" | rewrite_agents_md | sed \
               -e 's|\.copilot/skills/|.github/prompts/|g' \
               -e 's|`\.claude/skills/`|`.github/prompts/`|g' \
               -e 's|\.claude/skills/|.github/prompts/|g' \
@@ -430,7 +476,7 @@ emit_mode_prompts() {
               -e 's|using `templates/skills/domain-operational\.template\.md` as the base pattern|using the skill template shown in the preamble above|g'
             ;;
           *)
-            rewrite_paths < "$mode_file"
+            rewrite_paths < "$mode_file" | rewrite_agents_md
             ;;
         esac
       } > "$DIST_DIR/.github/prompts/${mode_name}.prompt.md"
@@ -453,7 +499,7 @@ emit_mode_prompts() {
         printf '>\n'
         printf '> If the user explicitly says "switch to /<other>" or types another slash command, drop this block.\n'
         printf '\n'
-        rewrite_paths < "$mode_file"
+        rewrite_paths < "$mode_file" | rewrite_agents_md
       } > "$DIST_DIR/.github/prompts/${mode_name}.prompt.md"
     fi
 
@@ -477,7 +523,7 @@ emit_skill_prompts() {
       printf 'description: "%s"\n' "$(yaml_escape "$prefixed")"
       printf -- '---\n'
       printf '\n'
-      strip_frontmatter "$skill_md" | rewrite_paths
+      strip_frontmatter "$skill_md" | rewrite_paths | rewrite_agents_md
     } > "$DIST_DIR/.github/prompts/${skill_name}.prompt.md"
 
     count=$((count + 1))
@@ -502,7 +548,7 @@ emit_service_builder_prompts() {
       printf -- '---\n'
       printf '\n'
       # Body retains `{{SERVICE_NAME}}` etc. — the install CLI substitutes at scaffold time (design §5.1).
-      strip_frontmatter "$tpl" | rewrite_paths
+      strip_frontmatter "$tpl" | rewrite_paths | rewrite_agents_md
     } > "$DIST_DIR/.github/prompts/${stack}.prompt.md"
 
     count=$((count + 1))
@@ -540,7 +586,7 @@ emit_named_agent_prompts() {
       printf 'tools: %s\n' "$tools_list"
       printf -- '---\n'
       printf '\n'
-      strip_frontmatter "$agent_md" | rewrite_paths
+      strip_frontmatter "$agent_md" | rewrite_paths | rewrite_agents_md
     } > "$DIST_DIR/.github/prompts/${agent_name}.prompt.md"
 
     count=$((count + 1))
@@ -566,7 +612,7 @@ emit_skill_instructions() {
       printf 'applyTo: "%s"\n' "$glob"
       printf -- '---\n'
       printf '\n'
-      strip_frontmatter "$skill_md" | rewrite_paths
+      strip_frontmatter "$skill_md" | rewrite_paths | rewrite_agents_md
     } > "$DIST_DIR/.github/instructions/${skill_name}.instructions.md"
     count=$((count + 1))
   done
@@ -588,7 +634,7 @@ emit_decisions_instructions() {
     printf 'applyTo: "**/*"\n'
     printf -- '---\n'
     printf '\n'
-    rewrite_paths < "$src"
+    rewrite_paths < "$src" | rewrite_agents_md
   } > "$DIST_DIR/.github/instructions/decisions.instructions.md"
   echo "  decisions:       emitted instructions file (ADR obligation rules)"
 }
@@ -632,7 +678,7 @@ At session start, read each of the following that exists. If absent, proceed wit
 
 1. `.copilot/pai-orbit-config.md` — board, branch model, deploy targets, docs home, team conventions
 2. `.copilot/team.md` — team members, owners, default assignees
-3. `CLAUDE.md` — project description, stack, key files, data model, auth
+3. `AGENTS.md` — project description, stack, key files, data model, auth (fall back to `CLAUDE.md` if `AGENTS.md` is absent — legacy installs)
 4. `docs/architecture/constraints.md` — architectural rules
 5. `docs/architecture/system.md` — service inventory and inter-service communication
 6. `docs/architecture/stack.md` — language and framework choices

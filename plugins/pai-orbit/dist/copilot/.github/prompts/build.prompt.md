@@ -47,14 +47,14 @@ Before starting:
   - If `system_docs_repo` is a relative path: check whether the directory exists. If yes, add `<system_docs_repo>/<system_docs_path>` to the doc read set. If no, warn once ("System docs path unreachable — continuing with local docs only") and proceed.
   - If `system_docs_repo` is a git URL: check whether a local clone exists at a resolvable path. If yes, add it. If no, warn once and proceed.
   - Read docs from all resolved paths before starting the session.
-- Read `CLAUDE.md` — it contains the project's architecture, stack, conventions, and key file locations
+- Read `AGENTS.md` — it contains the project's architecture, stack, conventions, and key file locations
 - If `docs/architecture/constraints.md` exists, read it before generating any code — treat violations of declared constraints as blocking; do not produce code that crosses a constraint boundary without flagging it explicitly and switching to `/arch` to ratify the change
 - Read relevant `docs/features/<feature>/` and `docs/decisions/` before starting significant work
 - Check the task board (see `/board` for board details): find the relevant issue and confirm it is in the right in-progress state
 
 During build:
 - Spawn sub-agents per repo where tasks are independent; run in parallel where possible
-- Each sub-agent must read the repo's own `CLAUDE.md` before starting
+- Each sub-agent must read the repo's own `AGENTS.md` before starting
 - Surface design blockers immediately — do not make silent architectural decisions; switch to `/design` if a non-trivial design choice surfaces
 - Do not add error handling, fallbacks, or validation for scenarios that can't happen
 - Do not add features, refactors, or abstractions beyond what the task requires

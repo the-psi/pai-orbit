@@ -11,7 +11,7 @@ Implementation agent for `{{SERVICE_PATH}}/`.
 
 ## Setup
 
-1. Read `CLAUDE.md` first — check GCP/cloud project boundaries and environment config
+1. Read `AGENTS.md` first — check GCP/cloud project boundaries and environment config
 2. Work only inside `{{SERVICE_PATH}}/` — never modify application repos
 3. Confirm the target environment before any apply or deploy: `{{AUTH_CHECK_CMD}}`
 4. Verify the active project/account matches the expected target — stop if wrong

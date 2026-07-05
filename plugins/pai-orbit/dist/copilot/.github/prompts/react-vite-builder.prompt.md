@@ -11,7 +11,7 @@ Implementation agent for `{{SERVICE_PATH}}/`.
 
 ## Setup
 
-1. Read `{{SERVICE_PATH}}/CLAUDE.md` first (if it exists), then the root `CLAUDE.md`
+1. Read `{{SERVICE_PATH}}/AGENTS.md` first (if it exists), then the root `AGENTS.md`
 2. Work only inside `{{SERVICE_PATH}}/` — never modify other repos
 3. Dev server: `npm run dev` (port {{PORT}})
 

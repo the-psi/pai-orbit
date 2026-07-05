@@ -31,7 +31,7 @@ Switch out when:
 
 ### Reads from
 
-- `CLAUDE.md` — stack conventions, key file patterns, architectural constraints
+- `AGENTS.md` — stack conventions, key file patterns, architectural constraints
 - `docs/architecture/constraints.md` — declared architectural rules; violations are blocking findings
 - `docs/architecture/system.md` — service boundaries and communication paths; undeclared additions are flagged
 - `docs/decisions/` — ADRs; changes that conflict with a decision are flagged
@@ -53,7 +53,7 @@ Run: `git diff main...<branch>` (or the equivalent for the configured branching 
 #### 2. Read before reviewing
 
 Before writing a single comment:
-- Read `CLAUDE.md` — understand the conventions the diff should follow
+- Read `AGENTS.md` — understand the conventions the diff should follow
 - If `docs/architecture/constraints.md` exists, read it. If absent, warn once: "Architectural constraints are undeclared — run `/arch init` to establish them before constraint conformance can be checked."
 - If `docs/architecture/system.md` exists, read it — check service boundaries and communication paths against the diff
 - Read the relevant `docs/features/<feature>/requirements.md` and `design.md` if they exist
@@ -67,12 +67,12 @@ Check each changed file against:
 - Does the change violate any rule in `docs/architecture/constraints.md`? (blocking if yes)
 - Does it introduce a direct DB connection across service boundaries? (check `constraints.md` Trust Boundaries)
 - Does the change add a new service or communication path not declared in `docs/architecture/system.md`? (advisory)
-- Does the change stay within the layer boundaries described in CLAUDE.md? (e.g., router calls service, service calls data layer — not the other way)
+- Does the change stay within the layer boundaries described in AGENTS.md? (e.g., router calls service, service calls data layer — not the other way)
 - Does it introduce a new dependency that wasn't discussed in design?
 - Does it conflict with any ADR in `docs/decisions/`? Name the ADR.
 
 **Conventions**
-- Naming, file location, code style — as documented in CLAUDE.md
+- Naming, file location, code style — as documented in AGENTS.md
 - No raw dicts where Pydantic models are expected; no inline SQL where a service layer exists; etc.
 - Test coverage: new endpoints / public functions should have at least one test
 
@@ -116,7 +116,7 @@ What was done particularly well — worth naming so it repeats.
 - [ ] No violations of rules in docs/architecture/constraints.md
 - [ ] No undeclared service or communication path added (docs/architecture/system.md)
 - [ ] No cross-service DB connection introduced in violation of trust boundaries
-- [ ] Stays within layer boundaries defined in CLAUDE.md
+- [ ] Stays within layer boundaries defined in AGENTS.md
 - [ ] No conflicts with ADRs in docs/decisions/
 - [ ] No undiscussed dependencies introduced
 
@@ -144,7 +144,7 @@ Targeted security review of changed code before merge. Run this in addition to `
 ### Reads from
 
 - Branch diff or specified files
-- `CLAUDE.md` — auth model, system boundaries, and known security constraints
+- `AGENTS.md` — auth model, system boundaries, and known security constraints
 - `docs/architecture/system.md` — trust boundaries and attack surface (if it exists)
 - `docs/architecture/constraints.md` — declared constraints around auth, input, and external APIs (if it exists)
 - `docs/decisions/` — security-relevant ADRs

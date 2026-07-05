@@ -347,7 +347,7 @@ Generate per D19. Write the following JSON, replacing placeholders:
 
 This file is read on subsequent re-runs (`/setup` or `npx … init copilot`) to know what was previously installed and to drive the diff report.
 
-##### `CLAUDE.md` (tool-agnostic; kept under that name per D26)
+##### `CLAUDE.md`
 
 Use the template at `templates/CLAUDE.md.template`. Fill in:
 - Project name and one-line description
@@ -355,7 +355,7 @@ Use the template at `templates/CLAUDE.md.template`. Fill in:
 - Commands section (dev server, build, test for each service)
 - Leave architecture section with clear `<!-- TODO: fill in by hand -->` markers
 
-`CLAUDE.md` is tool-agnostic project documentation. The Copilot adapter's `.github/copilot-instructions.md` references it explicitly under `## Context discovery`. Do not rename it per-tool; Claude / Cursor / Copilot all read the same file.
+If a `CLAUDE.md` already exists at repo root, do not overwrite it. Preserve the user's content and leave any per-tool rename to the adapter's install path.
 
 ##### Docs scaffold
 
@@ -414,8 +414,8 @@ If any hook shows ⚠️ in the Step 3 validation output, surface it here with i
 
 Methodology surfaces (always written):
 - ✅ Generated — `.github/copilot-instructions.md` — slim rule book + Context discovery + prompt-library pointer
-- ✅ Generated — `.github/prompts/` — 25 invokable slash commands (12 modes, 6 skills, 7 service-builder agent prompts)
-- ✅ Generated — `.github/instructions/` — 4 auto-attaching guidance files (`git`, `data-model`, `arch-drift`, `context-discovery`)
+- ✅ Generated — `.github/prompts/` — 29 invokable slash commands (14 modes, 6 skills, 7 service-builder agent prompts, 2 named agents: `docs-writer`, `cross-repo-impact`)
+- ✅ Generated — `.github/instructions/` — 5 auto-attaching guidance files (`git`, `data-model`, `arch-drift`, `context-discovery`, `decisions`)
 - ✅ Generated — `.copilot/pai-orbit-config.md` — board, branch model, deploy targets, docs home, team conventions
 - ✅ Generated — `.copilot/team.md` — team members, owners, default assignees
 - ✅ Generated — `.copilot/settings.json` — version, target, install timestamp, husky opt-in, detected languages, pre-commit installer choice (per D19)
@@ -433,4 +433,4 @@ Pre-commit hooks (D29 — commit-time lint + weak secret tripwire, depends on th
 
 **Honest gap statement (read aloud to the user):** Copilot has no runtime hook system. The `bash-guard` intent is delivered **as advisory text only** in `.github/copilot-instructions.md` — Copilot is instructed to refuse `git push --force`, `git add -A`, `--no-verify`, and destructive `rm`, and usually obeys, but this is not enforced. The optional `.husky/pre-commit` (or `.pre-commit-config.yaml`) adds real enforcement **at commit time only**, and its scope is narrow: lint failures block the commit and a weak regex catches obvious credential patterns — it does NOT and cannot block `git push --force` (wrong git phase), `git add -A` (staging happens before the hook), or shell commands like `rm -rf`. For hard enforcement of those patterns, use Claude Code, a separate pre-push hook, or server-side branch protection. The `arch-drift` intent is split between `.github/copilot-instructions.md` and `.github/instructions/arch-drift.instructions.md` (advisory). Lint at commit time runs the project's own linter config. Service-builder prompts emit with `mode: agent` (D30): on Copilot Pro/Business they run as multi-step agents; on Free they degrade to regular prompts. Full agent-runtime parity with Claude Code is out of scope.
 
-End with: "Run `/suggest-skills` after a few sessions to discover operational skills worth adding." (Note: `/suggest-skills` is a Claude Code feature — Copilot-only teams should skip this line.)
+End with: "Run `/suggest-skills` after a few sessions to discover operational skills worth adding." (`/suggest-skills` is emitted for all three targets — Claude Code, Cursor, and Copilot — so this recommendation applies regardless of the selected adapter.)

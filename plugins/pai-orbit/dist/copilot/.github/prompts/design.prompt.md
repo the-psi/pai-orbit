@@ -42,7 +42,7 @@ Switch out when:
   - If `system_docs_repo` is a relative path: check whether the directory exists. If yes, add `<system_docs_repo>/<system_docs_path>` to the doc read set. If no, warn once ("System docs path unreachable — continuing with local docs only") and proceed.
   - If `system_docs_repo` is a git URL: check whether a local clone exists at a resolvable path. If yes, add it. If no, warn once and proceed.
   - Read docs from all resolved paths before starting the session.
-- Read `CLAUDE.md` for project architecture context before designing
+- Read `AGENTS.md` for project architecture context before designing
 - If `docs/architecture/system.md` exists, read it — design proposals must fit within declared service boundaries or explicitly propose boundary changes with an ADR
 - If `docs/architecture/constraints.md` exists, read it — design options that violate a constraint must flag this explicitly; violating a constraint requires `/arch update` to ratify the change before implementation
 - Read relevant existing docs before making recommendations

@@ -4,7 +4,7 @@ description: "[mode] Analyse this project's workflows and propose invokable skil
 tools: ["codebase", "editFiles", "runCommands", "search"]
 ---
 
-> **Agent-mode prompt (Copilot-adapted).** On Copilot Pro/Business this runs as a multi-step agent that reads `CLAUDE.md`, `docs/`, `git log`, `.github/prompts/`, `docs/wip/`, and `docs/ops/` to identify workflow patterns worth encoding as skills. On Copilot Free it degrades to advisory text.
+> **Agent-mode prompt (Copilot-adapted).** On Copilot Pro/Business this runs as a multi-step agent that reads `AGENTS.md` (or `CLAUDE.md` on legacy installs), `docs/`, `git log`, `.github/prompts/`, `docs/wip/`, and `docs/ops/` to identify workflow patterns worth encoding as skills. On Copilot Free it degrades to advisory text.
 >
 > **Copilot-adapted target:** when scaffolding a suggested skill, write it as a Copilot prompt file at `.github/prompts/<suggested-name>.prompt.md` (NOT `.claude/skills/<name>/SKILL.md` — that is the Claude Code target).
 >
@@ -93,7 +93,7 @@ Switch out when:
 
 Read the following to identify recurring patterns:
 
-1. **CLAUDE.md and docs/** — what workflows are described but not yet skills?
+1. **AGENTS.md and docs/** — what workflows are described but not yet skills?
 2. **Git log** — what commit types recur? (`data:`, `ops:`, `chore:` commits often indicate recurring procedures)
 3. **Existing `.github/prompts/`** — what is already covered? Don't suggest duplicates
 4. **`docs/wip/` session captures** — what multi-step procedures came up repeatedly?

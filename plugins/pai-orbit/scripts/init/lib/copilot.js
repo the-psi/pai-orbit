@@ -207,8 +207,8 @@ function renderHealthTable(deployServices) {
 
 function renderCopilotConfig(cwd, ctx, answers) {
   const target = path.join(cwd, '.copilot', 'pai-orbit-config.md');
-  if (fs.existsSync(target) && !ctx.flags['re-interview']) return false;
-
+  // Callers only reach this function inside the --setup branch of run(),
+  // which is an explicit "re-interview me" gesture. Overwrite unconditionally.
   const srcTemplate = path.join(ctx.pluginDir, 'core', 'templates', 'pai-orbit-config.md.template');
   if (!fs.existsSync(srcTemplate)) {
     process.stderr.write(`pai-orbit: missing config template at ${srcTemplate}\n`);
@@ -316,8 +316,7 @@ function extractGitLabNamespace(url) {
 
 function renderTeam(cwd, ctx, answers) {
   const target = path.join(cwd, '.copilot', 'team.md');
-  if (fs.existsSync(target) && !ctx.flags['re-interview']) return false;
-
+  // Same logic as renderCopilotConfig — reached only in --setup mode.
   const srcTemplate = path.join(ctx.pluginDir, 'core', 'templates', 'team.md.template');
   if (!fs.existsSync(srcTemplate)) return false;
 
@@ -351,12 +350,23 @@ function renderTeam(cwd, ctx, answers) {
 }
 
 // ---------------------------------------------------------------------------
-// Rich rendering — CLAUDE.md
+// Rich rendering — AGENTS.md (Copilot target; Claude+Cursor keep CLAUDE.md)
 // ---------------------------------------------------------------------------
 
-function renderClaudeMd(cwd, ctx, answers) {
-  const target = path.join(cwd, 'CLAUDE.md');
-  if (fs.existsSync(target) && !ctx.flags['re-init-claude-md']) return false;
+function renderAgentsMd(cwd, ctx, answers) {
+  const target = path.join(cwd, 'AGENTS.md');
+  const legacyTarget = path.join(cwd, 'CLAUDE.md');
+  const force = ctx.flags['re-init-agents-md'] === true || ctx.flags['re-init-claude-md'] === true;
+  if (fs.existsSync(target) && !force) return false;
+
+  if (!fs.existsSync(target) && fs.existsSync(legacyTarget)) {
+    process.stdout.write(
+      'pai-orbit: found existing CLAUDE.md at repo root. Copilot target now uses AGENTS.md.\n' +
+      '  Creating AGENTS.md alongside. Move project context from CLAUDE.md to AGENTS.md by hand,\n' +
+      '  or delete CLAUDE.md once AGENTS.md is populated.\n',
+    );
+  }
+
   const srcTemplate = path.join(ctx.pluginDir, 'core', 'templates', 'CLAUDE.md.template');
   if (!fs.existsSync(srcTemplate)) return false;
 
@@ -440,9 +450,7 @@ function renderArchitectureScaffold(cwd, ctx, answers) {
 
 function renderSettingsJson(cwd, ctx, answers) {
   const target = path.join(cwd, '.copilot', 'settings.json');
-  const existing = readJsonIfExists(target);
-  if (existing && !ctx.flags['re-interview']) return false;
-
+  // Same logic as renderCopilotConfig — reached only in --setup mode.
   const settings = {
     pai_orbit_version: ctx.version,
     target: 'copilot',
@@ -545,7 +553,7 @@ function reportInstallOnly(ctx, lifecycle, huskyResult, pcResult) {
   process.stdout.write('\n  files NOT written (deferred — configure via /setup in Chat or re-run with --setup):\n');
   process.stdout.write('    ⚠  .copilot/pai-orbit-config.md   ← board, branch, deploy, docs conventions\n');
   process.stdout.write('    ⚠  .copilot/team.md                 ← team members + roles + handles\n');
-  process.stdout.write('    ⚠  CLAUDE.md                        ← project stack, services, key files\n');
+  process.stdout.write('    ⚠  AGENTS.md                        ← project stack, services, key files\n');
   process.stdout.write('    ⚠  docs/architecture/*.md           ← system, constraints, stack (starter docs)\n');
   process.stdout.write('\nNext steps — pick ONE based on your Copilot tier:\n');
   process.stdout.write('\n  ★ Copilot Pro / Business (recommended):\n');
@@ -608,7 +616,8 @@ async function run(ctx) {
   const setupImpliedByFlag =
     ctx.flags.board !== undefined ||
     ctx.flags.branch !== undefined ||
-    ctx.flags['re-init-claude-md'] === true;
+    ctx.flags['re-init-claude-md'] === true ||
+    ctx.flags['re-init-agents-md'] === true;
   const runFullSetup = ctx.flags.setup === true || setupImpliedByFlag;
 
   const distDir = findDistDir(ctx);
@@ -661,7 +670,7 @@ async function run(ctx) {
 
   renderCopilotConfig(ctx.cwd, ctx, answers);
   renderTeam(ctx.cwd, ctx, answers);
-  renderClaudeMd(ctx.cwd, ctx, answers);
+  renderAgentsMd(ctx.cwd, ctx, answers);
   renderSettingsJson(ctx.cwd, ctx, answers);
   const docsCreated = scaffoldDocs(ctx.cwd, ctx);
   const archCreated = renderArchitectureScaffold(ctx.cwd, ctx, answers);

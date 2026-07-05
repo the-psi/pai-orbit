@@ -50,7 +50,7 @@ Two ways to use this:
 
   pai-orbit init <target> --setup
       Install files AND run the 11-question interview from the terminal.
-      Renders .copilot/pai-orbit-config.md, .copilot/team.md, CLAUDE.md,
+      Renders .copilot/pai-orbit-config.md, .copilot/team.md, AGENTS.md,
       and docs/architecture/*.md with your answers. Nothing to hand-edit.
       Recommended for Copilot Free users — Free tier's /setup in Chat only
       renders advisory text, not file-edit proposals.
@@ -59,7 +59,7 @@ Subcommands:
   pai-orbit init <target>            First-time install (files only by default).
   pai-orbit init <target> --setup    First-time install + run interview.
   pai-orbit update <target>          Refresh pai-orbit-owned files; preserves
-                                     your .copilot/*, CLAUDE.md, docs/.
+                                     your .copilot/*, AGENTS.md, docs/.
   pai-orbit update <target> --setup  Refresh files + re-run interview,
                                      overwriting .copilot/pai-orbit-config.md
                                      and .copilot/team.md with new answers.
@@ -87,7 +87,8 @@ Flags:
   --install-precommit-framework      Install .pre-commit-config.yaml even if
                                      previously opted out (D29).
   --reinstall-precommit-framework    Overwrite an existing .pre-commit-config.yaml.
-  --re-init-claude-md                Force rewrite of CLAUDE.md (implies --setup).
+  --re-init-agents-md                Force rewrite of AGENTS.md (implies --setup).
+                                     Copilot target only. Alias: --re-init-claude-md.
   --ignore-existing                  Forces npx to re-fetch from GitHub.
 
 Examples — Copilot Business/Pro (recommended):

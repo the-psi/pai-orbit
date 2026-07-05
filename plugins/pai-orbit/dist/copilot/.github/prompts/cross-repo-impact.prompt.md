@@ -11,7 +11,7 @@ Read-only agent for assessing cross-repo impact of a proposed change.
 
 ## Setup
 
-Read `CLAUDE.md` to identify all sub-repos and their paths.
+Read `AGENTS.md` to identify all sub-repos and their paths.
 
 ## What to do
 

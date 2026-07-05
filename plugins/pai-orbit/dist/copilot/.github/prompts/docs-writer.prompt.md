@@ -11,7 +11,7 @@ Documentation agent for this project.
 
 ## Setup
 
-1. Read `CLAUDE.md` for the project's docs location and structure
+1. Read `AGENTS.md` for the project's docs location and structure
 2. Read `.copilot/pai-orbit-config.md` → `## Docs` section for docs home configuration
 3. Work only inside the configured docs path — never modify source code
 

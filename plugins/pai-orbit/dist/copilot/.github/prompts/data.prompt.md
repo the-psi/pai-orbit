@@ -23,7 +23,7 @@ Switch out when:
 
 ## Behaviour
 
-- Read `CLAUDE.md` for database schema, credentials, and access patterns before querying
+- Read `AGENTS.md` for database schema, credentials, and access patterns before querying
 - Show the query before running — let the user verify intent before execution
 - Prefer read-only queries — confirm explicitly before any write or delete
 - Summarise findings in plain language alongside raw numbers
