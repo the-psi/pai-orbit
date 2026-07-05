@@ -28,7 +28,7 @@ Extend pai-orbit so the same mode discipline and operational skills work in Curs
 | canonical-spec | Not started | Phase 1 of the broader multi-tool plan; deferred until a 4th tool warrants it (per existing decision below) |
 | cursor-adapter | Done | Ships in `plugins/pai-orbit/adapters/cursor/` and `cursor-plugin/`; install guide at `docs/cursor-plugin-install-and-usage.md` |
 | codex-adapter | Done (experimental) | Ships in `plugins/pai-orbit/adapters/codex/`; emits `AGENTS.md`. Hooks degrade gracefully |
-| copilot-adapter-prompt-files | Done (automation green; live-Chat validation pending) | Phase 2 of `docs/plans/copilot-adapter-upgrade-2026-06-28.md`. Adapter emits 25 prompts + 4 instructions + 2 hook templates + slim rule book |
+| copilot-adapter-prompt-files | Done (automation green; live-Chat validation pending) | Copilot adapter emits 29 prompts (14 modes incl. `/setup` and `/suggest-skills` as agent-mode, 6 skills, 9 agent-mode prompts) + 5 instructions files + 2 hook templates + slim rule book. Working plan kept locally by the implementing team. |
 | copilot-install-cli (npx) | Done (smoke-tested; live npx flow pending) | Phase 3b. `pai-orbit init|update|migrate copilot` runs end-to-end with first-run / re-run / migration detection |
 | setup-multi-tool | In Progress (Copilot target shipped) | `/setup` now asks "assistant target" and writes the Copilot tree when selected. Claude/Cursor paths are unchanged. Adoption page at `docs/copilot-install-and-usage.md` |
 
@@ -45,7 +45,7 @@ Extend pai-orbit so the same mode discipline and operational skills work in Curs
 - **Claude adapter strategy (Phase 1):** Claude reads source files directly (native format). Generator does not produce Claude output yet. Migration to full Option B deferred to a future phase when a 4th tool warrants it.
 - **Cursor modes:** Surfaced as `agent_requested` Cursor rules — no custom slash commands. User types "enter build mode" or task context triggers the rule automatically.
 - **Codex CLI hooks:** Terminal wrapper scripts (`pai` CLI) handle pre/post execution hooks. No native hook system in Codex CLI.
-- **Copilot adapter (2026-06-28):** D1..D34 committed in `docs/plans/copilot-adapter-upgrade-2026-06-28.md`. Highlights:
+- **Copilot adapter (2026-06-28 → 2026-07-05):** D1..D36 committed in the working plan (kept locally by the implementing team). Highlights:
   - Prompt files (`agent: agent`) for 12 modes + 6 skills; service-builder prompts (`mode: agent`) for 7 stacks (D30).
   - Instructions files for `git`, `data-model`, `arch-drift`, `context-discovery` (R8 fall-back).
   - `.copilot/` metadata folder symmetric with `.claude/` and `.cursor/` (D3).

@@ -344,7 +344,7 @@ If the file was tracked, git always has the prior version. If it was untracked (
 
 ### Copilot ignores Context discovery and gives generic answers
 
-Per [risk R8 in the plan](plans/copilot-adapter-upgrade-2026-06-28.md):
+Copilot may sometimes ignore the always-loaded Context discovery directives (a known Copilot Free-tier risk). Recovery:
 
 1. Restart Chat (close + reopen the Chat panel in VS Code).
 2. Verify `.github/copilot-instructions.md` exists and contains the `## Context discovery` section.

@@ -3,3 +3,21 @@
 *.swo
 .claude/settings.local.json
 website/
+
+# Copilot adapter upgrade — working docs kept locally by the implementing team.
+# These files are for session continuity and follow-up tracking. Do not commit.
+docs/plans/copilot-adapter-upgrade-2026-06-28.md
+docs/plans/copilot-validation-2026-06-28.SUPERSEDED.md
+docs/features/copilot-adapter-prompt-files/design.md
+docs/wip/copilot-live-chat-cheatsheet-2026-06-28.md
+docs/wip/copilot-upgrade-checkpoint-2026-06-28.md
+docs/wip/copilot-upgrade-followups-2026-06-28.md
+docs/wip/copilot-upgrade-validation-2026-06-28.md
+
+# External review documents also kept local — reviewer sessions produce these
+# but they don't belong in the merged branch.
+docs/plans/copilot-adapter-review-feedback-2026-07-04.md
+docs/plans/copilot-adapter-review-feedback-2026-07-04-v2.md
+docs/plans/copilot-readiness-audit-2026-07-04.md
+docs/plans/copilot_pluging_copilot_review_v2.md
+docs/plans/copilot_pluging_cirsor_review_v2.md
