@@ -120,14 +120,26 @@ emit_groom_preamble() {
 > 1. Read `.copilot/pai-orbit-config.md`. Find the `## Agile Board` section and
 >    extract the board `type` (one of: `gitlab`, `github`, `github-projects`,
 >    `linear`, `jira`, `notion`, `none`) and the board URL / project path.
-> 2. Query the issue using the matching tool via `runCommands`:
->    - **gitlab** — `glab issue view <n> --repo <namespace/project>` (namespace
->      derived from the board URL).
->    - **github** or **github-projects** — `gh issue view <n> --repo <owner>/<repo>`.
+> 2. Query the issue using the matching tool via `runCommands`. **Prefer the
+>    direct API subcommand over the "smart" issue-view subcommand** — the
+>    latter can prompt interactively for repo selection, which hangs Copilot's
+>    non-interactive shell. This matches the pattern Step 2b of /setup already
+>    uses to query boards.
+>    - **gitlab** — `glab api /projects/<url-encoded-namespace-and-project>/issues/<n>`
+>      where `<url-encoded-namespace-and-project>` is the namespace/project path
+>      with `/` URL-encoded as `%2F` (example: `Internal%2Fpsi-portal`). The
+>      response is JSON; read the `title` field. Do NOT use `glab issue view`
+>      — it prompts for repo selection when the working directory's git remote
+>      doesn't match the requested repo.
+>    - **github** or **github-projects** — `gh api /repos/<owner>/<repo>/issues/<n>`.
+>      Read the `title` field from the JSON response. Do NOT use `gh issue view`
+>      for the same interactive-prompting reason.
 >    - **linear** — Linear MCP server if configured (check for a `board:` MCP
->      entry in the `## MCP` section of the config); otherwise `linear issue <n>`.
->    - **jira** — Jira MCP server if configured; otherwise `jira issue view <n>`
->      (or the equivalent Atlassian CLI). If neither is available, skip lookup.
+>      entry in the `## MCP` section of the config). If no MCP is configured,
+>      skip lookup — the `linear` CLI is interactive-heavy and not suitable
+>      for scripted runs.
+>    - **jira** — Jira MCP server if configured. If no MCP is configured, skip
+>      lookup — the Atlassian CLIs are interactive-heavy.
 >    - **notion** — Notion MCP required. If not configured, skip lookup.
 >    - **none** — no board configured; skip lookup.
 > 3. Extract the issue title from the tool output. Propose a feature slug
