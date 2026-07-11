@@ -834,7 +834,22 @@ emit_service_builder_prompts() {
       printf 'tools: ["codebase", "editFiles", "runCommands", "search"]\n'
       printf -- '---\n'
       printf '\n'
-      # Body retains `{{SERVICE_NAME}}` etc. — the install CLI substitutes at scaffold time (design §5.1).
+      # D42 (2026-07-05): Runtime-resolution note prepended to every service-
+      # builder prompt. The body below retains `{{SERVICE_NAME}}`,
+      # `{{SERVICE_PATH}}`, `{{LANGUAGE}}` etc. as literal markers — the
+      # Copilot install CLI does NOT substitute them at install time (unlike
+      # Claude Code's /setup which pre-fills per-service copies into
+      # `.claude/agents/`). Instead, Copilot Business's agent runtime resolves
+      # these markers per invocation by reading `AGENTS.md` and detecting the
+      # active service context. This note tells the user reading the file
+      # (or Copilot itself) that the markers are substitution points, not
+      # blanks to complete manually.
+      cat <<'RUNTIME_NOTE_EOF'
+> **Generic template — resolved at runtime.** The `{{SERVICE_NAME}}`, `{{SERVICE_PATH}}`, `{{LANGUAGE}}`, `{{FRAMEWORK}}`, and other `{{PLACEHOLDER}}` markers below are NOT substituted at install time. Copilot's agent runtime resolves them per invocation by reading `AGENTS.md` and detecting the target service context (in a monorepo: the service whose folder contains the files currently being edited).
+>
+> Do not hand-fill the markers — they are substitution points, not blanks to complete. If Copilot cannot resolve a marker (ambiguous service context in a monorepo, missing `AGENTS.md` service table, unclear stack), it will ask you to disambiguate before proceeding.
+
+RUNTIME_NOTE_EOF
       strip_frontmatter "$tpl" | rewrite_paths | rewrite_agents_md
     } > "$DIST_DIR/.github/prompts/${stack}.prompt.md"
 
