@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Owner:** Punit Singhal
-**Last Updated:** 2026-06-28
+**Last Updated:** 2026-07-05
 
 ## Summary
 Extend pai-orbit so the same mode discipline and operational skills work in Cursor, GitHub Copilot Chat, and OpenAI Codex CLI, not just Claude Code — enabling teams to use whichever AI coding tool they prefer without losing the methodology.
@@ -28,15 +28,15 @@ Extend pai-orbit so the same mode discipline and operational skills work in Curs
 | canonical-spec | Not started | Phase 1 of the broader multi-tool plan; deferred until a 4th tool warrants it (per existing decision below) |
 | cursor-adapter | Done | Ships in `plugins/pai-orbit/adapters/cursor/` and `cursor-plugin/`; install guide at `docs/cursor-plugin-install-and-usage.md` |
 | codex-adapter | Done (experimental) | Ships in `plugins/pai-orbit/adapters/codex/`; emits `AGENTS.md`. Hooks degrade gracefully |
-| copilot-adapter-prompt-files | Done (automation green; live-Chat validation pending) | Copilot adapter emits 29 prompts (14 modes incl. `/setup` and `/suggest-skills` as agent-mode, 6 skills, 9 agent-mode prompts) + 5 instructions files + 2 hook templates + slim rule book. Working plan kept locally by the implementing team. |
-| copilot-install-cli (npx) | Done (smoke-tested; live npx flow pending) | Phase 3b. `pai-orbit init|update|migrate copilot` runs end-to-end with first-run / re-run / migration detection |
-| setup-multi-tool | In Progress (Copilot target shipped) | `/setup` now asks "assistant target" and writes the Copilot tree when selected. Claude/Cursor paths are unchanged. Adoption page at `docs/copilot-install-and-usage.md` |
+| copilot-adapter-prompt-files | Done (automation green; live-Chat validation pending) | Copilot adapter emits 29 prompts (14 modes incl. `/setup` and `/suggest-skills` as agent-mode, 6 skills, 9 agent-mode prompts: 7 service-builders + `/docs-writer` + `/cross-repo-impact`) + 5 instructions files (adds `decisions.instructions.md`) + 2 hook templates + slim rule book. All prompts use documented `mode: agent` + `tools:` frontmatter. Working plan kept locally by the implementing team. |
+| copilot-install-cli (npx) | Done (smoke-tested; live npx flow pending) | Phase 3b. `pai-orbit init|update|migrate copilot` runs end-to-end with first-run / re-run / migration detection. Install-only by default; `--setup` runs the full 11-question interview from the terminal (for Copilot Free users whose Chat-side `/setup` degrades to advisory text). |
+| setup-multi-tool | Deferred | Multi-target `/setup` (single interview scaffolds Claude/Cursor/Copilot together) was prototyped but reverted before merge to keep the Copilot PR scoped. Each adapter's `/setup` scaffolds only its own target. Multi-target may return as a separate follow-up feature if there is demand. |
 
 ## Success Metrics
 - A Cursor project with pai-orbit rules active enforces the same mode headspace as Claude Code
-- A Copilot Chat session in a pai-orbit project shows 25 invokable slash commands (`[mode]`, `[skill]`, `[agent]`) and honours mode-discipline anti-drift on at least 2 of 3 mode replies
+- A Copilot Chat session in a pai-orbit project shows 29 invokable slash commands (`[mode]`, `[skill]`, `[agent]`) and honours mode-discipline anti-drift on at least 2 of 3 mode replies
 - A Codex CLI session in a pai-orbit project reads AGENTS.md and behaves mode-aware
-- `/setup` generates correct output for Claude Code, Cursor, Copilot, and Codex CLI from a single run; Claude/Cursor outputs remain byte-identical to the pre-Copilot-upgrade behaviour
+- Each tool's `/setup` generates correct output for its own target (Claude Code → `.claude/`, Cursor → `.cursor/`, Copilot → `.copilot/` + `.github/`). Claude Code + Cursor `/setup` output on this branch is byte-identical to `main`
 - A team with no Claude Code or Cursor can install pai-orbit's Copilot adapter in one command (`npx github:the-psi/pai-orbit init copilot`)
 - No pai-orbit content is duplicated — all tool outputs are generated from the canonical `.md` source files
 
@@ -45,13 +45,15 @@ Extend pai-orbit so the same mode discipline and operational skills work in Curs
 - **Claude adapter strategy (Phase 1):** Claude reads source files directly (native format). Generator does not produce Claude output yet. Migration to full Option B deferred to a future phase when a 4th tool warrants it.
 - **Cursor modes:** Surfaced as `agent_requested` Cursor rules — no custom slash commands. User types "enter build mode" or task context triggers the rule automatically.
 - **Codex CLI hooks:** Terminal wrapper scripts (`pai` CLI) handle pre/post execution hooks. No native hook system in Codex CLI.
-- **Copilot adapter (2026-06-28 → 2026-07-05):** D1..D36 committed in the working plan (kept locally by the implementing team). Highlights:
-  - Prompt files (`agent: agent`) for 12 modes + 6 skills; service-builder prompts (`mode: agent`) for 7 stacks (D30).
-  - Instructions files for `git`, `data-model`, `arch-drift`, `context-discovery` (R8 fall-back).
-  - `.copilot/` metadata folder symmetric with `.claude/` and `.cursor/` (D3).
-  - Standalone install via `npx github:the-psi/pai-orbit` — no npm publish (D7).
-  - No editor-specific files (`.vscode/`, `.idea/`, etc.) emitted (D33).
-  - Hook intent delivered as advisory text + opt-in pre-commit (husky or pre-commit framework, D29).
+- **Copilot adapter (2026-06-28 → 2026-07-05):** Working plan kept locally by the implementing team. Highlights:
+  - Prompt files use documented `mode: agent` + `tools:` frontmatter — 14 modes, 6 skills, 7 service-builder agent prompts, 2 named agents (`/docs-writer`, `/cross-repo-impact`).
+  - Instructions files for `git`, `data-model`, `arch-drift`, `context-discovery`, and `decisions` (ADR obligation rules, always attached).
+  - `.copilot/` metadata folder symmetric with `.claude/` and `.cursor/`.
+  - Standalone install via `npx github:the-psi/pai-orbit` — no npm publish.
+  - Copilot's project-context file is `AGENTS.md` at repo root (renamed from `CLAUDE.md` per D37 — same content, different filename per each tool's convention).
+  - No editor-specific files (`.vscode/`, `.idea/`, etc.) emitted.
+  - Hook intent delivered as advisory text + opt-in pre-commit (husky or pre-commit framework).
+- **Copilot `/setup` content lives in the Copilot adapter, not in shared source (D39):** `plugins/pai-orbit/adapters/copilot/build.sh` assembles Copilot's `setup.prompt.md` from shared Steps 1–2b + Copilot-specific Steps 3–4 heredocs. Shared `core/modes/setup.md` stays byte-identical to `main`, so Claude Code and Cursor dist trees are untouched by this branch.
 
 ## Open Questions
 - [ ] Should Phase 1 (canonical front-matter) be done in one PR across all commands + skills, or incrementally? — owner: Punit Singhal

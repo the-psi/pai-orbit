@@ -154,13 +154,13 @@ See [`docs/cursor-plugin-install-and-usage.md`](docs/cursor-plugin-install-and-u
 
 ### GitHub Copilot (VS Code)
 
-Copilot users get real invokable slash commands (`/groom`, `/design`, `/build`, `/git`, …) — 25 mode + skill + service-builder prompts, plus 4 auto-attaching instructions files. Install with one command from the project root:
+Copilot users get real invokable slash commands (`/groom`, `/design`, `/build`, `/git`, …) — 29 prompts (14 modes, 6 skills, 7 service-builder agents, 2 named agents: `/docs-writer` and `/cross-repo-impact`) plus 5 auto-attaching instructions files. Install with one command from the project root:
 
 ```bash
 npx github:the-psi/pai-orbit init copilot
 ```
 
-The CLI runs an interactive interview (board, branch model, docs home, optional pre-commit hooks), copies the built adapter output, renders `.copilot/pai-orbit-config.md`, and scaffolds `docs/` + `CLAUDE.md`. Full adoption guide: [`docs/copilot-install-and-usage.md`](docs/copilot-install-and-usage.md).
+This installs the pai-orbit files only. Then run `/setup` in Copilot Chat (Business/Pro tier runs it agentically, proposing file edits you accept). Copilot Free users can pass `--setup` to run the full interview from the terminal instead: `npx github:the-psi/pai-orbit init copilot --setup`. The setup step renders `.copilot/pai-orbit-config.md`, `.copilot/team.md`, `AGENTS.md`, and scaffolds `docs/`. Full adoption guide: [`docs/copilot-install-and-usage.md`](docs/copilot-install-and-usage.md).
 
 **Enforcement is honest:** Copilot has no runtime hook system, so `bash-guard` intent lives as advisory text in `.github/copilot-instructions.md` (Copilot usually obeys); the optional `.husky/pre-commit` adds commit-time lint + weak secret detection, but cannot block `git push --force` or `git add -A`. Details in the adoption page's Hook coverage matrix.
 
