@@ -76,29 +76,195 @@ rewrite_agents_md() {
     -e 's|AGENTS\.md\.template|CLAUDE.md.template|g'
 }
 
-# D37: Copilot-only view of setup.md. Strips the Claude Code and Cursor target
-# subsections from Step 3 so a Copilot user reading `/setup` in Chat sees only
-# shared steps (1, 2, 2b) and the Copilot target block. Boundaries are marked
-# by `### Target: <name>` headings and closing `---` separators, so this filter
-# is structural — no per-line text edits leak into the Claude/Cursor sources.
-# Also retargets Step 3's intro so it doesn't advertise the removed blocks.
-strip_non_copilot_targets() {
-  awk '
-    BEGIN { skip = 0 }
-    /^### Target: Claude Code/ { skip = 1; next }
-    /^### Target: Cursor/      { skip = 1; next }
-    /^### Target: Copilot/     { skip = 0 }
-    skip == 1 && /^---$/       { skip = 0; next }
-    # Drop the "Regression discipline" blockquote — it is an implementation
-    # directive to maintainers about Claude Code / Cursor paths, meaningless
-    # to a Copilot reader of /setup.
-    /^> \*\*Regression discipline/ { skip_bq = 1; next }
-    skip_bq == 1 && /^$/           { skip_bq = 0; next }
-    skip_bq == 1                   { next }
-    skip == 0                      { print }
-  ' | sed \
-    -e 's|^Create the following files based on the assistant target(s) chosen in Step 2 question 11\. The Claude Code path (default) is documented first; the Cursor and Copilot paths follow as additive blocks\. When multiple targets are selected, run each block in turn — the resulting folders coexist in the same repo without conflict\.|Create the following files for the Copilot target. If the user also selected Claude Code or Cursor in Step 2 question 11, run `/setup` inside that tool separately — the Copilot `/setup` prompt only handles the Copilot scaffolding.|' \
-    -e 's|^Run this block when `copilot` is one of the selected targets\. The Copilot adapter output|The Copilot adapter output|'
+# D39 (2026-07-05): Copilot's setup.prompt.md is assembled by:
+#   1. Passing Steps 1, 2, and 2b of the shared core/modes/setup.md through the
+#      standard path + AGENTS.md rewrites (target-agnostic content — scan,
+#      interview questions, board discovery).
+#   2. Stopping the pass-through at `## Step 3 — Generate` (shared source's
+#      Step 3+4 are Claude-Code-specific — .claude/, hooks, .claude/settings.json
+#      merge, etc. — none of it applies to Copilot).
+#   3. Appending the Copilot Step 3 target block + Copilot Step 4 report, both
+#      defined as heredocs below (emit_copilot_step3_block, emit_copilot_step4_report).
+# This keeps the shared setup.md byte-identical to main — Claude Code and Cursor
+# adapters emit it unchanged. Copilot content lives entirely in this build.sh.
+transform_setup_for_copilot() {
+  awk -v step3_file="$1" -v step4_file="$2" '
+    # Stop passing shared source at Step 3 — everything after is Claude-specific.
+    /^## Step 3 — Generate$/ {
+      # Emit Copilot Step 3 + Step 4 content in place of the shared Step 3+4.
+      while ((getline line < step3_file) > 0) print line
+      close(step3_file)
+      while ((getline line < step4_file) > 0) print line
+      close(step4_file)
+      exit
+    }
+    { print }
+  '
+}
+
+emit_copilot_step3_block() {
+  cat <<'EOF'
+## Step 2c — Copilot install questions
+
+Before scaffolding, additionally ask:
+
+- **"Install the optional `.husky/pre-commit` hook (commit-time lint + weak secret tripwire; does NOT block `git push --force` or `git add -A`)?"** Default: `yes` if the project has `.git/`, `no` otherwise.
+- **"Choose pre-commit installer: husky / pre-commit framework / both / neither"**. Detection-driven defaults: `husky` if `.husky/` exists or `package.json` has a husky dep; `pre-commit` if `.pre-commit-config.yaml` already exists; `husky` otherwise.
+
+## Step 3 — Generate
+
+Create the following files. Tell the user what was created and what they need to fill in by hand.
+
+The Copilot adapter output lives in `plugins/pai-orbit/dist/copilot/` and is copied verbatim into the project, then `.copilot/` config files are rendered from the Step 2 interview answers.
+
+### Files to write
+
+Copy from the built `dist/copilot/` tree:
+
+| Source | Destination | Behaviour |
+|--------|-------------|-----------|
+| `dist/copilot/.github/copilot-instructions.md` | `<project>/.github/copilot-instructions.md` | **Overwrite** — pai-orbit owns this. |
+| `dist/copilot/.github/prompts/` | `<project>/.github/prompts/` | **Overwrite** the pai-orbit-emitted `*.prompt.md` files. Leave any user-authored prompts alone. |
+| `dist/copilot/.github/instructions/` | `<project>/.github/instructions/` | **Overwrite** the pai-orbit-emitted `*.instructions.md` files. Leave any user-authored instructions alone. |
+| `dist/copilot/.husky/pre-commit.template` | `<project>/.husky/pre-commit.template` | **Always copy** as the inert `.template`. If the user opted in to `husky`, additionally rename to `.husky/pre-commit`, `chmod +x`, and run `git update-index --add --chmod=+x .husky/pre-commit` so the exec bit is tracked. |
+| `dist/copilot/.pre-commit-config.yaml.template` | `<project>/.pre-commit-config.yaml.template` | **Always copy** as the inert `.template`. If the user opted in to `pre-commit framework`, rename to `.pre-commit-config.yaml` and instruct the user to run `pre-commit install` (this step does NOT install Python tooling itself). |
+
+Render from templates using the Step 2 answers:
+
+### `.copilot/pai-orbit-config.md`
+
+Use the template at `templates/pai-orbit-config.md.template`. Fill all sections from the answers above and the board discovery in Step 2b.
+
+For the `## Agile Board → columns` table, use **only** the column names and labels confirmed in Step 2b — never write placeholder or example values. Delete the tool-specific comment blocks that don't apply to the chosen board type.
+
+For the `## System Docs` section:
+- If the user answered **no** to the multi-repo question: omit the `## System Docs` section entirely from the generated file (do not write it with blank values).
+- If the user answered **yes** and provided a **relative path**: check whether that directory exists before writing. If it does not exist, warn the user ("System docs path not found — writing the pointer anyway; ensure the repo is cloned before running commands") and write it as given.
+- If the user answered **yes** and provided a **git URL**: write it as-is. Do not attempt to clone or validate — note that the user must clone the repo locally before commands can read from it.
+
+### `.copilot/team.md`
+
+Use the template at `templates/team.md.template`. Populate from team answers.
+
+### `.copilot/settings.json`
+
+Write the following JSON, replacing placeholders:
+
+```json
+{
+  "pai_orbit_version": "<version from plugins/pai-orbit/core/plugin.json>",
+  "target": "copilot",
+  "installed_at": "<ISO-8601 UTC timestamp at scaffold time>",
+  "husky_opted_in": <true if user picked husky or both, else false>,
+  "detected_languages": [<languages inferred from Step 1 file scan>],
+  "precommit_installer": "<husky | pre-commit | both | neither>"
+}
+```
+
+This file is read on subsequent re-runs (`/setup` or `npx … init copilot`) to know what was previously installed and to drive the diff report.
+
+### `AGENTS.md`
+
+Use the template at `templates/CLAUDE.md.template` (source template kept under its historical name; the emitted file for the Copilot target is `AGENTS.md`). Fill in:
+- Project name and one-line description
+- Sub-projects / services table (name, path, stack, purpose)
+- Commands section (dev server, build, test for each service)
+- Leave architecture section with clear `<!-- TODO: fill in by hand -->` markers
+
+If a `CLAUDE.md` already exists at repo root (legacy pre-D37 install), do not overwrite it. Create `AGENTS.md` alongside and tell the user to migrate content by hand — the Copilot adapter's `copilot-instructions.md` reads `AGENTS.md` first and falls back to `CLAUDE.md`, so both files can coexist.
+
+### MCP configuration
+
+If the user provided MCP server answers in Step 2, write an `## MCP` section to `.copilot/pai-orbit-config.md`:
+
+```markdown
+## MCP
+
+git: {{GIT_MCP_SERVER}}
+<!-- Choose one: github | gitlab | none -->
+
+board: {{BOARD_MCP_SERVER}}
+<!-- Choose one: github | linear | jira | none -->
+
+docs: {{DOCS_MCP_SERVER}}
+<!-- Choose one: confluence | notion | none -->
+```
+
+Omit the `## MCP` section entirely if all three answers are "none".
+
+### Docs scaffold
+
+If `docs/` does not exist, copy the scaffold from `templates/docs/` to the configured docs path.
+If a dedicated docs repo path was given, create the scaffold there.
+If Confluence or Notion: skip the scaffold, note the MCP setup required (see Getting Started).
+
+### Architecture scaffold
+
+Copy `templates/docs/architecture/system.md`, `constraints.md`, and `stack.md` to `docs/architecture/` (replacing `{{PROJECT_NAME}}` and `{{DATE}}`).
+
+Populate `stack.md` from the language and framework info discovered in Step 1.
+
+If the user answered the architecture question (Step 2, item 8), pre-populate the service table in `system.md` and the rules in `constraints.md` from those answers. Otherwise leave as stubs.
+
+Tell the user: "Run `/arch init` to complete your architecture declaration. Once declared, `/build` and `/review` will read `constraints.md` to enforce architectural rules automatically."
+
+### What is NOT written for the Copilot target
+
+- **No `.claude/` folder.** That is the Claude Code path.
+- **No `.cursor/` folder.** That is the Cursor path.
+- **No native hooks (`.claude/hooks/`).** Copilot has no hook event surface. `bash-guard` intent lives in `.github/copilot-instructions.md` as always-loaded advisory text plus the optional `.husky/pre-commit` (or `.pre-commit-config.yaml`). `arch-drift` intent lives in `.github/copilot-instructions.md` and `.github/instructions/arch-drift.instructions.md`. Lint hooks rely on the project's own linter config invoked at commit time by the pre-commit hook — the linter config (`pyproject.toml`, `.eslintrc.json`) is owned by the project, never authored by pai-orbit.
+- **No editor-specific files (`.vscode/`, `.idea/`, etc.).** Editor settings are owned by the team. VS Code users who want lint-on-save follow the 4-line copy-paste recipe in `docs/copilot-install-and-usage.md`.
+- **Service-builder prompts already ship as `.github/prompts/<stack>-builder.prompt.md`** under the Copilot adapter. On Pro/Business Copilot they run as multi-step agents (read `AGENTS.md`, detect the service, propose file edits); on Free they degrade to regular prompts that still give correct manual scaffolding guidance.
+
+### Standalone install alternative
+
+If the team does not use Claude Code or Cursor, the `/setup` mode is unreachable. Tell the user about the equivalent CLI entry point:
+
+```bash
+npx github:the-psi/pai-orbit init copilot
+```
+
+It runs the same interview, renders the same files, and is the supported path for Copilot-only teams.
+
+EOF
+}
+
+emit_copilot_step4_report() {
+  cat <<'EOF'
+## Step 4 — Report
+
+List every file created. For each:
+- ✅ Complete — no action needed
+- ⚠️ Stub — what the human needs to fill in
+
+Architecture files:
+- ⚠️ Stub — `docs/architecture/system.md` — run `/arch init` to complete
+- ⚠️ Stub — `docs/architecture/constraints.md` — run `/arch init` to define rules
+- ✅ Generated — `docs/architecture/stack.md` (populated from detected stack)
+
+Methodology surfaces (always written):
+- ✅ Generated — `.github/copilot-instructions.md` — slim rule book + Context discovery + prompt-library pointer
+- ✅ Generated — `.github/prompts/` — 29 invokable slash commands (14 modes, 6 skills, 7 service-builder agent prompts, 2 named agents: `docs-writer`, `cross-repo-impact`)
+- ✅ Generated — `.github/instructions/` — 5 auto-attaching guidance files (`git`, `data-model`, `arch-drift`, `context-discovery`, `decisions`)
+- ✅ Generated — `.copilot/pai-orbit-config.md` — board, branch model, deploy targets, docs home, team conventions
+- ✅ Generated — `.copilot/team.md` — team members, owners, default assignees
+- ✅ Generated — `.copilot/settings.json` — version, target, install timestamp, husky opt-in, detected languages, pre-commit installer choice
+
+Pre-commit hooks (commit-time lint + weak secret tripwire, depends on the user's Step 2 answer):
+- ✅ Generated — `.husky/pre-commit.template` — inert template; rename to `.husky/pre-commit` + `chmod +x` to activate (the exec bit is tracked in git)
+- ✅ Generated — `.pre-commit-config.yaml.template` — inert template; rename to `.pre-commit-config.yaml` + run `pre-commit install` to activate
+- If user opted into `husky`: ✅ Active — `.husky/pre-commit` is in place, executable, and the exec bit is tracked in git. **Scope:** runs `ruff` / `eslint` on staged files (blocks on lint failure) plus a weak regex secret tripwire. **Does NOT** block `git push --force`, `git add -A`, `--no-verify`, or `rm -rf` — those are pre-push / staging-phase / shell operations that no pre-commit hook can see.
+- If user opted into `pre-commit framework`: ✅ Active — `.pre-commit-config.yaml` is in place; remind the user to run `pre-commit install`. Same scope caveats as husky.
+- If user picked `both`: both active paths above.
+- If user picked `neither`: both inert templates only; user can opt in later.
+
+**Explicit non-emissions:**
+- ❌ No `.vscode/`, no `.idea/`, no editor-specific folders. Editor settings are owned by the team. VS Code users follow the 4-line lint-on-save recipe in `docs/copilot-install-and-usage.md`.
+
+**Honest gap statement (read aloud to the user):** Copilot has no runtime hook system. The `bash-guard` intent is delivered **as advisory text only** in `.github/copilot-instructions.md` — Copilot is instructed to refuse `git push --force`, `git add -A`, `--no-verify`, and destructive `rm`, and usually obeys, but this is not enforced. The optional `.husky/pre-commit` (or `.pre-commit-config.yaml`) adds real enforcement **at commit time only**, and its scope is narrow: lint failures block the commit and a weak regex catches obvious credential patterns — it does NOT and cannot block `git push --force` (wrong git phase), `git add -A` (staging happens before the hook), or shell commands like `rm -rf`. For hard enforcement of those patterns, use Claude Code, a separate pre-push hook, or server-side branch protection.
+
+End with: "Run `/suggest-skills` after a few sessions to discover operational skills worth adding."
+EOF
 }
 
 # Modes dropped on the Copilot adapter.
@@ -372,12 +538,16 @@ emit_mode_prompts() {
           setup)
             printf '> **Agent-mode prompt.** On Copilot Pro/Business this runs as a multi-step agent that reads project files, asks questions in Chat, runs shell commands (e.g. `glab api`, `gh project field-list`, `chmod`), and proposes file edits you accept. On Copilot Free it degrades to advisory text — Copilot describes the steps and you run them manually. The equivalent terminal path is `npx github:the-psi/pai-orbit init copilot`.\n'
             printf '\n'
-            # Apply rewrite_agents_md after stripping non-Copilot target blocks.
-            # Safe now that the source uses single-filename wording only — the
-            # blanket rewrite converts CLAUDE.md → AGENTS.md throughout the
-            # Copilot-target block without garbling cross-adapter narrative
-            # (there is none left to garble in the surviving text).
-            strip_non_copilot_targets < "$mode_file" | rewrite_paths | rewrite_agents_md
+            # D39: assemble Copilot's setup.prompt.md from shared source
+            # (Steps 1-2, 2b, Step 3 intro + Step 4 header/closing) + Copilot's
+            # own Step 3 + Step 4 content emitted from build.sh. Then apply
+            # standard path + AGENTS.md rewrites.
+            local step3_tmp="$DIST_DIR/.copilot_step3.tmp" step4_tmp="$DIST_DIR/.copilot_step4.tmp"
+            emit_copilot_step3_block > "$step3_tmp"
+            emit_copilot_step4_report > "$step4_tmp"
+            transform_setup_for_copilot "$step3_tmp" "$step4_tmp" < "$mode_file" \
+              | rewrite_paths | rewrite_agents_md
+            rm -f "$step3_tmp" "$step4_tmp"
             ;;
           suggest-skills)
             printf '> **Agent-mode prompt (Copilot-adapted).** On Copilot Pro/Business this runs as a multi-step agent that reads `AGENTS.md` (or `CLAUDE.md` on legacy installs), `docs/`, `git log`, `.github/prompts/`, `docs/wip/`, and `docs/ops/` to identify workflow patterns worth encoding as skills. On Copilot Free it degrades to advisory text.\n'
