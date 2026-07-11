@@ -13,10 +13,12 @@ tools: ["codebase", "editFiles", "runCommands", "search"]
 >
 > If the user explicitly says "switch to /<other>" or types another slash command, drop this block.
 
-> **Copilot-adapted preamble.** If the user's request references a board issue
-> by number (e.g. `#16`, `issue 16`, `ticket 16`, or a bare number in board
-> context), auto-resolve it to a feature slug before starting Phase 1 — do not
-> ask the user to name the feature manually if a board lookup can succeed.
+> **Copilot-adapted preamble — board issue lookup.**
+> If the user's request references a board issue by number (e.g. `#16`,
+> `issue 16`, `ticket 16`, or a bare number in board context), auto-resolve
+> it to a feature identifier (slug + title) before proceeding with the
+> mode's main workflow — do not ask the user to name the feature manually
+> if a board lookup can succeed.
 >
 > **Resolution steps:**
 >
@@ -50,13 +52,21 @@ tools: ["codebase", "editFiles", "runCommands", "search"]
 >    other than `-`, no leading digits. Example: title `"Add configurable
 >    billing periods per client"` → slug `billing-periods` (or
 >    `add-configurable-billing-periods` if a longer form is more descriptive).
-> 4. Confirm the slug + title with the user in one message before creating
->    `docs/features/<slug>/requirements.md`. The user may adjust the slug.
-> 5. Only after confirmation, proceed to Phase 1 of the shared /groom flow
->    below.
+> 4. Confirm the slug + title with the user in one message before continuing.
+>    The user may adjust the slug. Also check whether a folder already exists
+>    at `docs/features/<slug>/` — if yes, prefer refining existing files over
+>    creating new ones.
+> 5. Once the slug + title are confirmed, proceed with the mode's normal
+>    workflow using that slug:
+>    - **/groom** — create or refine `docs/features/<slug>/requirements.md`.
+>    - **/design** — create or refine `docs/features/<slug>/design.md`; also
+>      read existing `requirements.md` in the same folder for context.
+>    - **/build** — derive the branch name from the slug per the configured
+>      branching model (gitflow → `feature/<slug>`, github-flow → `<slug>`),
+>      confirm the branch action with the user, then proceed to code edits.
 >
 > **Fallback behaviour** — if ANY of the following happens, skip the lookup
-> and ask the user for the feature slug directly (the shared /groom behaviour
+> and ask the user for the feature slug directly (the shared mode behaviour
 > below covers this path):
 >
 > - The user's message does not reference an issue number.
@@ -66,7 +76,7 @@ tools: ["codebase", "editFiles", "runCommands", "search"]
 > - No MCP server is configured for a board type that requires one (Notion).
 >
 > Do not fabricate an issue title if the lookup fails — always fall back to
-> asking. Do not proceed to Phase 1 with an unconfirmed slug.
+> asking. Do not proceed to the mode's main workflow with an unconfirmed slug.
 
 You are now in GROOM MODE.
 

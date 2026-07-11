@@ -102,18 +102,23 @@ transform_setup_for_copilot() {
   '
 }
 
-# D40 (2026-07-05): Copilot-adapted preamble prepended to the shared /groom
-# mode. Tells Copilot Business how to resolve a board issue number reference
-# (e.g. "#16", "issue 16", "ticket 16") into a feature slug + title by querying
-# the board configured in `.copilot/pai-orbit-config.md`. Board type drives the
-# tool choice (glab / gh / linear / jira / MCP); fall back to asking the user
-# if the board type is `none` or the query fails.
-emit_groom_preamble() {
+# D40 (2026-07-05, extended D41 2026-07-05): Copilot-adapted preamble
+# prepended to shared workflow modes (/groom, /design, /build) that need to
+# resolve a board issue number reference (e.g. "#16", "issue 16", "ticket 16")
+# into a feature identifier (slug + title). Board type comes from
+# `.copilot/pai-orbit-config.md` and drives the tool choice (glab api / gh
+# api / MCP). All three modes need this because /groom uses the slug for the
+# feature folder name, /design uses it to locate the feature under active
+# work, and /build uses it for the gitflow branch name (`feature/<slug>`).
+# Falls back to asking the user directly if the lookup can't succeed.
+emit_board_lookup_preamble() {
   cat <<'EOF'
-> **Copilot-adapted preamble.** If the user's request references a board issue
-> by number (e.g. `#16`, `issue 16`, `ticket 16`, or a bare number in board
-> context), auto-resolve it to a feature slug before starting Phase 1 — do not
-> ask the user to name the feature manually if a board lookup can succeed.
+> **Copilot-adapted preamble — board issue lookup.**
+> If the user's request references a board issue by number (e.g. `#16`,
+> `issue 16`, `ticket 16`, or a bare number in board context), auto-resolve
+> it to a feature identifier (slug + title) before proceeding with the
+> mode's main workflow — do not ask the user to name the feature manually
+> if a board lookup can succeed.
 >
 > **Resolution steps:**
 >
@@ -147,13 +152,21 @@ emit_groom_preamble() {
 >    other than `-`, no leading digits. Example: title `"Add configurable
 >    billing periods per client"` → slug `billing-periods` (or
 >    `add-configurable-billing-periods` if a longer form is more descriptive).
-> 4. Confirm the slug + title with the user in one message before creating
->    `docs/features/<slug>/requirements.md`. The user may adjust the slug.
-> 5. Only after confirmation, proceed to Phase 1 of the shared /groom flow
->    below.
+> 4. Confirm the slug + title with the user in one message before continuing.
+>    The user may adjust the slug. Also check whether a folder already exists
+>    at `docs/features/<slug>/` — if yes, prefer refining existing files over
+>    creating new ones.
+> 5. Once the slug + title are confirmed, proceed with the mode's normal
+>    workflow using that slug:
+>    - **/groom** — create or refine `docs/features/<slug>/requirements.md`.
+>    - **/design** — create or refine `docs/features/<slug>/design.md`; also
+>      read existing `requirements.md` in the same folder for context.
+>    - **/build** — derive the branch name from the slug per the configured
+>      branching model (gitflow → `feature/<slug>`, github-flow → `<slug>`),
+>      confirm the branch action with the user, then proceed to code edits.
 >
 > **Fallback behaviour** — if ANY of the following happens, skip the lookup
-> and ask the user for the feature slug directly (the shared /groom behaviour
+> and ask the user for the feature slug directly (the shared mode behaviour
 > below covers this path):
 >
 > - The user's message does not reference an issue number.
@@ -163,7 +176,7 @@ emit_groom_preamble() {
 > - No MCP server is configured for a board type that requires one (Notion).
 >
 > Do not fabricate an issue title if the lookup fails — always fall back to
-> asking. Do not proceed to Phase 1 with an unconfirmed slug.
+> asking. Do not proceed to the mode's main workflow with an unconfirmed slug.
 
 EOF
 }
@@ -374,17 +387,18 @@ needs_skills_target_rewrite() {
   esac
 }
 
-# D40 (2026-07-05): modes that need a Copilot-adapted preamble prepended to the
-# shared mode content. Currently only /groom — Copilot users often reference
-# board issue numbers (`#16`, `issue 16`) that Claude Code / Cursor users don't
-# use as commonly. Copilot's model is more literal about following prompts, so
-# the preamble tells it explicitly how to resolve a board issue number to a
-# feature slug by querying the board type configured in
-# `.copilot/pai-orbit-config.md`. Falls back to the shared /groom behaviour if
-# no issue number is referenced or the board query fails.
+# D40 (2026-07-05, extended D41 2026-07-05): modes that need the shared
+# board-issue-lookup preamble prepended. All three workflow modes (groom,
+# design, build) resolve board issue numbers into feature identifiers — /groom
+# uses the slug for the feature folder, /design uses it to locate the feature,
+# /build uses it for the gitflow branch name. Copilot's model is more literal
+# about following prompts than Claude Code / Cursor (Anthropic Sonnet-based),
+# so the preamble tells it explicitly how to query the board via `glab api` /
+# `gh api` / MCP based on the configured board type. Falls back to asking the
+# user directly if the lookup can't succeed.
 needs_copilot_preamble() {
   case "$1" in
-    groom) return 0 ;;
+    groom|design|build) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -762,10 +776,11 @@ emit_mode_prompts() {
         printf '>\n'
         printf '> If the user explicitly says "switch to /<other>" or types another slash command, drop this block.\n'
         printf '\n'
-        # D40: Copilot-adapted preamble for modes that need it (currently only
-        # /groom — auto-resolves board issue numbers to feature slugs).
+        # D40/D41: Copilot-adapted board-lookup preamble for workflow modes
+        # (groom, design, build) that resolve a board issue number into a
+        # feature identifier (slug + title) before their main workflow starts.
         if needs_copilot_preamble "$mode_name"; then
-          emit_groom_preamble
+          emit_board_lookup_preamble
         fi
         rewrite_paths < "$mode_file" | rewrite_agents_md
       } > "$DIST_DIR/.github/prompts/${mode_name}.prompt.md"

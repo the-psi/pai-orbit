@@ -13,6 +13,71 @@ tools: ["codebase", "editFiles", "runCommands", "search"]
 >
 > If the user explicitly says "switch to /<other>" or types another slash command, drop this block.
 
+> **Copilot-adapted preamble — board issue lookup.**
+> If the user's request references a board issue by number (e.g. `#16`,
+> `issue 16`, `ticket 16`, or a bare number in board context), auto-resolve
+> it to a feature identifier (slug + title) before proceeding with the
+> mode's main workflow — do not ask the user to name the feature manually
+> if a board lookup can succeed.
+>
+> **Resolution steps:**
+>
+> 1. Read `.copilot/pai-orbit-config.md`. Find the `## Agile Board` section and
+>    extract the board `type` (one of: `gitlab`, `github`, `github-projects`,
+>    `linear`, `jira`, `notion`, `none`) and the board URL / project path.
+> 2. Query the issue using the matching tool via `runCommands`. **Prefer the
+>    direct API subcommand over the "smart" issue-view subcommand** — the
+>    latter can prompt interactively for repo selection, which hangs Copilot's
+>    non-interactive shell. This matches the pattern Step 2b of /setup already
+>    uses to query boards.
+>    - **gitlab** — `glab api /projects/<url-encoded-namespace-and-project>/issues/<n>`
+>      where `<url-encoded-namespace-and-project>` is the namespace/project path
+>      with `/` URL-encoded as `%2F` (example: `Internal%2Fpsi-portal`). The
+>      response is JSON; read the `title` field. Do NOT use `glab issue view`
+>      — it prompts for repo selection when the working directory's git remote
+>      doesn't match the requested repo.
+>    - **github** or **github-projects** — `gh api /repos/<owner>/<repo>/issues/<n>`.
+>      Read the `title` field from the JSON response. Do NOT use `gh issue view`
+>      for the same interactive-prompting reason.
+>    - **linear** — Linear MCP server if configured (check for a `board:` MCP
+>      entry in the `## MCP` section of the config). If no MCP is configured,
+>      skip lookup — the `linear` CLI is interactive-heavy and not suitable
+>      for scripted runs.
+>    - **jira** — Jira MCP server if configured. If no MCP is configured, skip
+>      lookup — the Atlassian CLIs are interactive-heavy.
+>    - **notion** — Notion MCP required. If not configured, skip lookup.
+>    - **none** — no board configured; skip lookup.
+> 3. Extract the issue title from the tool output. Propose a feature slug
+>    derived from the title: lowercase, whitespace → `-`, strip punctuation
+>    other than `-`, no leading digits. Example: title `"Add configurable
+>    billing periods per client"` → slug `billing-periods` (or
+>    `add-configurable-billing-periods` if a longer form is more descriptive).
+> 4. Confirm the slug + title with the user in one message before continuing.
+>    The user may adjust the slug. Also check whether a folder already exists
+>    at `docs/features/<slug>/` — if yes, prefer refining existing files over
+>    creating new ones.
+> 5. Once the slug + title are confirmed, proceed with the mode's normal
+>    workflow using that slug:
+>    - **/groom** — create or refine `docs/features/<slug>/requirements.md`.
+>    - **/design** — create or refine `docs/features/<slug>/design.md`; also
+>      read existing `requirements.md` in the same folder for context.
+>    - **/build** — derive the branch name from the slug per the configured
+>      branching model (gitflow → `feature/<slug>`, github-flow → `<slug>`),
+>      confirm the branch action with the user, then proceed to code edits.
+>
+> **Fallback behaviour** — if ANY of the following happens, skip the lookup
+> and ask the user for the feature slug directly (the shared mode behaviour
+> below covers this path):
+>
+> - The user's message does not reference an issue number.
+> - The board `type` is `none` or missing.
+> - The required CLI tool is not installed (`command -v <tool>` fails).
+> - The board query returns an error (auth, network, issue not found).
+> - No MCP server is configured for a board type that requires one (Notion).
+>
+> Do not fabricate an issue title if the lookup fails — always fall back to
+> asking. Do not proceed to the mode's main workflow with an unconfirmed slug.
+
 You are now in BUILD MODE.
 
 This is an implementation session. Stay in this mode until the user switches.
