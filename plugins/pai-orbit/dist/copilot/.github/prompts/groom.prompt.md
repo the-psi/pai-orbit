@@ -13,6 +13,49 @@ tools: ["codebase", "editFiles", "runCommands", "search"]
 >
 > If the user explicitly says "switch to /<other>" or types another slash command, drop this block.
 
+> **Copilot-adapted preamble.** If the user's request references a board issue
+> by number (e.g. `#16`, `issue 16`, `ticket 16`, or a bare number in board
+> context), auto-resolve it to a feature slug before starting Phase 1 — do not
+> ask the user to name the feature manually if a board lookup can succeed.
+>
+> **Resolution steps:**
+>
+> 1. Read `.copilot/pai-orbit-config.md`. Find the `## Agile Board` section and
+>    extract the board `type` (one of: `gitlab`, `github`, `github-projects`,
+>    `linear`, `jira`, `notion`, `none`) and the board URL / project path.
+> 2. Query the issue using the matching tool via `runCommands`:
+>    - **gitlab** — `glab issue view <n> --repo <namespace/project>` (namespace
+>      derived from the board URL).
+>    - **github** or **github-projects** — `gh issue view <n> --repo <owner>/<repo>`.
+>    - **linear** — Linear MCP server if configured (check for a `board:` MCP
+>      entry in the `## MCP` section of the config); otherwise `linear issue <n>`.
+>    - **jira** — Jira MCP server if configured; otherwise `jira issue view <n>`
+>      (or the equivalent Atlassian CLI). If neither is available, skip lookup.
+>    - **notion** — Notion MCP required. If not configured, skip lookup.
+>    - **none** — no board configured; skip lookup.
+> 3. Extract the issue title from the tool output. Propose a feature slug
+>    derived from the title: lowercase, whitespace → `-`, strip punctuation
+>    other than `-`, no leading digits. Example: title `"Add configurable
+>    billing periods per client"` → slug `billing-periods` (or
+>    `add-configurable-billing-periods` if a longer form is more descriptive).
+> 4. Confirm the slug + title with the user in one message before creating
+>    `docs/features/<slug>/requirements.md`. The user may adjust the slug.
+> 5. Only after confirmation, proceed to Phase 1 of the shared /groom flow
+>    below.
+>
+> **Fallback behaviour** — if ANY of the following happens, skip the lookup
+> and ask the user for the feature slug directly (the shared /groom behaviour
+> below covers this path):
+>
+> - The user's message does not reference an issue number.
+> - The board `type` is `none` or missing.
+> - The required CLI tool is not installed (`command -v <tool>` fails).
+> - The board query returns an error (auth, network, issue not found).
+> - No MCP server is configured for a board type that requires one (Notion).
+>
+> Do not fabricate an issue title if the lookup fails — always fall back to
+> asking. Do not proceed to Phase 1 with an unconfirmed slug.
+
 You are now in GROOM MODE.
 
 This is a feature requirements session that runs in three gated phases — purpose, scenarios, then requirements. Do not analyze requirements until phases 1 and 2 are confirmed. Output saved to `docs/features/<feature>/requirements.md`.

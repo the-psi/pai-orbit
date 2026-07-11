@@ -102,6 +102,60 @@ transform_setup_for_copilot() {
   '
 }
 
+# D40 (2026-07-05): Copilot-adapted preamble prepended to the shared /groom
+# mode. Tells Copilot Business how to resolve a board issue number reference
+# (e.g. "#16", "issue 16", "ticket 16") into a feature slug + title by querying
+# the board configured in `.copilot/pai-orbit-config.md`. Board type drives the
+# tool choice (glab / gh / linear / jira / MCP); fall back to asking the user
+# if the board type is `none` or the query fails.
+emit_groom_preamble() {
+  cat <<'EOF'
+> **Copilot-adapted preamble.** If the user's request references a board issue
+> by number (e.g. `#16`, `issue 16`, `ticket 16`, or a bare number in board
+> context), auto-resolve it to a feature slug before starting Phase 1 — do not
+> ask the user to name the feature manually if a board lookup can succeed.
+>
+> **Resolution steps:**
+>
+> 1. Read `.copilot/pai-orbit-config.md`. Find the `## Agile Board` section and
+>    extract the board `type` (one of: `gitlab`, `github`, `github-projects`,
+>    `linear`, `jira`, `notion`, `none`) and the board URL / project path.
+> 2. Query the issue using the matching tool via `runCommands`:
+>    - **gitlab** — `glab issue view <n> --repo <namespace/project>` (namespace
+>      derived from the board URL).
+>    - **github** or **github-projects** — `gh issue view <n> --repo <owner>/<repo>`.
+>    - **linear** — Linear MCP server if configured (check for a `board:` MCP
+>      entry in the `## MCP` section of the config); otherwise `linear issue <n>`.
+>    - **jira** — Jira MCP server if configured; otherwise `jira issue view <n>`
+>      (or the equivalent Atlassian CLI). If neither is available, skip lookup.
+>    - **notion** — Notion MCP required. If not configured, skip lookup.
+>    - **none** — no board configured; skip lookup.
+> 3. Extract the issue title from the tool output. Propose a feature slug
+>    derived from the title: lowercase, whitespace → `-`, strip punctuation
+>    other than `-`, no leading digits. Example: title `"Add configurable
+>    billing periods per client"` → slug `billing-periods` (or
+>    `add-configurable-billing-periods` if a longer form is more descriptive).
+> 4. Confirm the slug + title with the user in one message before creating
+>    `docs/features/<slug>/requirements.md`. The user may adjust the slug.
+> 5. Only after confirmation, proceed to Phase 1 of the shared /groom flow
+>    below.
+>
+> **Fallback behaviour** — if ANY of the following happens, skip the lookup
+> and ask the user for the feature slug directly (the shared /groom behaviour
+> below covers this path):
+>
+> - The user's message does not reference an issue number.
+> - The board `type` is `none` or missing.
+> - The required CLI tool is not installed (`command -v <tool>` fails).
+> - The board query returns an error (auth, network, issue not found).
+> - No MCP server is configured for a board type that requires one (Notion).
+>
+> Do not fabricate an issue title if the lookup fails — always fall back to
+> asking. Do not proceed to Phase 1 with an unconfirmed slug.
+
+EOF
+}
+
 emit_copilot_step3_block() {
   cat <<'EOF'
 ## Step 2c — Copilot install questions
@@ -304,6 +358,21 @@ needs_agent_mode() {
 needs_skills_target_rewrite() {
   case "$1" in
     suggest-skills) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# D40 (2026-07-05): modes that need a Copilot-adapted preamble prepended to the
+# shared mode content. Currently only /groom — Copilot users often reference
+# board issue numbers (`#16`, `issue 16`) that Claude Code / Cursor users don't
+# use as commonly. Copilot's model is more literal about following prompts, so
+# the preamble tells it explicitly how to resolve a board issue number to a
+# feature slug by querying the board type configured in
+# `.copilot/pai-orbit-config.md`. Falls back to the shared /groom behaviour if
+# no issue number is referenced or the board query fails.
+needs_copilot_preamble() {
+  case "$1" in
+    groom) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -681,6 +750,11 @@ emit_mode_prompts() {
         printf '>\n'
         printf '> If the user explicitly says "switch to /<other>" or types another slash command, drop this block.\n'
         printf '\n'
+        # D40: Copilot-adapted preamble for modes that need it (currently only
+        # /groom — auto-resolves board issue numbers to feature slugs).
+        if needs_copilot_preamble "$mode_name"; then
+          emit_groom_preamble
+        fi
         rewrite_paths < "$mode_file" | rewrite_agents_md
       } > "$DIST_DIR/.github/prompts/${mode_name}.prompt.md"
     fi
