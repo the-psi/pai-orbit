@@ -20,10 +20,11 @@ When a user enters `/build` mode, Claude should invoke `/git` at session start t
 1. REQ-1 (Scenario 1): At session start, `/build` must read `.claude/pai-orbit-config.md → ## Git` to determine the branching model. If the model is GitHub Flow or GitFlow and the current branch is `main`/`develop`, Claude must create the appropriate feature branch before any file edits or commits occur.
 2. REQ-2 (Scenario 1): The feature branch name must be derived from the board issue or feature slug. Claude must state the branch name to the user and wait for confirmation before creating it.
 3. REQ-3 (Scenario 2): If the current branch is already a valid feature branch for the work (e.g. `feature/<slug>`), Claude must confirm this to the user and proceed without creating a new branch.
-4. REQ-4 (Scenario 3): For trunk-based projects, Claude must assess change size at session start. Small changes: confirm direct-to-`main` and proceed. Larger changes: create a short-lived branch, state its name, and confirm with the user.
-5. REQ-5 (Scenario 3): The distinction between "small" and "larger" changes for trunk-based projects must be derived from the scope of requirements or task description — not left implicit. If Claude cannot determine size, it must ask the user before deciding.
+4. REQ-4 (Scenario 3): For trunk-based projects, Claude must assess change size at session start using a file-count heuristic: ≤ 3 files estimated = small (commit directly to `main`); > 3 files estimated = larger (create a short-lived branch). The estimate is based on the task or requirements scope before any code is written. If Claude cannot estimate, it must ask the user before deciding.
+5. REQ-5 (Scenario 3): Small trunk-based change: confirm "Committing directly to `main` (trunk-based, small change ≤ 3 files)" and proceed. Larger trunk-based change: propose a short-lived branch name, state the estimated scope, and wait for user confirmation before creating it.
 6. REQ-6 (Scenario 4): If no branching model is configured, Claude must default to GitHub Flow, state the assumption ("No branching model configured — defaulting to GitHub Flow"), and proceed with feature branch creation per REQ-1/REQ-2.
 7. REQ-7 (All scenarios): Claude must communicate the active branch and intended PR target to the user as the first output of every `/build` session, before any implementation work begins.
+8. REQ-8 (Scenarios 1, 4): The branch name slug must be derived from the linked board issue title (kebab-cased). If no board issue is linked or the title cannot be resolved, Claude must ask the user for the slug before creating the branch.
 
 ## Non-functional requirements
 - Branch establishment must happen before the first file edit — not deferred to session close.
@@ -38,8 +39,8 @@ The `/git` skill already handles branching logic and reads from `.claude/pai-orb
 - Enforcing branch naming on commits the user made outside of `/build`.
 
 ## Open questions
-- [ ] How should "small vs. larger" change size be determined for trunk-based projects — by number of files, story points, or explicit user declaration? — owner: Pratham
-- [ ] Should the branch name slug come from the board issue title, the feature folder name, or user input? — owner: Pratham
+- [x] How should "small vs. larger" change size be determined for trunk-based projects? → **File-count heuristic: ≤ 3 files = small, > 3 files = larger.** If scope is unclear, Claude asks. (resolved 2026-06-20)
+- [x] Should the branch name slug come from the board issue title, the feature folder name, or user input? → **Board issue title (kebab-cased), falling back to user input if no issue is linked.** (resolved 2026-06-20)
 
 ## Acceptance criteria
 - AC-1 (Scenario 1): Given GitHub Flow config and current branch `main`, when `/build` starts, then Claude creates `feature/<slug>`, states it, and waits for confirmation before writing any code.

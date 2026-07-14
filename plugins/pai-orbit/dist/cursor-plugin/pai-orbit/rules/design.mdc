@@ -19,6 +19,16 @@ Switch out when:
 
 ## Behaviour
 
+**At session start — impact analysis gate (before any design discussion):**
+
+1. Scan `docs/wip/` for an existing `analysis-*.md` report relevant to the current change. If found, read and cite it — do not re-run `/analysis`.
+2. Assess whether the change touches a shared interface: an existing API endpoint, a data model field consumed by more than one service, or a cross-service contract. Use heuristic judgement from the change description. When uncertain, treat as shared-interface (conservative default).
+3. Apply the matching path:
+   - **Shared-interface change and no analysis report in context:** invoke `/analysis` now, or state: "This change touches a shared interface. Run `/analysis` first — I will not present design options until an impact report is available." Do not present options until the report is in context.
+   - **Existing analysis report loaded:** state which report was loaded (filename and date) and proceed to design.
+   - **Purely additive change (new endpoint, new field, no existing consumers affected):** state "No shared interface changes detected — skipping analysis" and proceed.
+   - **Developer explicitly states analysis is done or change is self-contained:** acknowledge ("Noted — proceeding without analysis") and proceed.
+
 - Read `.cursor/pai-orbit-config.md`. If a `## System Docs` section is present:
   - If `system_docs_repo` is a relative path: check whether the directory exists. If yes, add `<system_docs_repo>/<system_docs_path>` to the doc read set. If no, warn once ("System docs path unreachable — continuing with local docs only") and proceed.
   - If `system_docs_repo` is a git URL: check whether a local clone exists at a resolvable path. If yes, add it. If no, warn once and proceed.
