@@ -4,19 +4,28 @@ Full-parity build of pai-orbit for OpenAI Codex CLI (v0.144.6+).
 
 ## Install (no clone required)
 
-**macOS / Linux / WSL / Git Bash:**
+Single command, cross-platform (requires Node.js 18+):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/the-psi/pai-orbit/main/plugins/pai-orbit/dist/codex/install.sh | bash
+npx github:the-psi/pai-orbit init codex
 ```
 
-**Windows (native PowerShell):**
+Pin a specific release with a git ref suffix:
 
-```powershell
-irm https://raw.githubusercontent.com/the-psi/pai-orbit/main/plugins/pai-orbit/dist/codex/install.ps1 | iex
+```bash
+npx github:the-psi/pai-orbit#v1.4.0 init codex
 ```
 
-Pin a specific release with `PAI_ORBIT_REF=v1.4.0` (bash) or `$env:PAI_ORBIT_REF='v1.4.0'` (PowerShell) before running.
+To re-install and overwrite existing files (upgrade path):
+
+```bash
+npx github:the-psi/pai-orbit update codex
+```
+
+The CLI copies every file under `dist/codex/` into your project's root.
+Under the hood it just runs Node's `fs.copyFile`; there's no network fetch
+beyond `npx`'s initial repo download, no shell requirement, and no
+platform-specific script.
 
 ## Layout installed into your project
 

@@ -8,54 +8,58 @@ pai-orbit ships a full-parity build for OpenAI Codex CLI: skills, hooks, subagen
 
 ## Install
 
-### Recommended: no-clone install
+### Recommended: single command, cross-platform
 
-**macOS / Linux / WSL / Git Bash:**
+Run from the root of the project you want to install into:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/the-psi/pai-orbit/main/plugins/pai-orbit/dist/codex/install.sh | bash
+npx github:the-psi/pai-orbit init codex
 ```
 
-**Windows (native PowerShell):**
-
-```powershell
-irm https://raw.githubusercontent.com/the-psi/pai-orbit/main/plugins/pai-orbit/dist/codex/install.ps1 | iex
-```
-
-Both installers fetch every emitted file from the committed dist on GitHub and place them at your project root. Nothing is compiled; nothing runs on your machine other than `curl`/`Invoke-WebRequest` and the file writes.
+That's it. Works on macOS, Linux, WSL, and native Windows PowerShell. **Requires Node.js 18+** on your machine — npx fetches the repo, then a small Node CLI copies files into your project. No `curl`, no shell script, no platform-specific binary.
 
 ### Pin a specific release
 
-Override the ref (branch, tag, or SHA) before running:
+Append a git ref (branch, tag, or SHA) with `#`:
 
 ```bash
-PAI_ORBIT_REF=v1.4.0 curl -fsSL https://raw.githubusercontent.com/the-psi/pai-orbit/main/plugins/pai-orbit/dist/codex/install.sh | bash
+npx github:the-psi/pai-orbit#v1.4.0 init codex
 ```
 
-```powershell
-$env:PAI_ORBIT_REF='v1.4.0'; irm https://raw.githubusercontent.com/the-psi/pai-orbit/main/plugins/pai-orbit/dist/codex/install.ps1 | iex
+```bash
+# Install from a pre-merge branch:
+npx github:the-psi/pai-orbit#feat/codex-adapter init codex
 ```
+
+### Re-install / upgrade
+
+The `init` subcommand refuses to overwrite an existing `.agents/skills/` directory (protects other tools' installs). Use `update` to overwrite:
+
+```bash
+npx github:the-psi/pai-orbit update codex
+```
+
+`update` is idempotent — safe to run after every pai-orbit upgrade.
 
 ### Local development install
 
-If you're hacking on pai-orbit itself, clone and copy from the built `dist/codex/`:
+If you're hacking on pai-orbit itself, run the CLI directly from a checkout:
 
 ```bash
 git clone https://github.com/the-psi/pai-orbit
 cd your-project
-cp -R /path/to/pai-orbit/plugins/pai-orbit/dist/codex/. .
-chmod +x .codex/hooks/*.sh
+node /path/to/pai-orbit/plugins/pai-orbit/adapters/codex/install.js init codex
 ```
 
-Rebuild after editing anything under `plugins/pai-orbit/core/`:
+Rebuild the dist after editing anything under `plugins/pai-orbit/core/`:
 
 ```bash
 bash /path/to/pai-orbit/plugins/pai-orbit/build.sh
 ```
 
-### Manual install (no piping to shell)
+### Manual install (no npx)
 
-If your team policy forbids `curl | bash`:
+If your team policy forbids running `npx` against a `github:` URL:
 
 ```bash
 git clone https://github.com/the-psi/pai-orbit
@@ -63,7 +67,7 @@ cp -R pai-orbit/plugins/pai-orbit/dist/codex/. your-project/
 chmod +x your-project/.codex/hooks/*.sh
 ```
 
-That places the same files the installer would.
+That places the same files the CLI would.
 
 ---
 
@@ -280,8 +284,8 @@ The `.ps1` wrappers shell out to `bash` for the core scripts. If Git Bash / WSL 
 **`codex exec --sandbox workspace-write` errors: `codex-windows-sandbox-setup.exe not found`.**
 Windows-only edge case: the sandbox helper isn't discoverable from certain working directories. Workarounds: run `codex exec` with `--dangerously-bypass-approvals-and-sandbox` for automation contexts, or invoke Codex from a directory inside its install root.
 
-**The installer aborts with `WARNING: .agents/skills/ already exists in this project.`**
-Another tool is using `.agents/skills/`. Set `PAI_ORBIT_FORCE=1` (bash) or `$env:PAI_ORBIT_FORCE='1'` (PowerShell) to overwrite. Back up existing content first.
+**The installer aborts with `ERROR: .agents/skills/ already exists in this project.`**
+Another tool is using `.agents/skills/`, or you've already installed pai-orbit here. Run `npx github:the-psi/pai-orbit update codex` (instead of `init codex`) to overwrite. Back up existing content first if `.agents/skills/` belongs to a different tool.
 
 **I typed `/plan` in Codex and got an unexpected planner.**
 That's Codex's **built-in `/plan`** command. pai-orbit's plan mode is `$orbit-plan` on Codex (renamed to avoid this exact collision). Same for `/review` (Codex built-in) vs `$orbit-review` (pai-orbit).
@@ -313,7 +317,7 @@ Leave `~/.codex/` alone unless you also want to clear user-scope Codex config.
 
 ## Version compatibility
 
-- **Pinned baseline:** Codex CLI v0.144.6 (Phase 0 validation)
+- **Pinned baseline:** Codex CLI v0.144.6
 - **Minimum tested:** v0.144.6
 - **Untested / older:** anything below 0.144.6 — several primitives this adapter uses were validated on that pin. Older versions may work partially, but multi-agent primitives, `commandWindows`, and `agents/openai.yaml` respect are all version-dependent.
-- **Newer versions:** should work if the primitives above stay stable. When a new Codex release lands, re-run the Phase 3 validation checklist in `docs/wip/codex-adapter-validation-*.md` against the new pin.
+- **Newer versions:** should work if the primitives above stay stable. When a new Codex release lands, re-run the full checklist under [First-run steps](#first-run-steps) plus the interactive validation described in the adapter's Test plan.

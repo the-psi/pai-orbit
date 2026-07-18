@@ -45,21 +45,15 @@ Legacy copy-rules install (lossy): `plugins/pai-orbit/dist/cursor/` — use only
 
 ### OpenAI Codex CLI (full parity)
 
-pai-orbit ships as a full Codex CLI install — skills, hooks, subagents, MCP, and always-on rules all land natively. Requires Codex CLI v0.144.6 or later.
+pai-orbit ships as a full Codex CLI install — skills, hooks, subagents, MCP, and always-on rules all land natively. Requires Codex CLI v0.144.6+ and Node.js 18+.
 
-**macOS / Linux / WSL / Git Bash:**
+Single command, cross-platform:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/the-psi/pai-orbit/main/plugins/pai-orbit/dist/codex/install.sh | bash
+npx github:the-psi/pai-orbit init codex
 ```
 
-**Windows (native PowerShell):**
-
-```powershell
-irm https://raw.githubusercontent.com/the-psi/pai-orbit/main/plugins/pai-orbit/dist/codex/install.ps1 | iex
-```
-
-Pin a specific release with `PAI_ORBIT_REF=v1.4.0` (bash) or `$env:PAI_ORBIT_REF='v1.4.0'` (PowerShell) before running.
+Pin a specific release with a git ref suffix: `npx github:the-psi/pai-orbit#v1.4.0 init codex`. Re-install with `update codex` in place of `init codex`.
 
 After install, launch `codex` in the project, trust the project when prompted, then:
 

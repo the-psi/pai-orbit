@@ -4,7 +4,11 @@
 # Emits dist/codex/ containing:
 #   AGENTS.md, .agents/skills/ (20 skills), .codex/agents/ (2 TOML subagents),
 #   .codex/hooks/ + .codex/hooks.json, .codex/config.toml, .codex/templates/,
-#   install.sh, install.ps1, README.md.
+#   README.md.
+#
+# Install is via the npx CLI at plugins/pai-orbit/adapters/codex/install.js
+# (declared in the root package.json bin entry). No install.sh / install.ps1
+# is emitted; one cross-platform install path via `npx github:<repo> init codex`.
 #
 # Adapter is zero-core-edit: everything Codex-specific happens here.
 
@@ -298,144 +302,11 @@ while IFS= read -r -d '' f; do
   rewrite_paths_in_place "$f"
 done < <(find "$DIST_DIR/.codex/templates" \( -name '*.md' -o -name '*.mdc' -o -name '*.template' \) -print0)
 
-# ── 9. install.sh — no-clone Bash installer ────────────────────────────────
-# Build a list of every file under dist/codex relative to DIST_DIR.
-install_files=()
-while IFS= read -r -d '' f; do
-  rel="${f#$DIST_DIR/}"
-  # Skip the install scripts themselves and README (installer emits fresh docs)
-  case "$rel" in
-    install.sh|install.ps1|README.md) continue ;;
-  esac
-  install_files+=("$rel")
-done < <(find "$DIST_DIR" -type f -print0)
-
-if [ ${#install_files[@]} -eq 0 ]; then
-  echo "codex adapter: no files to install — did the emit steps run?" >&2
-  exit 1
-fi
-
-files_literal=""
-for rel in "${install_files[@]}"; do
-  files_literal+="  \"${rel}\""$'\n'
-done
-
-cat > "$DIST_DIR/install.sh" <<INSTALL_EOF
-#!/usr/bin/env bash
-# pai-orbit Codex installer — no clone required.
-# Run from the root of your project:
-#
-#   curl -fsSL https://raw.githubusercontent.com/${GITHUB_REPO}/main/${DIST_REL}/install.sh | bash
-#
-# Override the ref/tag with PAI_ORBIT_REF=v1.4.0 (defaults to main).
-set -euo pipefail
-
-REPO="${GITHUB_REPO}"
-REF="\${PAI_ORBIT_REF:-main}"
-BASE="https://raw.githubusercontent.com/\${REPO}/\${REF}/${DIST_REL}"
-
-FILES=(
-${files_literal})
-
-echo "pai-orbit (Codex): installing \${#FILES[@]} files from \${REPO}@\${REF} ..."
-echo ""
-
-# Sanity check: refuse to overwrite an existing .agents/skills/ directory
-# without confirmation — it could be another tool's plugin.
-if [ -d ".agents/skills" ] && [ -z "\${PAI_ORBIT_FORCE:-}" ]; then
-  echo "WARNING: .agents/skills/ already exists in this project."
-  echo "Set PAI_ORBIT_FORCE=1 to overwrite. Aborting."
-  exit 1
-fi
-
-for rel in "\${FILES[@]}"; do
-  dir="\$(dirname "\$rel")"
-  mkdir -p "\$dir"
-  curl -fsSL "\${BASE}/\${rel}" -o "\${rel}"
-  echo "  installed \${rel}"
-done
-
-# Ensure hook scripts are executable
-chmod +x .codex/hooks/*.sh 2>/dev/null || true
-
-echo ""
-echo "pai-orbit (Codex) installed."
-echo ""
-echo "Next steps:"
-echo "  1. Launch codex in this directory. Trust the project when prompted."
-echo "  2. Run /hooks to review and trust the 4 registered hooks."
-echo "  3. Run \\\$setup to fill in .codex/pai-orbit-config.md, .codex/team.md,"
-echo "     and the lint hooks' repo= configuration."
-echo "  4. Run /skills to see the 20 available skills."
-echo "     Six operational (analysis, board, data-model, epic, git, simplify)"
-echo "     fire implicitly on description match."
-echo "     Fourteen modes (arch, build, ..., orbit-plan, orbit-review) are"
-echo "     explicit-only: type \\\$mode-name to enter."
-echo ""
-INSTALL_EOF
-
-chmod +x "$DIST_DIR/install.sh"
-
-# ── 10. install.ps1 — no-clone PowerShell installer ────────────────────────
-ps1_files_literal=""
-for rel in "${install_files[@]}"; do
-  # PowerShell prefers backslash-style paths inside the array; but we keep
-  # forward slashes since curl/Invoke-WebRequest accepts them uniformly and
-  # the raw.githubusercontent URL requires forward slashes.
-  ps1_files_literal+="    '${rel}',"$'\n'
-done
-# Trim trailing comma-newline
-ps1_files_literal="${ps1_files_literal%,$'\n'}"$'\n'
-
-cat > "$DIST_DIR/install.ps1" <<INSTALLPS_EOF
-# pai-orbit Codex installer — Windows / PowerShell no-clone installer.
-# Run from the root of your project:
-#
-#   irm https://raw.githubusercontent.com/${GITHUB_REPO}/main/${DIST_REL}/install.ps1 | iex
-#
-# Override the ref/tag with \\\$env:PAI_ORBIT_REF='v1.4.0' before running.
-
-\$ErrorActionPreference = 'Stop'
-
-\$Repo   = '${GITHUB_REPO}'
-\$Ref    = if (\$env:PAI_ORBIT_REF) { \$env:PAI_ORBIT_REF } else { 'main' }
-\$Base   = "https://raw.githubusercontent.com/\$Repo/\$Ref/${DIST_REL}"
-
-\$Files = @(
-${ps1_files_literal})
-
-Write-Host "pai-orbit (Codex): installing \$(\$Files.Count) files from \$Repo@\$Ref ..."
-Write-Host ""
-
-if ((Test-Path '.agents/skills') -and -not \$env:PAI_ORBIT_FORCE) {
-    Write-Host "WARNING: .agents/skills/ already exists in this project." -ForegroundColor Yellow
-    Write-Host "Set \\\$env:PAI_ORBIT_FORCE='1' to overwrite. Aborting."
-    exit 1
-}
-
-foreach (\$rel in \$Files) {
-    \$dir = Split-Path -Parent \$rel
-    if (\$dir -and -not (Test-Path \$dir)) {
-        New-Item -ItemType Directory -Force -Path \$dir | Out-Null
-    }
-    Invoke-WebRequest -UseBasicParsing -Uri "\$Base/\$rel" -OutFile \$rel
-    Write-Host "  installed \$rel"
-}
-
-Write-Host ""
-Write-Host "pai-orbit (Codex) installed."
-Write-Host ""
-Write-Host "Next steps:"
-Write-Host "  1. Launch codex in this directory. Trust the project when prompted."
-Write-Host "  2. Run /hooks to review and trust the 4 registered hooks."
-Write-Host "  3. Run \\\$setup to fill in .codex/pai-orbit-config.md, .codex/team.md,"
-Write-Host "     and the lint hooks' repo= configuration."
-Write-Host "  4. Run /skills to see the 20 available skills."
-INSTALLPS_EOF
-
-# ── 11. README.md ──────────────────────────────────────────────────────────
-INSTALL_SH_URL="https://raw.githubusercontent.com/${GITHUB_REPO}/main/${DIST_REL}/install.sh"
-INSTALL_PS_URL="https://raw.githubusercontent.com/${GITHUB_REPO}/main/${DIST_REL}/install.ps1"
+# ── 9. README.md ───────────────────────────────────────────────────────────
+# Install is via the npx-distributed Node CLI at
+# plugins/pai-orbit/adapters/codex/install.js. This adapter no longer emits
+# install.sh / install.ps1 into dist — one cross-platform install path via
+# `npx github:the-psi/pai-orbit init codex`.
 
 cat > "$DIST_DIR/README.md" <<EOF
 # pai-orbit — OpenAI Codex CLI adapter
@@ -444,19 +315,28 @@ Full-parity build of pai-orbit for OpenAI Codex CLI (v0.144.6+).
 
 ## Install (no clone required)
 
-**macOS / Linux / WSL / Git Bash:**
+Single command, cross-platform (requires Node.js 18+):
 
 \`\`\`bash
-curl -fsSL ${INSTALL_SH_URL} | bash
+npx github:${GITHUB_REPO} init codex
 \`\`\`
 
-**Windows (native PowerShell):**
+Pin a specific release with a git ref suffix:
 
-\`\`\`powershell
-irm ${INSTALL_PS_URL} | iex
+\`\`\`bash
+npx github:${GITHUB_REPO}#v1.4.0 init codex
 \`\`\`
 
-Pin a specific release with \`PAI_ORBIT_REF=v1.4.0\` (bash) or \`\$env:PAI_ORBIT_REF='v1.4.0'\` (PowerShell) before running.
+To re-install and overwrite existing files (upgrade path):
+
+\`\`\`bash
+npx github:${GITHUB_REPO} update codex
+\`\`\`
+
+The CLI copies every file under \`dist/codex/\` into your project's root.
+Under the hood it just runs Node's \`fs.copyFile\`; there's no network fetch
+beyond \`npx\`'s initial repo download, no shell requirement, and no
+platform-specific script.
 
 ## Layout installed into your project
 
@@ -630,4 +510,5 @@ echo ""
 echo "codex adapter: built $DIST_DIR"
 echo "  20 skills / description sum: $total_desc chars (budget 8000)"
 echo "  2 subagents / 4 hooks + 3 wrappers + PS1 variants"
-echo "  install.sh, install.ps1, README.md, config.toml, hooks.json"
+echo "  README.md, config.toml, hooks.json"
+echo "  install: npx github:${GITHUB_REPO} init codex"
