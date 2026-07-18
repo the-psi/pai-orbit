@@ -1,8 +1,8 @@
 # Multi-Tool Compatibility
 
-**Status:** Draft
+**Status:** In Progress
 **Owner:** Punit Singhal
-**Last Updated:** 2026-05-18
+**Last Updated:** 2026-07-18
 
 ## Summary
 Extend pai-orbit so the same mode discipline and operational skills work in Cursor and OpenAI Codex CLI, not just Claude Code — enabling teams to use whichever AI coding tool they prefer without losing the methodology.
@@ -23,8 +23,8 @@ Extend pai-orbit so the same mode discipline and operational skills work in Curs
 | Feature | Status |
 |---------|--------|
 | canonical-spec | Not started |
-| cursor-adapter | Not started |
-| codex-adapter | Not started |
+| cursor-adapter | Done (Cursor plugin adapter shipped — see docs/cursor-plugin-install-and-usage.md) |
+| codex-adapter | Done (2026-07-18; full-parity build against Codex CLI v0.144.6 — see docs/codex-install-and-usage.md) |
 | setup-multi-tool | Not started |
 
 ## Success Metrics
@@ -37,9 +37,9 @@ Extend pai-orbit so the same mode discipline and operational skills work in Curs
 - **Generator vs parallel files:** Generator approach — single source of truth in `commands/*.md` and `skills/*/SKILL.md`; generator produces Cursor and Codex artefacts. See `docs/features/multi-tool-compat/design.md` D6.
 - **Claude adapter strategy (Phase 1):** Claude reads source files directly (native format). Generator does not produce Claude output yet. Migration to full Option B deferred to a future phase when a 4th tool warrants it.
 - **Cursor modes:** Surfaced as `agent_requested` Cursor rules — no custom slash commands. User types "enter build mode" or task context triggers the rule automatically.
-- **Codex CLI hooks:** Terminal wrapper scripts (`pai` CLI) handle pre/post execution hooks. No native hook system in Codex CLI.
+- **Codex CLI hooks:** ~~Terminal wrapper scripts (`pai` CLI) handle pre/post execution hooks. No native hook system in Codex CLI.~~ **Superseded 2026-07-18** — Codex CLI v0.144.6 has a native hook system (`hooks.json` with `PreToolUse`/`PostToolUse` events, `commandWindows` overrides, per-hook trust via `/hooks`). pai-orbit's Codex adapter registers hooks natively via `.codex/hooks.json`; no `pai` CLI wrapper needed. See docs/codex-install-and-usage.md.
 
 ## Open Questions
 - [ ] Should Phase 1 (canonical front-matter) be done in one PR across all commands + skills, or incrementally? — owner: Punit Singhal
 - [ ] Which skills should use `auto_attached` Cursor rule type vs `agent_requested`? (e.g. data-model auto-attaches to `*.sql`) — owner: Punit Singhal
-- [ ] `pai` CLI wrapper: how does it detect which Codex CLI binary is installed (`codex` vs `openai`)? — owner: Punit Singhal
+- [x] ~~`pai` CLI wrapper: how does it detect which Codex CLI binary is installed (`codex` vs `openai`)? — owner: Punit Singhal~~ — **Resolved 2026-07-18:** No `pai` CLI wrapper needed. Codex CLI has native hooks (`hooks.json`), skills (`.agents/skills/`), and subagents (`.codex/agents/*.toml`). Adapter emits directly into those primitives.
