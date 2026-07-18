@@ -1,0 +1,231 @@
+---
+name: "orbit-review"
+description: "Review code, PRs, or design against pai-orbit conventions and architectural constraints. Writes review notes; suggests follow-ups. Renamed from review to avoid Codex's built-in /review slash command. Explicit invocation only."
+---
+
+You are now in ORBIT-REVIEW MODE.
+
+This is a code review session against the project's documented architecture, conventions, and requirements.
+
+Usage:
+- `$orbit-review` — full review: architecture conformance, conventions, requirements match
+- `/review security` — security-focused pass: OWASP checklist only
+- `/review full` — both full review and security pass in sequence
+
+Switch out when:
+- Blocking findings need to be fixed → `/build` (return to REVIEW after fix)
+- Architecture violations need a formal decision → `/design`
+
+---
+
+## Full review (`$orbit-review`)
+
+### Reads from
+
+- `AGENTS.md` — stack conventions, key file patterns, architectural constraints
+- `docs/architecture/constraints.md` — declared architectural rules; violations are blocking findings
+- `docs/architecture/system.md` — service boundaries and communication paths; undeclared additions are flagged
+- `docs/decisions/` — ADRs; changes that conflict with a decision are flagged
+- `docs/features/<feature>/` — requirements and design; confirms the implementation matches intent
+- `.codex/pai-orbit-config.md` — branching model and PR conventions
+- `.codex/team.md` — reviewer assignment
+
+### Procedure
+
+#### 1. Scope the review
+
+Ask (or infer from context):
+- Branch name or PR number
+- Which feature or issue this relates to
+- Is this a full review or a focused review (e.g., security, architecture, test coverage only)?
+
+Run: `git diff main...<branch>` (or the equivalent for the configured branching model).
+
+#### 2. Read before reviewing
+
+Before writing a single comment:
+- Read `AGENTS.md` — understand the conventions the diff should follow
+- If `docs/architecture/constraints.md` exists, read it. If absent, warn once: "Architectural constraints are undeclared — run `/arch init` to establish them before constraint conformance can be checked."
+- If `docs/architecture/system.md` exists, read it — check service boundaries and communication paths against the diff
+- Read the relevant `docs/features/<feature>/requirements.md` and `design.md` if they exist
+- Read any ADRs in `docs/decisions/` that relate to the changed areas
+
+#### 3. Review the diff
+
+Check each changed file against:
+
+**Architecture conformance**
+- Does the change violate any rule in `docs/architecture/constraints.md`? (blocking if yes)
+- Does it introduce a direct DB connection across service boundaries? (check `constraints.md` Trust Boundaries)
+- Does the change add a new service or communication path not declared in `docs/architecture/system.md`? (advisory)
+- Does the change stay within the layer boundaries described in AGENTS.md? (e.g., router calls service, service calls data layer — not the other way)
+- Does it introduce a new dependency that wasn't discussed in design?
+- Does it conflict with any ADR in `docs/decisions/`? Name the ADR.
+
+**Conventions**
+- Naming, file location, code style — as documented in AGENTS.md
+- No raw dicts where Pydantic models are expected; no inline SQL where a service layer exists; etc.
+- Test coverage: new endpoints / public functions should have at least one test
+
+**Requirements match**
+- Does the implementation cover all functional requirements in `requirements.md`?
+- Are acceptance criteria from the test plan addressable by the shipped code?
+
+**Safety**
+- No credentials, tokens, or secrets in code or comments
+- No `TODO: fix later` on security-relevant paths
+- No disabled tests or skipped assertions without a documented reason
+
+#### 4. Produce the review report
+
+Write to `docs/wip/review-<branch-or-pr>-<date>.md`:
+
+```
+## Review: <branch or PR title>
+Date: <date>
+Reviewer: <name from .codex/team.md>
+Related issue: #N
+
+## Summary
+One paragraph: overall assessment — approve / approve with comments / request changes.
+
+## Findings
+
+### Blocking
+Issues that must be resolved before merge.
+- [ ] <file>:<line> — <description> — <reference to convention or ADR>
+
+### Non-blocking
+Suggestions worth addressing but not required for merge.
+- [ ] <file>:<line> — <description>
+
+### Positive observations
+What was done particularly well — worth naming so it repeats.
+- ...
+
+## Architecture conformance
+- [ ] No violations of rules in docs/architecture/constraints.md
+- [ ] No undeclared service or communication path added (docs/architecture/system.md)
+- [ ] No cross-service DB connection introduced in violation of trust boundaries
+- [ ] Stays within layer boundaries defined in AGENTS.md
+- [ ] No conflicts with ADRs in docs/decisions/
+- [ ] No undiscussed dependencies introduced
+
+## Requirements coverage
+- [ ] All functional requirements from requirements.md are addressed
+- [ ] Acceptance criteria are testable from the shipped code
+
+## Sign-off
+- [ ] All blocking findings resolved
+- Reviewer: <name> — <date>
+```
+
+#### 5. After review
+
+- If blocking findings exist: do not close the issue; note what needs fixing
+- If approved: the review doc serves as the approval record; link it in the PR description
+- If changes are needed and you're in a build session: before implementing fixes, confirm you are on a dedicated `fix/<slug>` branch (not directly on `main` or a release branch) — use `/git` to create one if needed. Then use `/build` to implement fixes and re-run `$orbit-review`.
+
+---
+
+## Security pass (`/review security`)
+
+Targeted security review of changed code before merge. Run this in addition to `$orbit-review` for any change touching auth, input handling, external APIs, file I/O, database writes, or permissions.
+
+### Reads from
+
+- Branch diff or specified files
+- `AGENTS.md` — auth model, system boundaries, and known security constraints
+- `docs/architecture/system.md` — trust boundaries and attack surface (if it exists)
+- `docs/architecture/constraints.md` — declared constraints around auth, input, and external APIs (if it exists)
+- `docs/decisions/` — security-relevant ADRs
+
+### Scope
+
+Ask (or infer):
+- What branch or files are in scope?
+- Is this a focused review (e.g., auth changes only) or a full pass?
+- Does this change touch: auth/authz, user input, file I/O, external APIs, database writes, permissions, cryptography?
+
+If `docs/architecture/system.md` exists, read it to understand trust boundaries and attack surface before starting the checklist. If `docs/architecture/constraints.md` exists, flag any declared constraint relating to auth, input handling, external APIs, or data access as in-scope for this review.
+
+### Checklist
+
+Work through each category. For each finding: report `file:line — description — severity (Critical / High / Medium / Low)`.
+
+**Injection**
+- [ ] All user-supplied input is parameterised or escaped before use in queries, shell commands, template rendering, or log output
+- [ ] No string concatenation to build SQL, shell commands, or URLs from user data
+- [ ] ORM / query builder used consistently; raw queries validated for injection risk
+
+**Authentication & session**
+- [ ] Auth checks happen at the system boundary (middleware or equivalent) — not scattered through business logic
+- [ ] No endpoint that should be authenticated is reachable without credentials
+- [ ] Session tokens are not logged, stored in plaintext, or returned in URLs
+- [ ] Token expiry and refresh are handled correctly
+
+**Authorisation**
+- [ ] Every data-mutating operation checks that the authenticated user has permission for the specific resource, not just for the operation type
+- [ ] Ownership checks use the authenticated user's identity from the trusted source (session / IAP header / JWT claim) — never from user-supplied input
+- [ ] Admin-only operations are gated at the right layer
+
+**Secrets and credentials**
+- [ ] No credentials, API keys, tokens, or passwords in code, comments, or test fixtures
+- [ ] Environment variables used for all secrets; `.env` is gitignored
+- [ ] Secret management service (Secrets Manager, Vault, etc.) used for production secrets
+- [ ] No secrets in log output
+
+**Input validation**
+- [ ] All external input (request body, query params, headers, file uploads) is validated at the boundary
+- [ ] File uploads: type validated server-side (not just client-side); size limited; stored outside the web root
+- [ ] Error messages do not leak stack traces, internal paths, or schema details to the client
+
+**Dependencies**
+- [ ] No new dependency added with known high/critical CVEs (check with `pip audit`, `npm audit`, `trivy`, or equivalent)
+- [ ] Pinned versions used — no `>=` ranges on security-sensitive packages
+
+**Cryptography**
+- [ ] No custom crypto — use standard library or well-audited package
+- [ ] Passwords hashed with bcrypt / argon2 / scrypt — not MD5, SHA1, or plain SHA256
+- [ ] TLS used for all external communications; certificate validation not disabled
+
+**Cloud / infrastructure**
+- [ ] IAM permissions follow least privilege — no wildcard roles granted to application identities
+- [ ] Storage buckets / blobs are not publicly readable unless explicitly required
+- [ ] No internal service URLs or admin endpoints exposed publicly
+
+### Output format
+
+Write findings to `docs/wip/security-review-<branch>-<date>.md`:
+
+```
+## Security Review: <branch or PR title>
+Date: <date>
+Reviewer: <name>
+
+## Summary
+Overall assessment: Clean / Findings — <N> critical, <N> high, <N> medium, <N> low.
+
+## Findings
+
+### Critical (block merge)
+- [ ] <file>:<line> — <description>
+
+### High (block merge)
+- [ ] <file>:<line> — <description>
+
+### Medium (fix before release)
+- [ ] <file>:<line> — <description>
+
+### Low (informational)
+- <file>:<line> — <description>
+
+## Clean areas
+What was checked and found acceptable (briefly — gives confidence to the reader).
+
+## Sign-off
+- [ ] All critical and high findings resolved
+- Reviewer: <name> — <date>
+```
+
+**Critical or High findings block merge.** Do not approve and "fix later" — fix before merging. Before switching to `/build`, confirm you are on a dedicated `fix/<slug>` branch (use `/git` to create one if needed). Switch to `/build` with the finding as context, then re-run `/review security` on the fix.

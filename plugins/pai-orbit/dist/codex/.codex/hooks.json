@@ -1,0 +1,47 @@
+{
+  "description": "pai-orbit hooks for Codex CLI. Trust each via /hooks on first install; re-trust after any script edit (Codex records trust against the hook's current hash).",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^Bash$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".codex/hooks/bash-guard.sh",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File .codex\\hooks\\bash-guard.ps1",
+            "statusMessage": "bash-guard",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "^(apply_patch|Edit|Write)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".codex/hooks/arch-drift-wrapper.sh",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File .codex\\hooks\\arch-drift-wrapper.ps1",
+            "statusMessage": "arch-drift",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "command": ".codex/hooks/lint-python-wrapper.sh",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File .codex\\hooks\\lint-python-wrapper.ps1",
+            "statusMessage": "lint-python",
+            "timeout": 60
+          },
+          {
+            "type": "command",
+            "command": ".codex/hooks/lint-ts-wrapper.sh",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -File .codex\\hooks\\lint-ts-wrapper.ps1",
+            "statusMessage": "lint-ts",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}

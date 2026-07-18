@@ -1,0 +1,7 @@
+interface:
+  display_name: "test"
+  short_description: "pai-orbit mode: test"
+  default_prompt: "Use $test to enter this mode."
+
+policy:
+  allow_implicit_invocation: false

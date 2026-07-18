@@ -1,0 +1,7 @@
+interface:
+  display_name: "setup"
+  short_description: "pai-orbit mode: setup"
+  default_prompt: "Use $setup to enter this mode."
+
+policy:
+  allow_implicit_invocation: false

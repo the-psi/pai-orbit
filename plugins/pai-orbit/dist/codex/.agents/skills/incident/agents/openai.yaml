@@ -1,0 +1,7 @@
+interface:
+  display_name: "incident"
+  short_description: "pai-orbit mode: incident"
+  default_prompt: "Use $incident to enter this mode."
+
+policy:
+  allow_implicit_invocation: false
