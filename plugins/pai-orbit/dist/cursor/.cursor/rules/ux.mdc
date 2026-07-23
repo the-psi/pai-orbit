@@ -22,6 +22,20 @@ Switch out when:
 - Do not design the technical implementation — only describe the user-facing behaviour
 - Flag any open questions about user intent or context with an owner
 
+## Session close
+
+When the UX document is complete:
+
+1. **Commit the UX file.** Use `/git` to stage and commit `docs/features/<feature>/ux.md`:
+   ```
+   docs: ux <feature-name>
+   ```
+   Local commit only. Do not push yet.
+
+2. **Offer to move the board issue.** If a board issue is associated with this feature, read the next column name from `.claude/pai-orbit-config.md → ## Agile Board`. Offer: "Move issue #N to `<column name>`?" Wait for confirmation before acting via `/board`. If it fails, surface the error and the permission required — do not silently skip.
+
+3. **Offer to push.** After the commit, ask: "Push this branch to remote?" Wait for explicit confirmation.
+
 ## Output format
 
 `docs/features/<feature>/ux.md`:

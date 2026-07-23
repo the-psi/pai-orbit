@@ -2,7 +2,7 @@
 
 A structured developer methodology harness for Claude Code that enforces disciplined working modes, prevents context loss, and produces local-first documentation at every stage of development.
 
-**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.3.1
+**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.3.2
 
 ---
 

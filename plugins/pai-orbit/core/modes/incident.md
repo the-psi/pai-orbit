@@ -37,7 +37,7 @@ This issue is the paper trail. Update it as the situation evolves.
 
 ### 3. Fast-path BUILD
 
-Switch to `/build` with the incident issue as context. Rules that differ from normal build:
+Before writing any code, create a `hotfix/<slug>` branch (or `fix/<slug>` for non-production incidents) using `/git` — never fix directly on `main`. Then switch to `/build` with the incident issue as context. Rules that differ from normal build:
 
 - **Scope tightly.** Fix the symptom. Do not refactor while fixing. Do not address related tech debt.
 - **Preserve rollback path.** If the fix is risky, consider a feature flag or a two-step deploy.

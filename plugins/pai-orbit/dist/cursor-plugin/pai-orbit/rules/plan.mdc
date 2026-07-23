@@ -12,7 +12,7 @@ Consumes:
 - Epic context from `docs/epics/`
 - Feature requirements from `docs/features/`
 - Current capabilities from `docs/domain/product-capabilities.md`
-- Task board state (read via `/agile-board`)
+- Task board state (read via `/board`)
 
 Switch out when:
 - A feature needs grooming before it can be planned → `/groom`
@@ -34,5 +34,5 @@ Switch out when:
 ## Output
 
 - Save non-trivial planning notes to `docs/plans/<topic>-<date>.md`
-- Move board cards via `/agile-board` when priorities change
+- Move board cards via `/board` when priorities change
 - Use Mermaid for sequencing and dependency diagrams when the order is non-obvious

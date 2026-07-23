@@ -201,19 +201,27 @@ chmod +x .claude/hooks/*.sh
 
 **Step D — Generate `.claude/settings.json`.**
 
-If `.claude/settings.json` already exists, read it first and merge the `hooks` key in — do not overwrite unrelated keys. If it does not exist, create it. The hooks block to write:
+First, resolve the absolute path to the project root so that hook paths in `settings.json` are not relative (relative paths break when Claude runs from a subdirectory):
+
+```bash
+git rev-parse --show-toplevel 2>/dev/null || pwd
+```
+
+Use the output as `<PROJECT_ROOT>` in the hook commands below.
+
+If `.claude/settings.json` already exists, read it first and merge the `hooks` key in — do not overwrite unrelated keys. If it does not exist, create it. The hooks block to write (replace `<PROJECT_ROOT>` with the resolved absolute path):
 
 ```json
 {
   "hooks": {
     "PreToolUse": [
-      { "matcher": "Bash", "hooks": [{ "type": "command", "command": ".claude/hooks/bash-guard.sh", "timeout": 10 }] }
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "<PROJECT_ROOT>/.claude/hooks/bash-guard.sh", "timeout": 10 }] }
     ],
     "PostToolUse": [
       { "matcher": "Edit|Write", "hooks": [
-        { "type": "command", "command": ".claude/hooks/lint-python.sh", "timeout": 30, "async": true },
-        { "type": "command", "command": ".claude/hooks/lint-ts.sh", "timeout": 60, "async": true },
-        { "type": "command", "command": ".claude/hooks/arch-drift-guard.sh", "timeout": 5, "async": true }
+        { "type": "command", "command": "<PROJECT_ROOT>/.claude/hooks/lint-python.sh", "timeout": 30, "async": true },
+        { "type": "command", "command": "<PROJECT_ROOT>/.claude/hooks/lint-ts.sh", "timeout": 60, "async": true },
+        { "type": "command", "command": "<PROJECT_ROOT>/.claude/hooks/arch-drift-guard.sh", "timeout": 5, "async": true }
       ]}
     ]
   }
@@ -222,11 +230,14 @@ If `.claude/settings.json` already exists, read it first and merge the `hooks` k
 
 Omit `lint-python.sh` from the PostToolUse array if Python was not detected. Omit `lint-ts.sh` if TypeScript/JavaScript was not detected.
 
-**Step E — Validate hook paths.** Run the following and warn if any hook is missing or not executable:
+**Step E — Validate hook paths.** Run the following and warn if any hook is missing or not executable (use the absolute path resolved in Step D):
 
 ```bash
-for hook in .claude/hooks/bash-guard.sh .claude/hooks/arch-drift-guard.sh; do
-  [ -x "$hook" ] && echo "✅ $hook" || echo "⚠️  $hook — not found or not executable"
+PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+for hook in bash-guard.sh arch-drift-guard.sh; do
+  [ -x "$PROJECT_ROOT/.claude/hooks/$hook" ] \
+    && echo "✅ $PROJECT_ROOT/.claude/hooks/$hook" \
+    || echo "⚠️  $PROJECT_ROOT/.claude/hooks/$hook — not found or not executable"
 done
 ```
 
