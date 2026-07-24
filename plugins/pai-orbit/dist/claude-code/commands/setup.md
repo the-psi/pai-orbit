@@ -263,6 +263,12 @@ If `docs/` does not exist, copy the scaffold from `templates/docs/` to the confi
 If a dedicated docs repo path was given, create the scaffold there.
 If Confluence or Notion: skip the scaffold, note the MCP setup required (see Getting Started).
 
+This includes `templates/docs/domain/product-capabilities.md`, the file `/build` appends to
+after every ship. Replace its placeholder surfaces in the Contents table and `##` sections with
+this product's actual surfaces — the axis that stays stable as the product grows. Leave its
+"How to maintain it" header intact: `/build` reads those rules to decide where a new entry goes,
+and without them the file drifts into a reverse-chronological build log.
+
 ### Architecture scaffold
 
 Copy `templates/docs/architecture/system.md`, `constraints.md`, and `stack.md` to `docs/architecture/` (replacing `{{PROJECT_NAME}}` and `{{DATE}}`).
