@@ -53,3 +53,6 @@ Prevent team members from starting implementation work in orbit without a ticket
 - AC-5 (Scenario 2): A developer who fixes the ticket and re-invokes the mode (without restarting the session) passes the gate — orbit re-fetches on each invocation.
 - AC-6 (Scenario 3): Given all required fields are present, orbit enters the mode with no gate-related output visible.
 - AC-7 (Scenario 4): Invoking `/design` or `/test` without a valid ticket triggers the same block behaviour as `/build` — identical output format, identical field checks.
+
+---
+Status: Groomed — ready for /design
