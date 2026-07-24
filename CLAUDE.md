@@ -56,6 +56,34 @@ pai-orbit/                          # repo = marketplace
 
 ---
 
+## Architecture
+
+pai-orbit is a static content pipeline, not a running service: `core/` is the single source of
+truth for every mode, skill, agent, hook, and template; each of the 5 adapters compiles `core/`
+into its own `dist/<tool>/` bundle, which is committed to git and is what consumers actually
+install. There are no data stores, no runtime auth, and no API surface — the only "deploy" is a
+version bump + rebuild + commit. Full declaration, trust boundaries, and hard constraints
+(including the full-adapter-parity and `dist/` backward-compatibility rules enforced by `/build`
+and `/review`): [docs/architecture/system.md](docs/architecture/system.md),
+[docs/architecture/constraints.md](docs/architecture/constraints.md).
+
+```mermaid
+graph LR
+    core[core/ — modes, skills, agents, hooks, templates] --> claudecode[adapters/claude-code]
+    core --> cursorplugin[adapters/cursor-plugin]
+    core --> cursor[adapters/cursor — lossy legacy]
+    core --> copilot[adapters/copilot — lossy]
+    core --> codex[adapters/codex — experimental]
+    claudecode --> distcc[dist/claude-code/]
+    cursorplugin --> distcp[dist/cursor-plugin/]
+    cursor --> distc[dist/cursor/]
+    copilot --> distco[dist/copilot/]
+    codex --> distcx[dist/codex/]
+    distcc --> consumer[consumer / target project]
+```
+
+---
+
 ## Core Concepts
 
 ### Modes (Commands)
