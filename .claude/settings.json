@@ -1,3 +1,13 @@
 {
-  "enabledPlugins": {}
+  "enabledPlugins": {},
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "/home/anurag/workspaces/pai-orbit/.claude/hooks/bash-guard.sh", "timeout": 10 }] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Edit|Write", "hooks": [
+        { "type": "command", "command": "/home/anurag/workspaces/pai-orbit/.claude/hooks/arch-drift-guard.sh", "timeout": 5, "async": true }
+      ]}
+    ]
+  }
 }
