@@ -2,7 +2,7 @@
 
 A structured developer methodology harness for Claude Code that enforces disciplined working modes, prevents context loss, and produces local-first documentation at every stage of development.
 
-**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.3.2
+**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.3.4
 
 ---
 
@@ -53,6 +53,34 @@ pai-orbit/                          # repo = marketplace
 - Modify a mode, skill, agent, hook, or template → edit `plugins/pai-orbit/core/...` and run `bash plugins/pai-orbit/build.sh`.
 - Change how a particular tool gets the plugin → edit the corresponding `plugins/pai-orbit/adapters/<tool>/build.sh`.
 - Never hand-edit `plugins/pai-orbit/dist/` — it is regenerated.
+
+---
+
+## Architecture
+
+pai-orbit is a static content pipeline, not a running service: `core/` is the single source of
+truth for every mode, skill, agent, hook, and template; each of the 5 adapters compiles `core/`
+into its own `dist/<tool>/` bundle, which is committed to git and is what consumers actually
+install. There are no data stores, no runtime auth, and no API surface — the only "deploy" is a
+version bump + rebuild + commit. Full declaration, trust boundaries, and hard constraints
+(including the full-adapter-parity and `dist/` backward-compatibility rules enforced by `/build`
+and `/review`): [docs/architecture/system.md](docs/architecture/system.md),
+[docs/architecture/constraints.md](docs/architecture/constraints.md).
+
+```mermaid
+graph LR
+    core[core/ — modes, skills, agents, hooks, templates] --> claudecode[adapters/claude-code]
+    core --> cursorplugin[adapters/cursor-plugin]
+    core --> cursor[adapters/cursor — lossy legacy]
+    core --> copilot[adapters/copilot — lossy]
+    core --> codex[adapters/codex — experimental]
+    claudecode --> distcc[dist/claude-code/]
+    cursorplugin --> distcp[dist/cursor-plugin/]
+    cursor --> distc[dist/cursor/]
+    copilot --> distco[dist/copilot/]
+    codex --> distcx[dist/codex/]
+    distcc --> consumer[consumer / target project]
+```
 
 ---
 
