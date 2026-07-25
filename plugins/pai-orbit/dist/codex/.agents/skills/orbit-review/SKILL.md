@@ -9,8 +9,8 @@ This is a code review session against the project's documented architecture, con
 
 Usage:
 - `$orbit-review` — full review: architecture conformance, conventions, requirements match
-- `/review security` — security-focused pass: OWASP checklist only
-- `/review full` — both full review and security pass in sequence
+- `$orbit-review security` — security-focused pass: OWASP checklist only
+- `$orbit-review full` — both full review and security pass in sequence
 
 Switch out when:
 - Blocking findings need to be fixed → `/build` (return to REVIEW after fix)
@@ -128,7 +128,7 @@ What was done particularly well — worth naming so it repeats.
 
 ---
 
-## Security pass (`/review security`)
+## Security pass (`$orbit-review security`)
 
 Targeted security review of changed code before merge. Run this in addition to `$orbit-review` for any change touching auth, input handling, external APIs, file I/O, database writes, or permissions.
 
@@ -228,4 +228,4 @@ What was checked and found acceptable (briefly — gives confidence to the reade
 - Reviewer: <name> — <date>
 ```
 
-**Critical or High findings block merge.** Do not approve and "fix later" — fix before merging. Before switching to `/build`, confirm you are on a dedicated `fix/<slug>` branch (use `/git` to create one if needed). Switch to `/build` with the finding as context, then re-run `/review security` on the fix.
+**Critical or High findings block merge.** Do not approve and "fix later" — fix before merging. Before switching to `/build`, confirm you are on a dedicated `fix/<slug>` branch (use `/git` to create one if needed). Switch to `/build` with the finding as context, then re-run `$orbit-review security` on the fix.

@@ -84,15 +84,18 @@ rewrite_mode_body_review() {
 }
 
 # Cross-reference rewrites — inside every emitted mode/skill body, rewrite
-# `/plan` → `$orbit-plan` and `/review` → `$orbit-review` where they appear as
-# switch-out targets (backtick-quoted invocation). Anchoring to backticks
-# avoids trampling docs/plans/ path strings.
+# `/plan` → `$orbit-plan` and `/review` → `$orbit-review` (including any
+# sub-mode suffix like `/review security`, `/review full`) where they appear
+# as switch-out targets (backtick-quoted invocation). Anchoring to backticks
+# avoids trampling docs/plans/ path strings. The `[^`]*` group captures any
+# whitespace/word suffix up to the closing backtick, so `/review security`
+# becomes `$orbit-review security`.
 rewrite_slash_cross_refs() {
   local file="$1"
   local tmp="${file}.rewrite.tmp"
   sed \
-    -e 's|`/plan`|`$orbit-plan`|g' \
-    -e 's|`/review`|`$orbit-review`|g' \
+    -e 's|`/plan\([^`]*\)`|`$orbit-plan\1`|g' \
+    -e 's|`/review\([^`]*\)`|`$orbit-review\1`|g' \
     "$file" > "$tmp"
   mv "$tmp" "$file"
 }
