@@ -37,6 +37,8 @@ Before starting:
 - If `docs/architecture/constraints.md` exists, read it before generating any code — treat violations of declared constraints as blocking; do not produce code that crosses a constraint boundary without flagging it explicitly and switching to `/arch` to ratify the change
 - Read relevant `docs/features/<feature>/` and `docs/decisions/` before starting significant work
 - Check the task board (see `/board` for board details): find the relevant issue and confirm it is in the right in-progress state
+- **Read full issue context before building:** read the issue's full comment history and any linked design docs/ADRs — not just the body. The body is often the original ask; a later comment or design doc may supersede it, and on conflict the later one wins.
+- **Build-readiness gate:** only build issues that are groomed **and** design-resolved. If the body or comments still pose an open question ("confirm whether…", "before deploying, confirm…"), or non-trivial work has no design doc, stop and switch to `/design` — do not proceed, and do not just move the card.
 
 During build:
 - Spawn sub-agents per repo where tasks are independent; run in parallel where possible
@@ -44,6 +46,7 @@ During build:
 - Surface design blockers immediately — do not make silent architectural decisions; switch to `/design` if a non-trivial design choice surfaces
 - Do not add error handling, fallbacks, or validation for scenarios that can't happen
 - Do not add features, refactors, or abstractions beyond what the task requires
+- **Verify state before running scripts, migrations, or infra changes:** check current state first (schema, file existence, deployed config). If the work is already done, record an "already complete" note on the issue and move on — do not re-run completed work. (This applies to *completed* work only — genuinely idempotent setup/seed/DDL scripts are safe to just run.)
 
 ## After shipping
 
