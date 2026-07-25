@@ -1,6 +1,6 @@
 ---
 mode: agent
-description: "[skill] Change impact and dependency analysis — assess the blast radius of a proposed change before building, or evaluate the effect of…"
+description: "[skill] Change impact and dependency analysis — assess the blast radius of a proposed change before building, or evaluate the effect of a…"
 tools: ["codebase", "editFiles", "runCommands", "search"]
 ---
 

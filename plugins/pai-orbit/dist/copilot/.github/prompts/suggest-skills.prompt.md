@@ -10,7 +10,7 @@ tools: ["codebase", "editFiles", "runCommands", "search"]
 >
 > **When scanning existing skills to avoid duplicates,** look in `.github/prompts/*.prompt.md`. Ignore prompt files whose `description:` starts with `[mode]` or `[agent]` (those are pai-orbit modes/agent prompts, not skills). Also ignore user-authored prompts without pai-orbit prefixes only if their names clearly overlap with a suggestion.
 >
-> **Skip the "Claude Code built-in suggest-skills" step** — Copilot has no equivalent introspection surface. Do the file-based analysis directly.
+> **On the shared mode body below referring to "Claude Code's built-in suggest-skills capability":** Copilot has no equivalent introspection surface as a separate step. Do the full file-based analysis (docs, git log, `.github/prompts/`, `docs/wip/`, `docs/ops/`) as if you ARE the built-in — you extend the workflow by performing the analysis directly, not by calling out to a separate tool. Do not skip the analysis; only skip the "invoke a separate built-in" phrasing.
 
 ## Skill template (base pattern for scaffolding)
 

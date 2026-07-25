@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # GitHub Copilot adapter — prompt files, instructions files, hook surrogates.
 #
+# D43 (2026-07-24): pin locale so string-length operations (${#var}) in
+# truncate_description() and elsewhere count characters, not bytes. Multi-byte
+# em-dashes in mode/skill descriptions otherwise produce different truncated
+# bytes on different systems (CI's default UTF-8 locale vs LC_ALL=C).
+#
 # Working design + plan (D1..D36) kept locally by the implementing team.
 # Comments below still reference plan/design section numbers for provenance.
 #
@@ -19,6 +24,11 @@
 #
 # No editor-specific files are emitted (D33).
 set -euo pipefail
+
+# D43: locale pin — see header comment. Applied here too in case this script
+# is invoked directly (not via the top-level build.sh).
+export LC_ALL=C.UTF-8
+export LANG=C.UTF-8
 
 ADAPTER_DIR="$(cd "$(dirname "$0")" && pwd)"
 PLUGIN_DIR="$(cd "$ADAPTER_DIR/../.." && pwd)"
@@ -651,7 +661,7 @@ emit_mode_prompts() {
             printf '>\n'
             printf '> **When scanning existing skills to avoid duplicates,** look in `.github/prompts/*.prompt.md`. Ignore prompt files whose `description:` starts with `[mode]` or `[agent]` (those are pai-orbit modes/agent prompts, not skills). Also ignore user-authored prompts without pai-orbit prefixes only if their names clearly overlap with a suggestion.\n'
             printf '>\n'
-            printf '> **Skip the "Claude Code built-in suggest-skills" step** — Copilot has no equivalent introspection surface. Do the file-based analysis directly.\n'
+            printf '> **On the shared mode body below referring to "Claude Code'"'"'s built-in suggest-skills capability":** Copilot has no equivalent introspection surface as a separate step. Do the full file-based analysis (docs, git log, `.github/prompts/`, `docs/wip/`, `docs/ops/`) as if you ARE the built-in — you extend the workflow by performing the analysis directly, not by calling out to a separate tool. Do not skip the analysis; only skip the "invoke a separate built-in" phrasing.\n'
             printf '\n'
             # Copilot-adapted skill template — inlined from
             # core/templates/skills/domain-operational.template.md with the

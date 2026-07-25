@@ -71,8 +71,7 @@ function performMigration(cwd, lifecycle, ctx) {
 
   if (!ctx.flags.yes) {
     process.stdout.write(
-      'pai-orbit migrate: re-run with `--yes` to apply this migration plan non-interactively, ' +
-        'or run `pai-orbit init copilot` (the interactive flow performs the same migration with a y/N prompt).\n',
+      'pai-orbit migrate: this was a dry-run — no files were changed. Re-run with `--yes` to apply the plan above.\n',
     );
     process.exit(0);
   }
@@ -84,6 +83,19 @@ function performMigration(cwd, lifecycle, ctx) {
     const from = path.join(oldDir, name);
     const to = path.join(newDir, name);
     if (fs.existsSync(from) && !fs.existsSync(to)) {
+      // D43 (2026-07-24): refuse to migrate a symlink. fs.copyFileSync
+      // dereferences symlinks and copies the target contents, which would
+      // silently exfiltrate arbitrary files if a malicious commit swapped
+      // these config files for symlinks pointing at /etc/passwd or similar.
+      const stat = fs.lstatSync(from);
+      if (stat.isSymbolicLink()) {
+        process.stderr.write(
+          `pai-orbit: refusing to migrate ${path.relative(cwd, from)} — it is a symbolic link, ` +
+          `which is unexpected in a pai-orbit config directory. Investigate the source of the ` +
+          `symlink and resolve it manually before re-running migration.\n`,
+        );
+        continue;
+      }
       fs.copyFileSync(from, to);
     }
   }

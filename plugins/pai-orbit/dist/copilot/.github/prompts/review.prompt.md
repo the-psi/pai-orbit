@@ -134,7 +134,7 @@ What was done particularly well — worth naming so it repeats.
 
 - If blocking findings exist: do not close the issue; note what needs fixing
 - If approved: the review doc serves as the approval record; link it in the PR description
-- If changes are needed and you're in a build session: use `/build` to implement fixes, then re-run `/review`
+- If changes are needed and you're in a build session: before implementing fixes, confirm you are on a dedicated `fix/<slug>` branch (not directly on `main` or a release branch) — use `/git` to create one if needed. Then use `/build` to implement fixes and re-run `/review`.
 
 ---
 
@@ -238,4 +238,4 @@ What was checked and found acceptable (briefly — gives confidence to the reade
 - Reviewer: <name> — <date>
 ```
 
-**Critical or High findings block merge.** Do not approve and "fix later" — fix before merging. Switch to `/build` with the finding as context, then re-run `/review security` on the fix.
+**Critical or High findings block merge.** Do not approve and "fix later" — fix before merging. Before switching to `/build`, confirm you are on a dedicated `fix/<slug>` branch (use `/git` to create one if needed). Switch to `/build` with the finding as context, then re-run `/review security` on the fix.
