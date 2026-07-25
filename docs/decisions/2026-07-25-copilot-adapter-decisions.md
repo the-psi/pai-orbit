@@ -43,6 +43,28 @@ tool-specific transforms in `build.sh` or per-tool sections in shared
 source — the design intentionally biases towards keeping adapter-specific
 content inside the adapter (see D39).
 
+### D9 — Standalone install CLI is Copilot-only; Claude/Cursor targets are stubs
+
+**Context.** The `npx github:the-psi/pai-orbit init copilot` install path
+exists because Copilot-only teams have no `/setup` slash-command inside
+Copilot Chat until pai-orbit files are installed — the CLI bootstraps
+them. Claude Code and Cursor users already have functional in-tool
+`/setup` workflows that scaffold `.claude/` / `.cursor/` from the
+plugin's built-in commands.
+
+**Decision.** The install CLI implements the `init copilot` path in full.
+Corresponding stubs `lib/claude.js` and `lib/cursor.js` print a message
+directing users to native `/setup` inside those tools and exit with code
+2. No attempt is made to duplicate Claude Code or Cursor scaffolding in
+the CLI.
+
+**Consequences.** The CLI stays lean and scoped. Users on Claude Code or
+Cursor who accidentally run `npx ... init claude` or `init cursor` get a
+clear pointer to the right workflow instead of a broken install or a
+half-scaffolded project. If future demand emerges for a truly
+tool-agnostic CLI install path, the stubs mark the entry points to
+implement.
+
 ### D23 — Migration backup folder is added to project `.gitignore`
 
 **Context.** Users installing pai-orbit into a project that already used an

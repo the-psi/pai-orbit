@@ -345,7 +345,7 @@ pai-orbit's Copilot adapter delivers **~85% of the methodology benefit on Free, 
 
 1. Did you reload VS Code? (`Ctrl+Shift+P` → "Developer: Reload Window")
 2. Open `.github/copilot-instructions.md` in VS Code. It should exist and start with `# pai-orbit — GitHub Copilot rule book`.
-3. List `.github/prompts/` — there should be 25 `*.prompt.md` files (12 mode + 6 skill + 7 agent).
+3. List `.github/prompts/` — there should be 29 `*.prompt.md` files (14 mode + 6 skill + 7 service-builder agent + 2 named agent: `docs-writer`, `cross-repo-impact`).
 4. Check the VS Code Copilot Chat settings — `chat.promptFiles` and `chat.instructionsFilesLocations` should be enabled. If they're disabled (org policy), prompt files won't be invokable; use the `## Modes` reference in `copilot-instructions.md` as a fall-back.
 
 ### `npx` fails
