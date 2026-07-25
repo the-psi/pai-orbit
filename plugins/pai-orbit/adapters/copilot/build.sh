@@ -562,7 +562,7 @@ This is advisory only — Copilot's compliance is not guaranteed. Real enforceme
 
 ## Architectural drift (arch-drift intent, advisory)
 
-When editing or proposing changes to structural files — `docker-compose.yml`, `docker-compose.yaml`, `package.json`, `go.mod`, `pom.xml`, `Cargo.toml`, `pyproject.toml`, `requirements.txt`, `fly.toml`, `vercel.json`, `app.yaml`, `main.py`, `app.py`, `index.ts`, `index.js`, `server.ts`, `server.js` — warn the user that the change may affect architecture and suggest running `/arch validate` after the session.
+When editing or proposing changes to structural files — `docker-compose.yml`, `docker-compose.yaml`, `package.json`, `go.mod`, `Cargo.toml`, `pyproject.toml`, `requirements.txt`, `fly.toml`, `vercel.json`, `app.yaml`, `main.py`, `app.py`, `index.ts`, `index.js`, `server.ts`, `server.js` — warn the user that the change may affect architecture and suggest running `/arch validate` after the session.
 
 The path-scoped detail lives in `.github/instructions/arch-drift.instructions.md`, which auto-attaches when these files are open.
 
@@ -950,10 +950,12 @@ emit_decisions_instructions() {
 }
 
 emit_arch_drift_instructions() {
-  # Glob list mirrors STRUCTURAL_PATTERNS in core/hooks/arch-drift-guard.sh (design §7.2).
+  # Glob list mirrors STRUCTURAL_PATTERNS in core/hooks/arch-drift-guard.sh.
+  # Keep in sync — the hook is the source of truth. Update both when adding
+  # or removing a structural file pattern.
   cat > "$DIST_DIR/.github/instructions/arch-drift.instructions.md" <<'EOF'
 ---
-applyTo: "**/docker-compose.yml, **/docker-compose.yaml, **/package.json, **/go.mod, **/pom.xml, **/Cargo.toml, **/pyproject.toml, **/requirements.txt, **/fly.toml, **/vercel.json, **/app.yaml, **/main.py, **/app.py, **/index.ts, **/index.js, **/server.ts, **/server.js"
+applyTo: "**/docker-compose.yml, **/docker-compose.yaml, **/package.json, **/go.mod, **/Cargo.toml, **/pyproject.toml, **/requirements.txt, **/fly.toml, **/vercel.json, **/app.yaml, **/main.py, **/app.py, **/index.ts, **/index.js, **/server.ts, **/server.js"
 ---
 
 # Architectural drift guard

@@ -48,7 +48,7 @@ on every PR that touches `plugins/pai-orbit/`.
 
 `detectLifecycle(cwd, ctx)` in `lib/copilot.js` runs three checks in order:
 
-1. If `--migrate` subcommand → force migration.
+1. If `migrate` subcommand → force migration.
 2. Else if `.copilot/pai-orbit-config.md` exists → re-run mode (refresh
    pai-orbit-owned files; preserve `.copilot/*` user config and `CLAUDE.md`).
 3. Else if `.github/pai-orbit/pai-orbit-config.md` or

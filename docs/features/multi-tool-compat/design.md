@@ -201,7 +201,7 @@ Phases 1–3 are independent of each other once the front-matter schema is agree
 | D3 | Cursor hooks | `.vscode/tasks.json` template vs rule-only model instructions | Both — model instructions for blocking behaviour, VS Code tasks for lint |
 | D4 | `AGENTS.md` scope | Repo root only vs service-level for monorepos | Repo root for Phase 3; service-level added in Phase 4 when `/setup` handles it |
 | D5 | `pai` CLI wrapper | Bash script vs npm package | Bash script for now — no install friction |
-| D6 | Claude adapter strategy | Option A (Claude = native format, no generation) now → Option B (generator produces all tool outputs including Claude) later | **Start with Option A.** Claude reads `commands/*.md` and `skills/*/SKILL.md` directly via `.claude-plugin/`. Generator only produces Cursor and Codex artefacts. Migrate to Option B in a future phase when adding a 4th tool (Gemini, Windsurf, etc.) makes the symmetry worth the cost. |
+| D6 | Claude adapter strategy | Option A (Claude = native format, no generation) now → Option B (generator produces all tool outputs including Claude) later | **Start with Option A.** Claude reads `commands/*.md` and `skills/*/SKILL.md` directly via `.claude-plugin/`. Generator only produces Cursor and Codex artefacts. Migrate to Option B in a future phase when adding a 4th tool (Gemini, Windsurf, etc.) makes the symmetry worth the cost. **Addendum 2026-07-25:** Copilot was added as the 4th tool. Option A was kept — the generator approach scaled cleanly by adding `adapters/copilot/build.sh` alongside the existing Cursor and Codex adapters. No Claude-adapter migration needed. Full context in `docs/decisions/2026-07-25-copilot-adapter-decisions.md` (D6 entry). |
 
 ---
 

@@ -358,12 +358,15 @@ function renderTeam(cwd, ctx, answers) {
   const domainExpert = answers.team.find((t) => /domain|product/i.test(t.role)) || { name: '(TBD)' };
   const opsLead = answers.team.find((t) => /ops/i.test(t.role)) || { name: '(TBD)' };
 
-  // Replace the single-placeholder row with our full roster.
+  // Replace the single-placeholder row with our full roster. Team/name values
+  // come from user free-text input (interview answers) — wrap each in a
+  // function replacement so JS's special replacement patterns ($&, $$, $1..$9,
+  // $', `$``) are treated as literal characters, not interpreted.
   const rendered = raw
-    .replace(/\| \{\{NAME_1\}\}.*\{\{NOTES_1\}\} \|/, teamRows)
-    .replace(/\{\{ENG_LEAD\}\}/g, engLead.name)
-    .replace(/\{\{DOMAIN_EXPERT\}\}/g, domainExpert.name)
-    .replace(/\{\{OPS_LEAD\}\}/g, opsLead.name)
+    .replace(/\| \{\{NAME_1\}\}.*\{\{NOTES_1\}\} \|/, () => teamRows)
+    .replace(/\{\{ENG_LEAD\}\}/g, () => engLead.name)
+    .replace(/\{\{DOMAIN_EXPERT\}\}/g, () => domainExpert.name)
+    .replace(/\{\{OPS_LEAD\}\}/g, () => opsLead.name)
     // Any remaining placeholders left in template — clear to empty.
     .replace(/\{\{[A-Z0-9_]+\}\}/g, '');
 
@@ -414,13 +417,17 @@ function renderAgentsMd(cwd, ctx, answers) {
   render.renderTemplateFile(srcTemplate, target, vars);
 
   // If multiple services, append a row per service to the Sub-projects table.
+  // Service names come from user free-text — use a function replacement so
+  // service-name values containing `$&`/`$$`/`$1..$9` are not mis-substituted
+  // by JS's special replacement-pattern handling. `$1` in the function form
+  // is passed as the first capture group argument, not template magic.
   if (answers.services.length > 1) {
     const raw = fs.readFileSync(target, 'utf8');
     const extraRows = answers.services.slice(1)
       .map((s) => `| ${s.name} | \`${s.path}/\` | ${s.stack} | (fill in) |`).join('\n');
     const withRows = raw.replace(
       /(\| .*\|.*\| \(fill in\) \|)/,
-      `$1\n${extraRows}`,
+      (_match, firstRow) => `${firstRow}\n${extraRows}`,
     );
     fs.writeFileSync(target, withRows, 'utf8');
   }

@@ -8,12 +8,16 @@
 #   - Frontmatter starts at line 1 with `---` and closes with `---`.
 #   - Prompt files declare `description:` whose value starts with `[mode] `,
 #     `[skill] `, or `[agent] ` (prefix convention).
-#   - Mode/skill prompts declare `agent: agent`.
-#   - Agent (service-builder) prompts declare `mode: agent` and a `tools:` line (D30).
+#   - Every prompt declares `mode: agent` (documented Copilot key). The
+#     undocumented `agent:` key is explicitly rejected.
+#   - Every prompt declares a `tools:` array containing `codebase` at minimum
+#     (all prompts need codebase read access; specific agents like
+#     /cross-repo-impact restrict to read-only tools by design).
 #   - Instructions files declare `applyTo:`.
-#   - Mode prompts include the anti-drift block (D28) within the head of the
-#     file — the verifier looks for `Do NOT` and `[<MODE>]` markers near the
-#     top of each mode prompt.
+#   - Persistent-headspace mode prompts include the anti-drift block within
+#     the head of the file — the verifier looks for `Do NOT` and the exact
+#     `[<MODE>]` marker matching the prompt's filename (e.g., `build.prompt.md`
+#     must contain `[BUILD]`, not any `[<X>]` token).
 #
 # Exits non-zero on the first failure, with a clear message naming the file
 # and the missing field.
@@ -119,6 +123,22 @@ verify_prompt_file() {
     fail "$rel: 'mode: agent' prompt must declare a 'tools:' field"
     return
   fi
+  # Tools list content check: must be a non-empty array containing at least
+  # "codebase" (every prompt needs codebase read access). Reject the trivial
+  # empty-array `[]` shape. Restricted-tools prompts like /cross-repo-impact
+  # legitimately drop editFiles/runCommands, so this check is minimum-viable
+  # rather than an exact-list match — the shipped tools list can be inspected
+  # by opening the file.
+  case "$tools_field" in
+    "[]"|"[ ]"|"[  ]")
+      fail "$rel: 'tools:' field is empty ('$tools_field'); prompt cannot run agentically without at least 'codebase'"
+      return
+      ;;
+  esac
+  if ! printf '%s' "$tools_field" | grep -q '"codebase"'; then
+    fail "$rel: 'tools:' array must contain \"codebase\" (got: $tools_field)"
+    return
+  fi
 
   # Anti-drift block check: applies to persistent-headspace mode prompts (arch,
   # build, design, groom, review, plan, data, domain, ux, test, incident,
@@ -134,10 +154,15 @@ verify_prompt_file() {
         local head_block
         head_block=$(head -25 "$file")
         if ! printf '%s' "$head_block" | grep -q 'Do NOT'; then
-          fail "$rel: mode prompt missing 'Do NOT' marker in anti-drift block (D28)"
+          fail "$rel: mode prompt missing 'Do NOT' marker in anti-drift block"
         fi
-        if ! printf '%s' "$head_block" | grep -qE '\[[A-Z]+\]'; then
-          fail "$rel: mode prompt missing '[<MODE>]' marker in anti-drift block (D28)"
+        # The anti-drift marker must match the mode's own name (e.g.,
+        # build.prompt.md must contain `[BUILD]`, not any `[<X>]` token).
+        # Prevents an accidentally-swapped marker from passing verification.
+        local expected_marker
+        expected_marker="[$(printf '%s' "$prompt_base" | tr '[:lower:]' '[:upper:]')]"
+        if ! printf '%s' "$head_block" | grep -qF "$expected_marker"; then
+          fail "$rel: mode prompt missing expected marker '$expected_marker' in anti-drift block"
         fi
         ;;
     esac

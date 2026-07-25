@@ -1,6 +1,6 @@
 {
   "name": "pai-orbit",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "Standalone install CLI for the pai-orbit methodology harness — scaffolds Copilot/Cursor/Claude config into a project.",
   "bin": {
     "pai-orbit": "plugins/pai-orbit/scripts/init/cli.js"
