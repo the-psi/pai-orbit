@@ -1,6 +1,6 @@
 {
   "name": "pai-orbit",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "description": "Structured developer methodology harness — install CLI for the pai-orbit Codex CLI adapter.",
   "bin": {
     "pai-orbit": "plugins/pai-orbit/adapters/codex/install.js"

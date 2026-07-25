@@ -73,7 +73,7 @@ graph LR
     core --> cursorplugin[adapters/cursor-plugin]
     core --> cursor[adapters/cursor — lossy legacy]
     core --> copilot[adapters/copilot — lossy]
-    core --> codex[adapters/codex — experimental]
+    core --> codex[adapters/codex — full parity]
     claudecode --> distcc[dist/claude-code/]
     cursorplugin --> distcp[dist/cursor-plugin/]
     cursor --> distc[dist/cursor/]
