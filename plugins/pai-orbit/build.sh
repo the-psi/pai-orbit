@@ -3,8 +3,8 @@
 # Iterates adapters/*/build.sh and invokes each. Fails fast.
 set -euo pipefail
 
-# D43 (2026-07-24): pin locale so string-length operations (${#var}) count
-# characters consistently on Windows Git Bash, Linux, macOS, and CI. Multi-byte
+# Pin locale so string-length operations (${#var}) count characters
+# consistently on Windows Git Bash, Linux, macOS, and CI. Multi-byte
 # characters in mode/skill descriptions (em-dashes, curly quotes) would
 # otherwise produce different truncation output under different LC_CTYPE
 # settings — the committed dist/ tree only reproduces under a pinned locale.

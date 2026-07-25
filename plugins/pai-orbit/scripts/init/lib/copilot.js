@@ -49,7 +49,7 @@ function readJsonIfExists(filePath) {
 }
 
 // ---------------------------------------------------------------------------
-// Migration (D18, D23, D25)
+// Migration (see D23 in docs/decisions/2026-07-25-copilot-adapter-decisions.md)
 // ---------------------------------------------------------------------------
 
 function performMigration(cwd, lifecycle, ctx) {
@@ -83,7 +83,7 @@ function performMigration(cwd, lifecycle, ctx) {
     const from = path.join(oldDir, name);
     const to = path.join(newDir, name);
     if (fs.existsSync(from) && !fs.existsSync(to)) {
-      // D43 (2026-07-24): refuse to migrate a symlink. fs.copyFileSync
+      // Refuse to migrate a symlink. fs.copyFileSync
       // dereferences symlinks and copies the target contents, which would
       // silently exfiltrate arbitrary files if a malicious commit swapped
       // these config files for symlinks pointing at /etc/passwd or similar.
@@ -467,7 +467,8 @@ function renderArchitectureScaffold(cwd, ctx, answers) {
 }
 
 // ---------------------------------------------------------------------------
-// Settings.json (D19)
+// Settings.json — install metadata (version, timestamp, husky opt-in, detected
+// languages, pre-commit installer choice). Read on re-run to drive the diff report.
 // ---------------------------------------------------------------------------
 
 function renderSettingsJson(cwd, ctx, answers) {

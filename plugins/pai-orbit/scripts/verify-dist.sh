@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # verify-dist.sh — dist/copilot/ frontmatter and anti-drift gate.
 #
-# Working plan + design spec (D1..D36) kept locally by the implementing team.
-# Comments below still reference plan / design section numbers as provenance.
+# Design decisions cited by D-number in comments are recorded in
+# `docs/decisions/2026-07-25-copilot-adapter-decisions.md`.
 #
 # Checks every *.prompt.md and *.instructions.md under dist/copilot/:
 #   - Frontmatter starts at line 1 with `---` and closes with `---`.
 #   - Prompt files declare `description:` whose value starts with `[mode] `,
-#     `[skill] `, or `[agent] ` (D20 prefix convention).
+#     `[skill] `, or `[agent] ` (prefix convention).
 #   - Mode/skill prompts declare `agent: agent`.
 #   - Agent (service-builder) prompts declare `mode: agent` and a `tools:` line (D30).
 #   - Instructions files declare `applyTo:`.
@@ -86,7 +86,7 @@ verify_prompt_file() {
     return
   fi
 
-  # D20 — every prompt description starts with [mode], [skill], or [agent].
+  # Prefix convention — every prompt description starts with [mode], [skill], or [agent].
   local kind=""
   case "$desc" in
     "[mode] "*)  kind="mode" ;;

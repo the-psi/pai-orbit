@@ -3,7 +3,7 @@
 # Rename this file to .husky/pre-commit and `chmod +x` to activate.
 # After install on Windows, also run:
 #   git update-index --add --chmod=+x .husky/pre-commit
-# so the exec bit is tracked in the repo (D21).
+# so the exec bit is tracked in the repo.
 set -e
 
 # bash-guard intent — block force-push, bulk staging, hook-bypass, destructive rm

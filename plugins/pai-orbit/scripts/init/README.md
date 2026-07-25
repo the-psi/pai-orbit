@@ -18,8 +18,8 @@ paths converge on the same templates and the same built `dist/copilot/` tree.
 |------|---------|
 | `cli.js` | Entry point — arg parser + subcommand router. Wired through the root `package.json`'s `bin` field. |
 | `lib/copilot.js` | Full Copilot install flow — lifecycle detection (first-run / re-run / migration), file copy from `dist/copilot/`, template rendering, husky / pre-commit activation. Branches on `--setup`: without the flag, installs files only; with the flag, runs the full interview and renders `.copilot/*` + `CLAUDE.md` + `docs/architecture/*`. |
-| `lib/claude.js` | Stub per D9 — points users at `/setup` inside Claude Code. |
-| `lib/cursor.js` | Stub per D9 — points users at `/setup` inside Cursor. |
+| `lib/claude.js` | Stub — points users at `/setup` inside Claude Code (CLI install for Claude target not yet implemented). |
+| `lib/cursor.js` | Stub — points users at `/setup` inside Cursor (CLI install for Cursor target not yet implemented). |
 | `lib/prompts.js` | Interview Q&A via the `prompts` npm package. Only invoked when `--setup` is set (or an implying flag like `--board=`, `--branch=`, `--re-init-agents-md`; legacy `--re-init-claude-md` kept as an alias). Falls back to defaults when `--yes` / `--no-interactive` is set or the package is unavailable. |
 | `lib/render.js` | Template placeholder substitution + directory copy + `.gitignore` line ensuring. |
 
@@ -27,7 +27,7 @@ paths converge on the same templates and the same built `dist/copilot/` tree.
 
 - Node.js ≥ 18 (root `package.json` declares this in `engines`).
 - One runtime dependency: `prompts ^2.4.2` — npm fetches it transparently when the CLI is invoked via `npx`.
-- `git` on `PATH` — required by npx (clone path) and by D21 (`git update-index --add --chmod=+x .husky/pre-commit`).
+- `git` on `PATH` — required by npx (clone path) and by the husky-activation step (`git update-index --add --chmod=+x .husky/pre-commit`) so the exec bit is tracked in the repo.
 
 ## Distribution
 
@@ -81,9 +81,9 @@ node plugins/pai-orbit/scripts/init/cli.js --version  # should print plugin vers
 
 - **npm packaging** — no `npm publish`, no shrinkwrap, no compiled bundle. The
   source IS the runnable artefact.
-- **TypeScript** — D8 commits to plain JS. The build-step cost outweighs the
+- **TypeScript** — install CLI is plain JS. The build-step cost outweighs the
   ergonomic win for ~500 LOC.
 - **Cross-tool installer logic** — `init claude` and `init cursor` are stubs
-  pending real demand (D9).
+  pending real demand.
 - **Editor-specific files** — the CLI never emits `.vscode/`, `.idea/`, etc.
   (D33). Editor config is owned by the team.

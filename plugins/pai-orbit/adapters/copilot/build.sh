@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # GitHub Copilot adapter — prompt files, instructions files, hook surrogates.
 #
-# D43 (2026-07-24): pin locale so string-length operations (${#var}) in
-# truncate_description() and elsewhere count characters, not bytes. Multi-byte
-# em-dashes in mode/skill descriptions otherwise produce different truncated
-# bytes on different systems (CI's default UTF-8 locale vs LC_ALL=C).
+# Pin locale so string-length operations (${#var}) in truncate_description()
+# and elsewhere count characters, not bytes. Multi-byte em-dashes in mode/skill
+# descriptions otherwise produce different truncated bytes on different systems
+# (CI's default UTF-8 locale vs LC_ALL=C).
 #
-# Working design + plan (D1..D36) kept locally by the implementing team.
-# Comments below still reference plan/design section numbers for provenance.
+# Architectural decisions cited by D-number in comments below are recorded in
+# `docs/decisions/2026-07-25-copilot-adapter-decisions.md`.
 #
 # Emits dist/copilot/ with:
 #   .github/copilot-instructions.md          slim rule book + context discovery
@@ -25,7 +25,7 @@
 # No editor-specific files are emitted (D33).
 set -euo pipefail
 
-# D43: locale pin — see header comment. Applied here too in case this script
+# Locale pin — see header comment. Applied here too in case this script
 # is invoked directly (not via the top-level build.sh).
 export LC_ALL=C.UTF-8
 export LANG=C.UTF-8
@@ -57,9 +57,10 @@ mkdir -p "$DIST_DIR/.husky"
 # Helpers
 # ---------------------------------------------------------------------------
 
-# Path rewrites for the Copilot adapter (design §3.1 step 4). Symmetric .copilot/
-# folder per D3. Hook references are stripped on emission — they only appear in
-# setup.md, which is not emitted (D13).
+# Path rewrites for the Copilot adapter. Symmetric .copilot/ folder (matching
+# .claude/ and .cursor/). Hook references from shared source are stripped via
+# the setup.md pipeline's Step 3/4 replacement (see D39) — Copilot has no
+# native hook runtime so hook-emit logic doesn't apply.
 rewrite_paths() {
   sed \
     -e 's|\.claude/pai-orbit-config\.md|.copilot/pai-orbit-config.md|g' \
@@ -356,17 +357,14 @@ End with: "Run `/suggest-skills` after a few sessions to discover operational sk
 EOF
 }
 
-# Modes dropped on the Copilot adapter.
-# D13 originally dropped both /setup and /suggest-skills. Superseded 2026-07-04
-# in two steps:
-#   - /setup un-dropped: emitted as agent-mode prompt so Copilot Business can
-#     re-configure inside Chat (Free degrades to advisory text).
-#   - /suggest-skills un-dropped: emitted as agent-mode prompt with a Copilot-
-#     adapted preamble that redirects skill scaffolding from `.claude/skills/`
-#     to `.github/prompts/` (Copilot's user-prompt surface). The mode's
-#     analysis workflow (AGENTS.md, docs/, git log, docs/wip/, docs/ops/) is
-#     portable; only the output target differs per adapter.
-# Nothing is currently skipped for Copilot — every mode in core/modes/ emits.
+# Modes skipped on emission for the Copilot adapter.
+#
+# All core modes emit for Copilot. `/setup` emits as an agent-mode prompt so
+# Copilot Business can re-configure inside Chat (Free degrades to advisory
+# text). `/suggest-skills` emits as an agent-mode prompt with a Copilot-
+# adapted preamble that redirects skill scaffolding from `.claude/skills/`
+# to `.github/prompts/` (Copilot's user-prompt surface).
+# Nothing is currently skipped — every mode in core/modes/ emits.
 is_skipped_mode() {
   case "$1" in
     *) return 1 ;;
@@ -1012,7 +1010,7 @@ emit_husky_template() {
 # Rename this file to .husky/pre-commit and `chmod +x` to activate.
 # After install on Windows, also run:
 #   git update-index --add --chmod=+x .husky/pre-commit
-# so the exec bit is tracked in the repo (D21).
+# so the exec bit is tracked in the repo.
 set -e
 
 # bash-guard intent — block force-push, bulk staging, hook-bypass, destructive rm
@@ -1164,7 +1162,7 @@ emit_readme
 
 echo "copilot adapter: build complete"
 
-# Final step (D24): hand off to the shared dist verifier so local and CI runs
+# Final step: hand off to the shared dist verifier so local and CI runs
 # produce the same pass/fail signal. Verification covers Copilot's dist only.
 if [ -x "$VERIFY_SCRIPT" ] || [ -f "$VERIFY_SCRIPT" ]; then
   echo "copilot adapter: running verify-dist.sh ..."

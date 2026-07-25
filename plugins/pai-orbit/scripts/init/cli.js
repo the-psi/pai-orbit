@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // pai-orbit install CLI — standalone installer for the Copilot adapter.
 //
-// Working plan + design spec (D1..D36) kept locally by the implementing team.
+// Design decisions cited by D-number in comments are recorded in
+// `docs/decisions/2026-07-25-copilot-adapter-decisions.md`.
 // This file is the runnable artefact; end-user docs live in
 // `docs/copilot-install-and-usage.md`.
 //
@@ -14,7 +15,7 @@
 //
 // Targets:
 //   copilot                      fully implemented
-//   claude | cursor              stubs (D9) — point users at /setup inside the host tool
+//   claude | cursor              stubs — point users at /setup inside the host tool
 //
 // Distribution channel: `npx github:the-psi/pai-orbit init copilot`. No npm publish.
 
@@ -68,7 +69,7 @@ Subcommands:
   pai-orbit --help                   Show this help.
   pai-orbit --version                Show CLI version.
 
-  <target>: copilot | claude | cursor  (claude/cursor are stubs in v1 — D9)
+  <target>: copilot | claude | cursor  (claude/cursor are stubs in v1)
 
 Flags:
   --setup                            Run the 11-question interview after files

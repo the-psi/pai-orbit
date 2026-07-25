@@ -132,10 +132,10 @@ Re-running the npx install is unnecessary and would only matter if the team lead
 |------|----------|---------|
 | `.copilot/` | pai-orbit | Team metadata (`pai-orbit-config.md`, `team.md`, `settings.json`). Read by the prompts via the Context-discovery directives. |
 | `.github/copilot-instructions.md` | pai-orbit | Always-loaded rule book + Context-discovery + prompt-library pointer. Refreshed on every re-run. |
-| `.github/prompts/*.prompt.md` | pai-orbit | 25 invokable slash commands (12 modes + 6 skills + 7 service-builder agents). Refreshed on every re-run. |
-| `.github/instructions/*.instructions.md` | pai-orbit | 4 auto-attaching guidance files. Refreshed on every re-run. |
+| `.github/prompts/*.prompt.md` | pai-orbit | 29 invokable slash commands (14 modes + 6 skills + 7 service-builder agents + 2 named agents: `/docs-writer`, `/cross-repo-impact`). Refreshed on every re-run. |
+| `.github/instructions/*.instructions.md` | pai-orbit | 5 auto-attaching guidance files (`git`, `data-model`, `arch-drift`, `context-discovery`, `decisions`). Refreshed on every re-run. |
 | `.husky/` and `.pre-commit-config.yaml(.template)` | pai-orbit (templates) / user (active files) | Inert templates are owned by pai-orbit and refreshed on re-run. The active `.husky/pre-commit` or `.pre-commit-config.yaml` is **preserved** once installed. |
-| `AGENTS.md` | user (after first scaffold) | Project documentation for Copilot: stack, services, key files, data model, auth. **Same content shape** as Claude Code's `CLAUDE.md` — only the filename differs to match each tool's convention. (D37 supersedes D26 for the Copilot target.) |
+| `AGENTS.md` | user (after first scaffold) | Project documentation for Copilot: stack, services, key files, data model, auth. **Same content shape** as Claude Code's `CLAUDE.md` — only the filename differs to match each tool's convention. |
 | `docs/` | user | Methodology output (requirements, design, ADRs, plans). Never overwritten on re-run. |
 
 **Note on `.github/`:** Copilot reads from `.github/copilot-instructions.md`, `.github/prompts/`, and `.github/instructions/` regardless of where the repo is hosted. `.github/` is a Copilot product path — it works on GitHub, GitLab, Bitbucket, Azure DevOps, and self-hosted git equally.
@@ -331,7 +331,7 @@ pai-orbit's Copilot adapter delivers **~85% of the methodology benefit on Free, 
 - **No native hooks** — Copilot has no tool-use event system. Hook intent is split between always-loaded instruction text (**advisory** — Copilot usually obeys, no guarantee) and the optional `.husky/pre-commit` (enforces lint failures + a weak secret tripwire at commit time). Force-push, `git add -A`, `--no-verify`, and destructive shell commands cannot be blocked by any pre-commit hook — they require Claude Code's PreToolUse blocking, a pre-push hook, or server-side branch protection. See the Hook coverage matrix above.
 - **Agents work only on Pro/Business** — service-builder prompts emit with `mode: agent` (D30). Pro/Business runs them as multi-step agents; Free degrades them to regular prompts that still give correct manual scaffolding guidance.
 - **Mode discipline is text-based, not runtime-enforced** — the anti-drift block (D28) tightens but does not enforce. Copilot Free tier may drift on some replies; check for the `[<MODE>]` prefix and re-issue the mode command if missing.
-- **`/setup` availability** — `/setup` IS emitted for Copilot as of 2026-07-04 (D13 fully superseded), as an agent-mode prompt. First-time install still starts from the terminal (`npx ... init copilot`) because the prompt files don't exist yet at first-run. On subsequent runs, `/setup` in Copilot Chat gives Copilot Business teams a reconfiguration UX equal to Claude Code's. Copilot Free degrades to advisory text.
+- **`/setup` availability** — `/setup` IS emitted for Copilot as an agent-mode prompt. First-time install still starts from the terminal (`npx ... init copilot`) because the prompt files don't exist yet at first-run. On subsequent runs, `/setup` in Copilot Chat gives Copilot Business teams a reconfiguration UX equal to Claude Code's. Copilot Free degrades to advisory text.
 - **`/suggest-skills` availability** — also emitted for Copilot as of 2026-07-04, as an agent-mode prompt with a Copilot-adapted preamble. Analysis inputs (`AGENTS.md` — legacy `CLAUDE.md` as fall-back, `docs/`, `git log`, existing `.github/prompts/`, `docs/wip/`, `docs/ops/`) are portable; the preamble redirects scaffold output from Claude's `.claude/skills/<name>/SKILL.md` target to Copilot's `.github/prompts/<name>.prompt.md` target and skips the "Claude Code built-in" step (no equivalent). Business tier scaffolds files agentically; Free tier produces the ranked suggestion list as text.
 - **Named sub-agents `/docs-writer` and `/cross-repo-impact`** — emitted for Copilot as of 2026-07-05 as agent-mode prompts. `/docs-writer` runs with `editFiles` capability (writes documentation into `docs/`); `/cross-repo-impact` runs with **read-only tools** (`codebase` + `search`, no `editFiles` / `runCommands`) — matching the source agent's read-only contract. Business tier runs both multi-step; Free tier renders as advisory text.
 - **ADR obligation rules** — `.github/instructions/decisions.instructions.md` with `applyTo: "**/*"` (always attached). Mirrors the Cursor plugin's `rules/decisions.mdc` (alwaysApply: true) and Claude Code's `rules/decisions.md`. Copilot now reads the "when to write an ADR" rules on every turn — same behaviour as the other adapters.
@@ -376,7 +376,7 @@ Copilot may sometimes ignore the always-loaded Context discovery directives (a k
 4. If still failing, check that `.github/instructions/context-discovery.instructions.md` is present (the R8 fall-back) — it auto-attaches to every file via `applyTo: "**/*"`.
 5. If both channels fail on Copilot Free, this is a known Free-tier limitation. Switch to Pro/Business for production use, or document the gap and proceed with caveat.
 
-### Failed-install recovery (per D27)
+### Failed-install recovery
 
 If `npx` crashed mid-write (Ctrl-C, network blip, OOM) and you have a partial install:
 
