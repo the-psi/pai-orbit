@@ -41,14 +41,22 @@ The docs home is configured in `.cursor/pai-orbit-config.md`. Two cases:
 ```
 docs/
 ├── domain/           Domain knowledge, expert science, rule/logic documentation
-├── features/         One folder per feature — requirements.md, design.md
+├── features/         One folder per feature — requirements.md, design.md, analyses, spikes
 ├── decisions/        ADRs — <slug>.md, date in frontmatter
+├── architecture/     system/constraints/stack + codebase-wide audits
+├── incidents/        Postmortems — postmortem-<slug>-<date>.md
 ├── ops/              Human-owned operational files — do not modify without being asked
 ├── backlog/          Feature parking lot — feature-ideas.md
-├── wip/              Ephemeral session captures — session-capture-<date>.md
+├── wip/              Only what dies when the branch merges or the session resumes;
+│                     swept at /release into wip/archive/
 ├── plans/            Planning and prioritisation notes
 └── reports/          Data analysis findings
 ```
+
+If the project has a `.claude/rules/docs-taxonomy.md`, **that file is the authority** on where an
+artifact goes — it may rename, add, or repurpose these directories. Read it before choosing a
+destination. `wip/` is never the answer to "I have nowhere better to put this": if the document
+outlives the branch, it has a subject, and it belongs with the subject.
 
 ## What not to do
 
