@@ -128,6 +128,8 @@ The current `.claude-plugin/` structure remains as-is. The Claude adapter reads 
 
 ### Codex CLI Adapter
 
+> **Superseded 2026-07-30.** The description below documents the ORIGINAL design (condensed `AGENTS.md` compile + generated `pai` CLI wrapper + terminal-wrapper hooks). What actually shipped is a full-parity native compile: `.agents/skills/` for skills, `.codex/hooks.json` for hooks (with native `commandWindows` for Windows), `.codex/agents/*.toml` for subagents, and an `npx` install CLI. See [`docs/decisions/2026-07-19-codex-adapter-decisions.md`](../../decisions/2026-07-19-codex-adapter-decisions.md) (DC1–DC10) for the actual architecture and the reasons for each divergence from this original plan. The text below is preserved for historical context only.
+
 **Output:** `AGENTS.md` at repo root (and optionally service-level `AGENTS.md` in subdirectories for monorepos)
 
 **Structure:**

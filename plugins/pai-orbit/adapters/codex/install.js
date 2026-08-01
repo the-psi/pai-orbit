@@ -5,8 +5,11 @@
 // No npm publish required — npx fetches the repo at run time.
 //
 // Subcommands:
-//   pai-orbit init codex          first-run install; refuses to overwrite
-//   pai-orbit update codex        overwrite existing install
+//   pai-orbit init codex          first-run install; aborts if ANY top-level
+//                                 dist entry already exists in the target
+//                                 project (protects hand-written AGENTS.md,
+//                                 README.md, pre-existing .codex/ config).
+//   pai-orbit update codex        re-install, overwriting existing files
 //   pai-orbit --help              usage
 //   pai-orbit --version           print version
 //
@@ -42,10 +45,12 @@ function usage() {
 Install pai-orbit's OpenAI Codex CLI adapter into your project.
 
 Usage:
-  npx github:the-psi/pai-orbit init codex          Install (refuses to overwrite existing .agents/skills/)
-  npx github:the-psi/pai-orbit update codex        Re-install, overwriting existing files
-  npx github:the-psi/pai-orbit --help              Show this help
-  npx github:the-psi/pai-orbit --version           Print version
+  npx github:the-psi/pai-orbit init codex          First-run install; aborts if any top-level
+                                                   dist entry (AGENTS.md, .agents/, .codex/, etc.)
+                                                   already exists in the target project.
+  npx github:the-psi/pai-orbit update codex        Re-install, overwriting existing files.
+  npx github:the-psi/pai-orbit --help              Show this help.
+  npx github:the-psi/pai-orbit --version           Print version.
 
 Pin a ref by appending #<branch|tag|sha>:
   npx github:the-psi/pai-orbit#v1.4.0 init codex
@@ -101,16 +106,36 @@ function runInstall(target, { overwrite }) {
   assertDistPresent();
 
   const cwd = process.cwd();
-  const skillsDir = path.join(cwd, '.agents', 'skills');
-  if (fs.existsSync(skillsDir) && !overwrite) {
-    console.error(`ERROR: ${skillsDir} already exists in this project.`);
-    console.error('Use \`update codex\` instead of \`init codex\` to re-install and overwrite.');
-    process.exit(1);
+  const entries = fs.readdirSync(DIST_DIR);
+
+  // Enforce the "refuses to overwrite" guarantee: on `init codex` (overwrite=false),
+  // check every top-level dist entry against the target project. If ANY of them
+  // already exists in the target, abort with the full list — don't silently
+  // clobber the user's hand-written AGENTS.md, README.md, or any pre-existing
+  // .codex/ config. The user must either delete the conflict or run `update codex`.
+  if (!overwrite) {
+    const conflicts = [];
+    for (const entry of entries) {
+      if (fs.existsSync(path.join(cwd, entry))) {
+        conflicts.push(entry);
+      }
+    }
+    if (conflicts.length > 0) {
+      console.error('ERROR: refusing to overwrite existing project files.');
+      console.error('');
+      console.error('The following entries already exist in this project:');
+      for (const c of conflicts) {
+        console.error(`  ${c}`);
+      }
+      console.error('');
+      console.error('Either back up / delete the conflicting entries, or run `update codex`');
+      console.error('to overwrite them.');
+      process.exit(1);
+    }
   }
 
   console.log(`pai-orbit (Codex v${VERSION}): installing into ${cwd} ...\n`);
 
-  const entries = fs.readdirSync(DIST_DIR);
   let fileCount = 0;
   for (const entry of entries) {
     const src = path.join(DIST_DIR, entry);

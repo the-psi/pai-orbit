@@ -33,7 +33,7 @@ npx github:the-psi/pai-orbit#feat/codex-adapter init codex
 
 ### Re-install / upgrade
 
-The `init` subcommand refuses to overwrite an existing `.agents/skills/` directory (protects other tools' installs). Use `update` to overwrite:
+The `init` subcommand refuses to overwrite ANY existing top-level entry (`AGENTS.md`, `.agents/`, `.codex/`, `README.md`, or any other dist entry that already exists in your project). This protects hand-written project files and other tools that may already own paths like `.agents/`. Use `update` to overwrite:
 
 ```bash
 npx github:the-psi/pai-orbit update codex
@@ -284,8 +284,13 @@ The `.ps1` wrappers shell out to `bash` for the core scripts. If Git Bash / WSL 
 **`codex exec --sandbox workspace-write` errors: `codex-windows-sandbox-setup.exe not found`.**
 Windows-only edge case: the sandbox helper isn't discoverable from certain working directories. Workarounds: run `codex exec` with `--dangerously-bypass-approvals-and-sandbox` for automation contexts, or invoke Codex from a directory inside its install root.
 
-**The installer aborts with `ERROR: .agents/skills/ already exists in this project.`**
-Another tool is using `.agents/skills/`, or you've already installed pai-orbit here. Run `npx github:the-psi/pai-orbit update codex` (instead of `init codex`) to overwrite. Back up existing content first if `.agents/skills/` belongs to a different tool.
+**The installer aborts with `ERROR: refusing to overwrite existing project files.`**
+`init codex` refuses to overwrite if ANY top-level dist entry already exists in your project (`AGENTS.md`, `.agents/`, `.codex/`, `README.md`, etc.). The installer prints the full list of conflicting entries. Two ways to proceed:
+
+- **You already have pai-orbit installed** — run `npx github:the-psi/pai-orbit update codex` to overwrite.
+- **A different tool owns one of the conflicts** (e.g. a hand-written `AGENTS.md`, or another tool using `.agents/`) — back up or rename the conflicting entries first, then re-run `init codex`.
+
+This safety guard was added after a review flagged that early versions only checked `.agents/skills/` — meaning a hand-written `AGENTS.md` could be silently clobbered on first install. Every top-level entry is now checked individually.
 
 **I typed `/plan` in Codex and got an unexpected planner.**
 That's Codex's **built-in `/plan`** command. pai-orbit's plan mode is `$orbit-plan` on Codex (renamed to avoid this exact collision). Same for `/review` (Codex built-in) vs `$orbit-review` (pai-orbit).

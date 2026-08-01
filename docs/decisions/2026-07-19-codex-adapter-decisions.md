@@ -121,7 +121,11 @@ Two questions surfaced: (1) Should Codex adopt the same npx style as Copilot for
 
 **Decision I made.** Every Codex-specific handling lives inside `plugins/pai-orbit/adapters/codex/`. Zero edits to `core/` are allowed as part of the Codex adapter work. Verified at each phase gate.
 
-**Solution shipped.** All Codex adapter files (`AGENTS.md`, `config.toml.template`, `hooks.json.template`, `hook-wrappers/`, `setup-append.md`, `suggest-skills-append.md`, `install.js`, `build.sh`) live inside the adapter directory. Where Codex needs to modify shared content (e.g., append Codex-specific setup steps to the `setup.md` mode body), the adapter emits an append fragment concatenated at build time — not by editing `core/modes/setup.md`. Path rewrites (`.claude/` → `.codex/`, `CLAUDE.md` → `AGENTS.md`) run at emit time, never at source time. Post-build guards enforce no `.claude/` or `CLAUDE.md` string leaks. `git diff main..HEAD -- plugins/pai-orbit/core/` is empty across the entire branch.
+**Solution shipped.** All Codex adapter files (`AGENTS.md`, `config.toml.template`, `hooks.json.template`, `hook-wrappers/`, `setup-append.md`, `suggest-skills-append.md`, `install.js`, `build.sh`) live inside the adapter directory. Where Codex needs to modify shared content (e.g., append Codex-specific setup steps to the `setup.md` mode body), the adapter emits an append fragment concatenated at build time — not by editing `core/modes/setup.md`. Path rewrites (`.claude/` → `.codex/`, `CLAUDE.md` → `AGENTS.md`) run at emit time, never at source time. Post-build guards enforce no `.claude/` or `CLAUDE.md` string leaks.
+
+Nuance on the "zero core edits" claim: **zero Codex-adapter-authored edits to `core/`**. The one `core/` change present on the branch (`plugins/pai-orbit/core/plugin.json`, version `1.3.3` → `1.3.4`) came in from upstream commit `7455b8e` via the merge into this branch — not authored by the Codex adapter work. It is a version bump required by `constraints.md` rule 7 (dist/ structural changes need a version bump) and is upstream-inherited behavior, not adapter-authored.
+
+**Cross-reference.** This ADR partially resolves the Review Date trigger in [`docs/decisions/2026-07-24-adapter-parity-and-dist-compat.md`](2026-07-24-adapter-parity-and-dist-compat.md): the `codex`-experimental gap flagged there is now closed. The `cursor` (legacy) gap remains as a documented deliberate fallback (see `constraints.md` rule 6 comment).
 
 ---
 
