@@ -1,5 +1,5 @@
 # System Architecture: pai-orbit
-Last updated: 2026-07-24
+Last updated: 2026-08-18
 Status: declared
 
 ## Services
@@ -9,6 +9,7 @@ Status: declared
 | core | `plugins/pai-orbit/core/` | Markdown (modes/skills/agents) + bash (hooks) | Tool-agnostic source of truth for all modes, skills, agents, hooks, templates |
 | claude-code adapter | `plugins/pai-orbit/adapters/claude-code/` → `dist/claude-code/` | bash build script | Full-fidelity compile of core to the Claude Code plugin format |
 | cursor-plugin adapter | `plugins/pai-orbit/adapters/cursor-plugin/` → `dist/cursor-plugin/` | bash build script | Cursor plugin (rules, skills, commands, agents, hooks) |
+| kiro-power adapter | `plugins/pai-orbit/adapters/kiro-power/` → `dist/kiro-power/` | bash build script | Kiro Power (skills + auto-loading steering); no agent or hook fidelity today |
 | cursor adapter (legacy) | `plugins/pai-orbit/adapters/cursor/` → `dist/cursor/` | bash build script | Lossy `.cursor/rules/*.mdc` compile |
 | copilot adapter | `plugins/pai-orbit/adapters/copilot/` → `dist/copilot/` | bash build script | Lossy `.github/copilot-instructions.md` compile |
 | codex adapter | `plugins/pai-orbit/adapters/codex/` → `dist/codex/` | bash build script | Experimental `AGENTS.md` compile |
@@ -31,11 +32,13 @@ None — this is a static content pipeline (markdown/bash in, markdown/bash out)
 graph LR
     core[core/ — modes, skills, agents, hooks, templates] --> claudecode[adapters/claude-code/build.sh]
     core --> cursorplugin[adapters/cursor-plugin/build.sh]
+    core --> kiropower[adapters/kiro-power/build.sh]
     core --> cursor[adapters/cursor/build.sh]
     core --> copilot[adapters/copilot/build.sh]
     core --> codex[adapters/codex/build.sh]
     claudecode --> distcc[dist/claude-code/]
     cursorplugin --> distcp[dist/cursor-plugin/]
+    kiropower --> distkp[dist/kiro-power/]
     cursor --> distc[dist/cursor/]
     copilot --> distco[dist/copilot/]
     codex --> distcx[dist/codex/]
@@ -54,3 +57,4 @@ graph LR
 ## Open Questions
 
 - [ ] `constraints.md` rule 6 requires full adapter parity, but `cursor` (legacy) is documented as "lossy" and `codex` as "experimental" today — both are known to fall short. Bring them to parity, or revisit the rule. — owner: unassigned
+- [ ] `kiro-power` ships with no agent or hook fidelity (`❌`/`❌` in `plugins/pai-orbit/README.md`'s adapter fidelity table) — same gap `copilot` and `codex` already carry. Accepted at introduction per `docs/decisions/2026-08-18-add-kiro-power-adapter.md` rather than blocking the adapter's addition; revisit alongside the `cursor`/`codex` parity question above. — owner: unassigned
