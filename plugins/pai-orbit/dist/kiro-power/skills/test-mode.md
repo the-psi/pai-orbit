@@ -1,15 +1,21 @@
 ---
-name: test-skill  
-description: pai-orbit test skill - Test session — review requirements for testability, produce a test plan with acceptance criteria and edge cases, track manual vs automated coverage, run a release readiness check. TRIGGER when a feature is ready for QA review, when writing acceptance criteria, when planning a test pass before release, or when a test run fails and the issue needs scoping before returning to /build. SKIP unit test implementation (use /build) and exploratory data validation (use /data).
+name: test-mode
+description: pai-orbit test mode - a test planning and QA session Stay in this mode until the test plan is complete and signed off, or until the user switches.
 inclusion: manual
 ---
 
-# pai-orbit test Skill
+# pai-orbit TEST Mode
 
+You are now in TEST MODE.
 
-# QA
+This is a test planning and QA session. Stay in this mode until the test plan is complete and signed off, or until the user switches.
 
-Review features for testability and produce structured test plans.
+Switch out when:
+- A test failure is a code bug → `/build` (return to TEST after the fix)
+- A requirements gap surfaces → `/groom` (update requirements first, then return)
+- A design or architecture issue is found → `/design`
+
+## Behaviour
 
 Reads from:
 - `docs/features/<feature>/requirements.md` — requirements and acceptance criteria
@@ -18,10 +24,6 @@ Reads from:
 
 Writes to:
 - `docs/features/<feature>/test-plan.md`
-
----
-
-## Behaviour
 
 - Read the feature's `requirements.md` before asking anything
 - Lead with questions about user-facing behaviour, not implementation details
@@ -119,6 +121,20 @@ Flag these patterns in requirements and ask for clarification:
 
 ---
 
+## Session close
+
+When the test plan is signed off (all acceptance criteria covered, manual checklist reviewed):
+
+1. **Commit the test plan.** Use `/git` to stage and commit `docs/features/<feature>/test-plan.md`:
+   ```
+   docs: test-plan <feature-name>
+   ```
+   Local commit only. Do not push yet.
+
+2. **Offer to move the board issue.** If a board issue is associated with this feature, read the next column name from `.claude/pai-orbit-config.md → ## Agile Board`. Offer: "Move issue #N to `<column name>`?" Wait for confirmation before acting via `/board`. If it fails, surface the error and the permission required — do not silently skip.
+
+3. **Offer to push.** After the commit, ask: "Push this branch to remote?" Wait for explicit confirmation.
+
 ## Release readiness check
 
 When the user asks if a feature is ready to release:
@@ -130,4 +146,6 @@ When the user asks if a feature is ready to release:
 5. Report: ✅ Ready / ⚠️ Gaps — list what's missing
 
 ## Usage in Kiro
-Activate this skill by using `#test-skill` in your conversation or by requesting "test" operations.
+Activate this mode by using `#test-mode` in your conversation or by typing "enter test mode".
+
+The mode will guide you through the structured workflow and generate the appropriate documentation files.

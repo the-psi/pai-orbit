@@ -15,6 +15,17 @@ Reads from:
 - `.claude/pai-orbit-config.md` → `## Agile Board` section — board type, URLs, label taxonomy, column flow
 - `.claude/team.md` — team roster for default assignees and handoffs
 
+## MCP vs shell
+
+Before executing any board operation, check `.claude/pai-orbit-config.md → ## MCP → board`:
+
+- **`github`** — prefer GitHub MCP tool calls (e.g. `create_issue`, `add_issue_comment`, `update_issue`). Fall back to `gh` CLI if MCP is unavailable.
+- **`linear`** — prefer Linear MCP tool calls. Fall back to `linear` CLI if MCP is unavailable.
+- **`jira`** — prefer Jira MCP tool calls. Fall back to `jira` CLI if MCP is unavailable.
+- **`none` or section absent** — use CLI shell commands directly; no MCP attempt.
+
+If an MCP call fails or the server is unreachable, fall back to the equivalent shell command and note the fallback: "MCP unavailable — using shell fallback."
+
 ## Procedure
 
 ### Creating an issue

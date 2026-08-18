@@ -1,15 +1,20 @@
 ---
-name: suggest-skills-skill  
-description: pai-orbit suggest-skills skill - Observe this project's working patterns and suggest operational skills worth adding as .claude/skills/. TRIGGER when the user asks what skills to add, wants to improve their harness, or after several sessions of work. SKIP if the project is brand new with no history.
+name: suggest-skills-mode
+description: pai-orbit suggest-skills mode - structured development mode
 inclusion: manual
 ---
 
-# pai-orbit suggest-skills Skill
+# pai-orbit SUGGEST-SKILLS Mode
 
+You are now in SUGGEST SKILLS MODE.
 
-# Suggest Skills
+Analyse this project's working patterns and suggest operational skills worth adding as `.claude/skills/`. This mode **extends** Claude Code's built-in suggest-skills capability — apply all standard Claude Code suggest-skills analysis first, then layer the project-specific analysis below on top. Do not replace or skip the built-in behaviour.
 
-Analyse working patterns and suggest new operational skills tailored to this project.
+Switch out when:
+- Suggestions are presented and user wants to scaffold one → remain in this mode to scaffold it
+- Session is complete
+
+---
 
 ## What to look for
 
@@ -27,7 +32,7 @@ A workflow deserves its own skill when it is:
 - **Recurring** — comes up more than once or twice per sprint
 - **Multi-step** — more than 3 steps, each dependent on the last
 - **Error-prone** — easy to miss a step or run in the wrong order
-- **Project-specific** — not covered by a generic pai-orbit skill
+- **Project-specific** — not covered by a generic pai-orbit skill or Claude built-in
 
 Common examples in software projects:
 - **Data backfill** — re-running a pipeline for historical records with verification steps
@@ -35,7 +40,6 @@ Common examples in software projects:
 - **DB migration** — run, verify, rollback path
 - **Feature flag management** — toggle flag states across environments
 - **Domain review** — structured analysis of domain-specific data (e.g., a product's plots, a clinic's records)
-- **Incident response** — check logs, identify scope, communicate status
 
 ## Output format
 
@@ -57,4 +61,6 @@ Rank by value: highest-impact suggestions first.
 Ask: "Want me to scaffold any of these?" If yes, create the skill file at `.claude/skills/<name>/SKILL.md` using `templates/skills/domain-operational.template.md` as the base pattern. Fill in what can be inferred; leave clear `<!-- TODO -->` markers for what the team needs to add.
 
 ## Usage in Kiro
-Activate this skill by using `#suggest-skills-skill` in your conversation or by requesting "suggest-skills" operations.
+Activate this mode by using `#suggest-skills-mode` in your conversation or by typing "enter suggest-skills mode".
+
+The mode will guide you through the structured workflow and generate the appropriate documentation files.

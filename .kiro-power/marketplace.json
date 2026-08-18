@@ -2,7 +2,7 @@
   "name": "pai-orbit",
   "displayName": "pai-orbit Structured Development",
   "description": "Structured development methodology with mode discipline, local-first documentation, and 3-phase grooming",
-  "version": "1.1.0",
+  "version": "1.4.0",
   "author": "Pratham Software (PSI)",
   "keywords": ["methodology", "development", "documentation", "architecture", "requirements"],
   "powerPath": "plugins/pai-orbit/dist/kiro-power",
@@ -10,25 +10,27 @@
   "license": "MIT",
   "capabilities": {
     "modes": [
-      "groom-mode",
-      "design-mode", 
-      "build-mode",
       "arch-mode",
-      "plan-mode",
+      "build-mode",
+      "data-mode",
+      "design-mode",
       "domain-mode",
-      "ux-mode",
-      "data-mode"
+      "groom-mode",
+      "incident-mode",
+      "plan-mode",
+      "release-mode",
+      "review-mode",
+      "setup-mode",
+      "suggest-skills-mode",
+      "test-mode",
+      "ux-mode"
     ],
     "skills": [
-      "git-skill",
-      "deploy-skill",
-      "review-skill", 
-      "test-skill",
       "analysis-skill",
-      "security-review-skill",
       "board-skill",
+      "data-model-skill",
       "epic-skill",
-      "setup-skill",
+      "git-skill",
       "simplify-skill"
     ],
     "documentation": [

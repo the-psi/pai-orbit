@@ -1,19 +1,25 @@
 ---
-name: deploy-skill  
-description: pai-orbit deploy skill - Guided deployment with preflight checks and post-deploy verification. Reads deployment targets and commands from .claude/pai-orbit-config.md. TRIGGER when the user asks to deploy, ship, or release any service. SKIP read-only service inspection (describe, status, logs) and local dev server starts.
+name: release-mode
+description: pai-orbit release mode - a deployment session with preflight checks and post-deploy verification Stay in this mode until the deployment is confirmed healthy or explicitly rolled back.
 inclusion: manual
 ---
 
-# pai-orbit deploy Skill
+# pai-orbit RELEASE Mode
 
+You are now in RELEASE MODE.
 
-# Deploy
+This is a deployment session with preflight checks and post-deploy verification. Stay in this mode until the deployment is confirmed healthy or explicitly rolled back.
 
-Deploy project services with preflight checks and post-deploy verification.
+Switch out when:
+- Tests need to run before deploying → `/test` (return after test sign-off)
+- A build fix is needed before shipping → `/build` (return after fix)
+- An incident occurs post-deploy → `/incident`
+
+## Behaviour
 
 Reads deployment targets and commands from `.claude/pai-orbit-config.md` → `## Deploy` section.
 
-## Procedure
+---
 
 ### 1. Preflight
 
@@ -46,6 +52,8 @@ List every service deployed with:
 - ✅ Deployed and healthy — URL
 - ❌ Failed — error summary and recommended next step
 
+---
+
 ## Safety rules
 
 - Never deploy to production without explicit confirmation in this session
@@ -54,4 +62,6 @@ List every service deployed with:
 - If a deploy command would be destructive (drop tables, delete storage), state it explicitly and require confirmation
 
 ## Usage in Kiro
-Activate this skill by using `#deploy-skill` in your conversation or by requesting "deploy" operations.
+Activate this mode by using `#release-mode` in your conversation or by typing "enter release mode".
+
+The mode will guide you through the structured workflow and generate the appropriate documentation files.

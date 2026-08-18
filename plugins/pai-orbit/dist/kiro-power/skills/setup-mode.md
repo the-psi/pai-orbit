@@ -1,15 +1,20 @@
 ---
-name: setup-skill  
-description: pai-orbit setup skill - First-time project setup for pai-orbit — interrogates repo structure and tech stack, asks short questions about task management, branching, deployment, docs, and team, then generates .claude/pai-orbit-config.md, .claude/team.md, a CLAUDE.md stub, stack-specific agents, and a docs/ scaffold. TRIGGER when starting a new project with pai-orbit, when the stack changes significantly, or when the user asks to configure or reconfigure the harness. SKIP if config files already exist and are current — offer to update specific sections instead.
+name: setup-mode
+description: pai-orbit setup mode - structured development mode
 inclusion: manual
 ---
 
-# pai-orbit setup Skill
+# pai-orbit SETUP Mode
 
-
-# Setup
+You are now in SETUP MODE.
 
 Configure `pai-orbit` for this project. Run once when starting, re-run when the stack or team changes significantly.
+
+Switch out when:
+- Setup is complete → return to whatever you were doing, or run `/arch init` next
+- Architecture needs to be declared → `/arch init`
+
+---
 
 ## Step 1 — Discover
 
@@ -37,6 +42,12 @@ Ask all unresolved questions in a single block — do not ask one at a time. Cov
 7. **Multi-repo project?**: Does this service repo belong to a larger multi-repo project with a separate repo for system-level docs (cross-cutting ADRs, epics spanning services, system-wide domain knowledge)? If yes, what is the path or git URL to that system docs repo?
 8. **Architecture (optional — can be done later with `/arch init`):** What services exist and how do they communicate? Any hard constraints — things that must never happen across the codebase? (e.g., "services must not share DBs", "frontend talks only to api-gateway")
 9. **Team**: names, roles, and handles (GitHub username / Linear ID / Jira user ID as relevant). Who is the default assignee for code issues? Who owns domain/expert decisions?
+10. **MCP servers (optional)**: do you have any MCP servers configured for this project? Answer for each category — enter the server name or "none":
+    - **Git**: GitHub MCP / GitLab MCP / none
+    - **Board**: GitHub Projects MCP / Linear MCP / Jira MCP / none
+    - **Docs**: Confluence MCP / Notion MCP / none
+
+    If MCP servers are configured, they will be preferred over CLI shell commands at runtime (with shell as fallback). If none are configured, all operations use shell commands — no MCP setup is required.
 
 ## Step 2b — Board Column Discovery (after Step 2 answers arrive)
 
@@ -162,38 +173,109 @@ For each service, pick the closest agent template from `templates/agents/`:
 
 Write the generated agent to `.claude/agents/<service>-builder.md`. Replace all `{{PLACEHOLDER}}` markers with actual values.
 
-### Lint hooks
+### Project rules
 
-For each language detected:
-- Python → generate `.claude/hooks/lint-python.sh` using `hooks/lint-python.sh` as a base; update repo paths
-- TypeScript/JavaScript → generate `.claude/hooks/lint-ts.sh` using `hooks/lint-ts.sh` as a base; update repo paths
+Copy `templates/rules/decisions.md` to `.claude/rules/decisions.md`.
 
-Update `.claude/settings.json` to wire the hooks:
+This file defines when an ADR is required and how to create one. It is read by every session via the rules directory so the obligation applies regardless of which skill or agent is active.
+
+### Hooks
+
+**Step A — Create the hooks directory:**
+
+```bash
+mkdir -p .claude/hooks
+```
+
+**Step B — Write the safety hooks.** Use the Write tool to create each file with the exact content from the plugin's `hooks/` directory:
+
+- Write `.claude/hooks/bash-guard.sh` — content from `hooks/bash-guard.sh`
+- Write `.claude/hooks/arch-drift-guard.sh` — content from `hooks/arch-drift-guard.sh`
+
+For each language detected, write the linting hooks:
+- Python detected → write `.claude/hooks/lint-python.sh` from `hooks/lint-python.sh`; update any repo-specific paths
+- TypeScript/JavaScript detected → write `.claude/hooks/lint-ts.sh` from `hooks/lint-ts.sh`; update any repo-specific paths
+
+**Step C — Set exec bit on all hooks:**
+
+```bash
+chmod +x .claude/hooks/*.sh
+```
+
+**Step D — Generate `.claude/settings.json`.**
+
+First, resolve the absolute path to the project root so that hook paths in `settings.json` are not relative (relative paths break when Claude runs from a subdirectory):
+
+```bash
+git rev-parse --show-toplevel 2>/dev/null || pwd
+```
+
+Use the output as `<PROJECT_ROOT>` in the hook commands below.
+
+If `.claude/settings.json` already exists, read it first and merge the `hooks` key in — do not overwrite unrelated keys. If it does not exist, create it. The hooks block to write (replace `<PROJECT_ROOT>` with the resolved absolute path):
+
 ```json
 {
   "hooks": {
     "PreToolUse": [
-      { "matcher": "Bash", "hooks": [{ "type": "command", "command": ".claude/hooks/bash-guard.sh", "timeout": 10 }] }
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "<PROJECT_ROOT>/.claude/hooks/bash-guard.sh", "timeout": 10 }] }
     ],
     "PostToolUse": [
       { "matcher": "Edit|Write", "hooks": [
-        { "type": "command", "command": ".claude/hooks/lint-python.sh", "timeout": 30, "async": true },
-        { "type": "command", "command": ".claude/hooks/lint-ts.sh", "timeout": 60, "async": true },
-        { "type": "command", "command": ".claude/hooks/arch-drift-guard.sh", "timeout": 5, "async": true }
+        { "type": "command", "command": "<PROJECT_ROOT>/.claude/hooks/lint-python.sh", "timeout": 30, "async": true },
+        { "type": "command", "command": "<PROJECT_ROOT>/.claude/hooks/lint-ts.sh", "timeout": 60, "async": true },
+        { "type": "command", "command": "<PROJECT_ROOT>/.claude/hooks/arch-drift-guard.sh", "timeout": 5, "async": true }
       ]}
     ]
   }
 }
 ```
 
-Copy `hooks/bash-guard.sh` to `.claude/hooks/bash-guard.sh`.
-Copy `hooks/arch-drift-guard.sh` to `.claude/hooks/arch-drift-guard.sh`.
+Omit `lint-python.sh` from the PostToolUse array if Python was not detected. Omit `lint-ts.sh` if TypeScript/JavaScript was not detected.
+
+**Step E — Validate hook paths.** Run the following and warn if any hook is missing or not executable (use the absolute path resolved in Step D):
+
+```bash
+PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+for hook in bash-guard.sh arch-drift-guard.sh; do
+  [ -x "$PROJECT_ROOT/.claude/hooks/$hook" ] \
+    && echo "✅ $PROJECT_ROOT/.claude/hooks/$hook" \
+    || echo "⚠️  $PROJECT_ROOT/.claude/hooks/$hook — not found or not executable"
+done
+```
+
+If any hook is missing, re-run Steps B–C before proceeding. Do not continue to Step 4 with a broken hook configuration — a missing `bash-guard.sh` will cause a non-blocking error on every Bash tool call.
+
+### MCP configuration
+
+If the user provided MCP server answers in Step 2, write an `## MCP` section to `.claude/pai-orbit-config.md`:
+
+```markdown
+## MCP
+
+git: {{GIT_MCP_SERVER}}
+<!-- Choose one: github | gitlab | none -->
+
+board: {{BOARD_MCP_SERVER}}
+<!-- Choose one: github | linear | jira | none -->
+
+docs: {{DOCS_MCP_SERVER}}
+<!-- Choose one: confluence | notion | none -->
+```
+
+Omit the `## MCP` section entirely if all three answers are "none" — do not write a section with all-none values.
 
 ### Docs scaffold
 
 If `docs/` does not exist, copy the scaffold from `templates/docs/` to the configured docs path.
 If a dedicated docs repo path was given, create the scaffold there.
 If Confluence or Notion: skip the scaffold, note the MCP setup required (see Getting Started).
+
+This includes `templates/docs/domain/product-capabilities.md`, the file `/build` appends to
+after every ship. Replace its placeholder surfaces in the Contents table and `##` sections with
+this product's actual surfaces — the axis that stays stable as the product grows. Leave its
+"How to maintain it" header intact: `/build` reads those rules to decide where a new entry goes,
+and without them the file drifts into a reverse-chronological build log.
 
 ### Architecture scaffold
 
@@ -216,7 +298,21 @@ Architecture files:
 - ⚠️ Stub — `docs/architecture/constraints.md` — run `/arch init` to define rules
 - ✅ Generated — `docs/architecture/stack.md` (populated from detected stack)
 
+Rules:
+- ✅ Generated — `.claude/rules/decisions.md` — ADR obligation rules (when to write one, how)
+
+Hooks:
+- ✅ Generated — `.claude/hooks/bash-guard.sh` — blocks force-push, bulk staging, hook bypass, destructive rm
+- ✅ Generated — `.claude/hooks/arch-drift-guard.sh` — advisory nudge on structural file edits
+- ✅ Generated (if Python) — `.claude/hooks/lint-python.sh` — runs ruff after Python edits
+- ✅ Generated (if TS/JS) — `.claude/hooks/lint-ts.sh` — runs eslint after TypeScript/JavaScript edits
+- ✅ Generated — `.claude/settings.json` — wires all hooks to Claude Code tool-use events
+
+If any hook shows ⚠️ in the Step 3 validation output, surface it here with instructions: "`.claude/hooks/<name>.sh` is missing. Re-run `/setup` or manually copy the file from the pai-orbit plugin's `hooks/` directory and run `chmod +x` on it."
+
 End with: "Run `/suggest-skills` after a few sessions to discover operational skills worth adding."
 
 ## Usage in Kiro
-Activate this skill by using `#setup-skill` in your conversation or by requesting "setup" operations.
+Activate this mode by using `#setup-mode` in your conversation or by typing "enter setup mode".
+
+The mode will guide you through the structured workflow and generate the appropriate documentation files.
