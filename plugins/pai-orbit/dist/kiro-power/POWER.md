@@ -1,4 +1,4 @@
-# pai-orbit Power
+# pai-orbit Power (Beta)
 
 **Structured Development Methodology for Kiro**
 

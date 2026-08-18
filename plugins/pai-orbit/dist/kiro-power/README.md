@@ -1,4 +1,4 @@
-# pai-orbit Kiro Power
+# pai-orbit Kiro Power (Beta)
 
 This directory contains the pai-orbit power for Kiro, providing structured development methodology through skills and steering files.
 

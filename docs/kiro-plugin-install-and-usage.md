@@ -1,4 +1,4 @@
-# pai-orbit for Kiro - Installation & Usage Guide
+# pai-orbit for Kiro (Beta) - Installation & Usage Guide
 
 pai-orbit brings structured development methodology to Kiro through powers, skills, and steering files. This guide covers installation and complete usage workflows.
 
