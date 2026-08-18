@@ -145,8 +145,8 @@ Produces sign-off documents the architect or tech lead can reference as an appro
 ### `/release` — Release Mode
 
 **Headspace:** Deployment  
-**Reads:** `.claude/pai-orbit-config.md → ## Deploy`  
-**Writes:** Deployment outputs (stdout); no doc writes  
+**Reads:** `.claude/pai-orbit-config.md → ## Deploy`, `.claude/rules/docs-taxonomy.md`  
+**Writes:** Deployment outputs (stdout); moves files within `docs/wip/` when sweeping  
 **Switch to:** `/test` before deploying if tests haven't run, `/build` if a fix is needed, `/incident` if a post-deploy outage occurs
 
 Guided deployment with preflight (auth check, project guard, dirty working tree check, test confirmation) and post-deploy health check verification. Deploys multi-service projects in dependency order. Stops on first failure — never silently continues.
@@ -157,7 +157,7 @@ Guided deployment with preflight (auth check, project guard, dirty working tree 
 
 **Headspace:** Production incident response  
 **Reads:** Error logs, git log, board state  
-**Writes:** docs/wip/postmortem-\*.md  
+**Writes:** docs/incidents/postmortem-\*.md  
 **Switch to:** `/build` for fast-path fix, `/review` for fast-path approval, `/release` for fast-path deploy
 
 Production fast-path: triage → BUILD → REVIEW → RELEASE → post-mortem. Bypasses GROOM and DESIGN for speed. Use only when something is broken in production right now. P1/P2 incidents require a post-mortem with timeline, root cause, fix, and follow-up items.
@@ -206,7 +206,7 @@ Task management — create issues, move cards, assign work, close on ship. Reads
 
 ### `/analysis`
 
-Change impact and dependency analysis — assess the blast radius of a proposed change before building, or evaluate the effect of a shipped change after the fact. Classifies each consumer as owned, external, or cascading. Produces `docs/wip/analysis-<slug>-<date>.md` with a migration path recommendation.
+Change impact and dependency analysis — assess the blast radius of a proposed change before building, or evaluate the effect of a shipped change after the fact. Classifies each consumer as owned, external, or cascading. Produces `docs/features/<feature>/analysis-<issue>-<date>.md` with a migration path recommendation (or `docs/wip/` when the change has no feature folder).
 
 ---
 
