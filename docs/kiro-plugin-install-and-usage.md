@@ -32,8 +32,10 @@ This automatically installs all skills, steering files, and methodology guidance
 The steering files will auto-load and provide methodology guidance. Skills are available for manual activation:
 
 ```
-Available skills: groom-mode, design-mode, build-mode, arch-mode, plan-mode, ux-mode, data-mode
-Available operational skills: git-skill, deploy-skill, review-skill, test-skill, analysis-skill
+Available modes: groom-mode, design-mode, build-mode, arch-mode, plan-mode, ux-mode, data-mode,
+  domain-mode, test-mode, review-mode, setup-mode, incident-mode, release-mode, suggest-skills-mode
+Available operational skills: git-skill, analysis-skill, epic-skill, board-skill,
+  data-model-skill, simplify-skill
 ```
 
 ---
@@ -50,7 +52,7 @@ Available operational skills: git-skill, deploy-skill, review-skill, test-skill,
 
 2. **Run initial setup**:
    ```
-   #setup-skill
+   #setup-mode
    ```
    
    This will:
@@ -83,19 +85,23 @@ Use the `#skill-name` syntax to activate specific modes:
 - `#domain-mode` - Domain knowledge capture
 - `#ux-mode` - User experience design
 - `#data-mode` - Data exploration and analysis
+- `#test-mode` - Test planning and execution
+- `#review-mode` - Structured code review (ask for a security-focused pass within this mode for the OWASP checklist)
+- `#setup-mode` - Project configuration
+- `#incident-mode` - Production incident fast-path
+- `#release-mode` - Guided deployment with safety checks
+- `#suggest-skills-mode` - Discover recurring patterns worth encoding as project skills
 
 ### Activating Skills
 
 Operational skills for specific procedures:
 
 - `#git-skill` - Git operations following project conventions
-- `#deploy-skill` - Guided deployment with safety checks
-- `#review-skill` - Structured code review process
-- `#test-skill` - Test planning and execution
 - `#analysis-skill` - Change impact analysis
-- `#security-review-skill` - OWASP-based security analysis
 - `#epic-skill` - Epic lifecycle management
-- `#setup-skill` - Project configuration
+- `#board-skill` - Task management operations
+- `#data-model-skill` - Schema reference and migration management
+- `#simplify-skill` - Code simplification and cleanup
 
 ### Automatic Guidance
 
@@ -172,14 +178,14 @@ Let's walk through adding a complete feature using pai-orbit methodology.
 
 1. **Code review**:
    ```
-   #review-skill
+   #review-mode
    ```
    - Structured review against requirements and architecture
    - Creates review documentation
 
 2. **Deploy safely**:
    ```
-   #deploy-skill
+   #release-mode
    ```
    - Pre-flight safety checks
    - Guided deployment process
@@ -246,7 +252,7 @@ User: "Can you review my authentication changes before I merge?"
 
 Kiro: I'll do a structured code review against your architecture and requirements.
 
-#review-skill
+#review-mode
 
 Reading your authentication design docs and architectural constraints...
 ```
@@ -263,7 +269,7 @@ docs/
 │   └── user-auth/
 │       ├── requirements.md    # from #groom-mode
 │       ├── design.md          # from #design-mode  
-│       └── test-plan.md       # from #test-skill
+│       └── test-plan.md       # from #test-mode
 ├── architecture/
 │   ├── system.md              # from #arch-mode
 │   └── constraints.md         # Enforcement rules
@@ -304,9 +310,9 @@ docs/
 ### Security Review
 
 ```
-#security-review-skill
+#review-mode
 
-# OWASP-based security analysis
+# Ask for the security-focused pass (OWASP checklist) within review-mode
 ```
 
 ---
@@ -328,7 +334,7 @@ User: "I need to hand this feature off to Sarah"
 
 Kiro: Let me create a proper handoff document with all the context.
 
-#review-skill
+#review-mode
 
 # Creates comprehensive handoff with:
 # - Current status and next steps
@@ -430,13 +436,23 @@ The generated docs aren't just artifacts - they're working documents that inform
 - `#build-mode` - Implementation  
 - `#arch-mode` - Architecture
 - `#plan-mode` - Prioritization
+- `#domain-mode` - Domain knowledge capture
+- `#ux-mode` - User experience design
+- `#data-mode` - Data exploration and analysis
+- `#test-mode` - Testing
+- `#review-mode` - Code review (including the security-focused pass)
+- `#setup-mode` - Project setup
+- `#incident-mode` - Production incident fast-path
+- `#release-mode` - Deployment
+- `#suggest-skills-mode` - Discover recurring patterns worth encoding as skills
 
 ### Skills (Operations)
 - `#git-skill` - Git operations
-- `#deploy-skill` - Deployment
-- `#review-skill` - Code review
-- `#test-skill` - Testing
-- `#setup-skill` - Project setup
+- `#analysis-skill` - Change impact analysis
+- `#epic-skill` - Epic lifecycle management
+- `#board-skill` - Task management operations
+- `#data-model-skill` - Schema reference and migration management
+- `#simplify-skill` - Code simplification and cleanup
 
 ---
 

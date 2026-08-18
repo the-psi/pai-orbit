@@ -1,5 +1,5 @@
 ---
-name: epic-skill  
+name: epic-skill
 description: pai-orbit epic skill - Epic lifecycle management — create, load, update, and list epics in docs/epics/. TRIGGER when creating a new epic, loading epic context before planning, updating an epic after a session, or listing all epics. SKIP individual feature requirements (use /groom) and roadmap sequencing (use /plan).
 inclusion: manual
 ---

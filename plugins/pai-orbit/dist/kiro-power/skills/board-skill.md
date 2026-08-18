@@ -1,5 +1,5 @@
 ---
-name: board-skill  
+name: board-skill
 description: pai-orbit board skill - Task management — create issues, move cards, assign work, close on ship — using the project's configured board. Reads board config from .claude/pai-orbit-config.md and team roster from .claude/team.md. TRIGGER when creating a task or issue, moving a card, assigning work, closing a completed item, or asking about what's on the board. SKIP read-only board browsing (just use the browser or CLI directly).
 inclusion: manual
 ---

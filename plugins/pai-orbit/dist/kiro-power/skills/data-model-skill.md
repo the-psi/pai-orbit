@@ -1,5 +1,5 @@
 ---
-name: data-model-skill  
+name: data-model-skill
 description: pai-orbit data-model skill - Data model reference and schema change management — document the current schema, propose and validate schema changes, plan migrations. TRIGGER when designing a new table or field, when modifying an existing schema, when asked about what a table contains or how tables join, or before writing a query against an unfamiliar table. SKIP pure query exploration with no schema change (use /data) and high-level data architecture decisions (use /design).
 inclusion: manual
 ---

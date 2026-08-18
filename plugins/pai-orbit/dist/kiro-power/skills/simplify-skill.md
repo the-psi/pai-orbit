@@ -1,5 +1,5 @@
 ---
-name: simplify-skill  
+name: simplify-skill
 description: pai-orbit simplify skill - Code simplification pass — review recently changed or new code for over-engineering, dead code, unnecessary abstractions, and duplication; then fix what's found. TRIGGER after a build session when the implementation feels overbuilt, when a PR review flags complexity, or on a periodic cleanup pass. SKIP full architectural refactors (use /design first) and test-only changes (use /build directly).
 inclusion: manual
 ---

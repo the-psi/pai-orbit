@@ -171,7 +171,7 @@ kiroPowers configure
 #groom-mode     # Feature requirements (3-phase approach)
 #build-mode     # Implementation session
 #design-mode    # Technical decisions  
-#deploy-skill   # Deployment procedures
+#release-mode   # Deployment procedures
 ```
 
 See [`plugins/pai-orbit/dist/kiro-power/POWER.md`](plugins/pai-orbit/dist/kiro-power/POWER.md) and **[`docs/kiro-plugin-install-and-usage.md`](docs/kiro-plugin-install-and-usage.md)** for complete setup and usage guides.

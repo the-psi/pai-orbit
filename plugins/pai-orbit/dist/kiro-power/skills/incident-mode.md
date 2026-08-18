@@ -1,6 +1,6 @@
 ---
 name: incident-mode
-description: pai-orbit incident mode - This issue is the paper trail Update it as the situation evolves.
+description: pai-orbit incident mode - structured development mode
 inclusion: manual
 ---
 

@@ -5,7 +5,7 @@ This directory contains the pai-orbit power for Kiro, providing structured devel
 ## What's Included
 
 - **POWER.md** - Main power documentation and overview
-- **skills/** - All pai-orbit modes and operational skills as Kiro skills  
+- **skills/** - All pai-orbit modes and operational skills as Kiro skills
 - **steering/** - Auto-loading methodology guidance
 
 ## Installation via Kiro Powers
@@ -28,7 +28,7 @@ cp -r steering/ ~/.kiro/steering/
 
 ## Features
 
-- **21 Skills**: All modes (`groom-mode`, `build-mode`, etc.) + operational skills (`git-skill`, `deploy-skill`, etc.)
+- **20 Skills**: All modes (`groom-mode`, `build-mode`, etc.) + operational skills (`git-skill`, `analysis-skill`, etc.)
 - **Auto-loading methodology**: Steering files provide guidance and suggest mode switches
 - **Structured documentation**: Consistent `docs/` output across all AI tools
 - **3-phase grooming**: Improved requirements process (Purpose → Scenarios → Requirements)
@@ -40,6 +40,7 @@ After installation, skills are activated with `#skill-name`:
 - `#groom-mode` - Start feature requirements
 - `#build-mode` - Implementation session
 - `#design-mode` - Technical decisions
-- `#deploy-skill` - Safe deployment
+- `#release-mode` - Safe deployment
+- `#review-mode` - Code review (ask for the security-focused pass within it)
 
 The methodology steering automatically guides conversations toward appropriate workflows.
