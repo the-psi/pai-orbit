@@ -120,7 +120,7 @@ total_generated=$(( ${#mode_entries[@]} + ${#skill_entries[@]} ))
 # Create POWER.md - the main power definition
 echo "kiro-power: creating POWER.md..."
 cat > "$DIST_DIR/POWER.md" << EOF
-# pai-orbit Power (Beta)
+# pai-orbit Power
 
 **Structured Development Methodology for Kiro**
 
@@ -331,7 +331,7 @@ EOF
 
 # Create README for the power
 cat > "$DIST_DIR/README.md" << EOF
-# pai-orbit Kiro Power (Beta)
+# pai-orbit Kiro Power
 
 This directory contains the pai-orbit power for Kiro, providing structured development methodology through skills and steering files.
 

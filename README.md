@@ -152,7 +152,7 @@ See [`docs/cursor-plugin-install-and-usage.md`](docs/cursor-plugin-install-and-u
 
 **Do not** use the legacy copy-rules install and the plugin together — duplicate mode rules will conflict.
 
-### Kiro (Beta)
+### Kiro
 
 **Option 1: As a Power (recommended)**
 
@@ -182,7 +182,7 @@ The same plugin source is compiled to per-tool bundles under `plugins/pai-orbit/
 
 | Tool | Path | How to install |
 |------|------|----------------|
-| Kiro (Power, Beta) | [`plugins/pai-orbit/dist/kiro-power/`](plugins/pai-orbit/dist/kiro-power/) | Install via Kiro powers: `https://github.com/the-psi/pai-orbit` |
+| Kiro (Power) | [`plugins/pai-orbit/dist/kiro-power/`](plugins/pai-orbit/dist/kiro-power/) | Install via Kiro powers: `https://github.com/the-psi/pai-orbit` |
 | Cursor (legacy) | [`plugins/pai-orbit/dist/cursor/`](plugins/pai-orbit/dist/cursor/) | Copy `.cursor/` into your project root — use only if you cannot install the plugin |
 | GitHub Copilot | [`plugins/pai-orbit/dist/copilot/`](plugins/pai-orbit/dist/copilot/) | Copy `.github/copilot-instructions.md` into your project |
 | OpenAI Codex CLI (experimental) | [`plugins/pai-orbit/dist/codex/`](plugins/pai-orbit/dist/codex/) | Copy `AGENTS.md` to your project root |

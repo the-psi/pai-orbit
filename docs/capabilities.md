@@ -2,7 +2,7 @@
 
 Reference for every mode, skill, and agent in pai-orbit.
 
-**Tool Support**: pai-orbit works with Claude Code (full fidelity), Cursor (plugin), Kiro (skills/steering, beta), GitHub Copilot (instructions), and OpenAI Codex CLI (experimental).
+**Tool Support**: pai-orbit works with Claude Code (full fidelity), Cursor (plugin), Kiro (skills/steering), GitHub Copilot (instructions), and OpenAI Codex CLI (experimental).
 
 ---
 
