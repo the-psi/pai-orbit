@@ -118,7 +118,7 @@ Before marking a feature as groomed and ready for `/design`, run a readiness gat
 
    This is a local commit only. Do not push yet.
 
-6. **Offer to move the board issue.** Read the target "Groomed" or backlog-ready column name from `.cursor/pai-orbit-config.md → ## Agile Board`. Offer: "Move issue #N to `<column name>`?" Wait for confirmation before acting via `/board`. Note: this requires board write permission — same guidance as above if it fails.
+6. **Sync the board.** Run the Board Sync Checkpoint at stage `groomed` via `/board`.
 
 7. **Offer to push.** After the commit, ask: "Push this branch to remote?" Wait for explicit confirmation. Note: this requires push permission for the branch.
 

@@ -30,4 +30,4 @@ If yes — write the ADR. Do not defer it; if the code ships without it, it will
 2. Name it `docs/decisions/YYYY-MM-DD-<slug>.md` (today's date + lowercase-hyphenated title, e.g. `2026-06-05-use-postgres-for-sessions.md`)
 3. Fill Context, Decision, Options Considered, Consequences, References
 4. Commit the ADR in the **same commit** as the code it documents
-5. If the work is tracked in an issue, post the ADR link as a comment on the issue
+5. If the work is tracked in an issue, post the ADR link as a comment on the issue — use the comment-only Board Sync Checkpoint via `/board` so it works on whichever board the project uses

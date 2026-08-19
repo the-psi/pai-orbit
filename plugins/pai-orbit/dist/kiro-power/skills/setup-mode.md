@@ -132,6 +132,40 @@ Present the team's workflow states and ask the user to confirm the ordered colum
 
 No API query needed. Ask the user to provide their workflow stages (column names) in order as a comma-separated list.
 
+### Step 2c — Lifecycle stage mapping (all board types)
+
+The columns discovered above tell us what this project's board looks like. This step binds
+them to pai-orbit's workflow stages, so `/build`, `/git`, `/test`, and `/release` know which
+column to move a ticket to without ever hardcoding a column name.
+
+Present the confirmed column list from Step 2b and ask **one** question — do not run
+another discovery pass, and do not ask for column names again:
+
+> "Which of your columns does each workflow stage correspond to? Answer with a column name
+> from the list above, or `—` if your workflow has no such stage (that stage is then skipped
+> entirely — no prompt, no ticket write).
+>
+> - `ux_defined` — user flows and interface behaviour are written
+> - `groomed` — requirements are written and agreed
+> - `designed` — technical design is resolved
+> - `build_start` — implementation has begun
+> - `review_open` — a PR is open for review
+> - `tested` — tests have passed
+> - `merged` — merged to the main branch
+> - `deployed` — live in production (this stage also closes the ticket)"
+
+Propose a sensible default mapping inferred from the column names before asking, so the
+user can usually just confirm. Common shapes:
+
+- 5 columns (`Backlog / Ready / In progress / In review / Done`) → `ux_defined`→`—`,
+  `groomed`→Ready, `designed`→`—`, `build_start`→In progress, `review_open`→In review,
+  `tested`→`—`, `merged`→In review, `deployed`→Done
+- 3 columns (`To Do / Doing / Done`) → `build_start`→Doing, `deployed`→Done, everything else `—`
+
+Do not invent columns that are not in the list. Mapping two stages to the same column is
+valid and common — it simply means the card does not move at the second one, and the
+checkpoint reports "already correct" while still posting the comment.
+
 ---
 
 ## Step 3 — Generate
@@ -143,6 +177,8 @@ Create the following files. Tell the user what was created and what they need to
 Use the template at `templates/pai-orbit-config.md.template`. Fill all sections from the answers above and the board discovery in Step 2b.
 
 For the `## Agile Board → columns` table, use **only** the column names and labels confirmed in Step 2b — never write placeholder or example values. Delete the tool-specific comment blocks that don't apply to the chosen board type.
+
+For the `## Agile Board → lifecycle` table, write the stage→column mapping confirmed in Step 2c. Keep the table even when the board type is `none` — write `—` in every Column cell in that case. Column values must match the `columns:` table exactly; a mismatch silently breaks every status transition, so verify each one against that table before writing.
 
 For the `## System Docs` section:
 - If the user answered **no** to the multi-repo question: omit the `## System Docs` section entirely from the generated file (do not write it with blank values).

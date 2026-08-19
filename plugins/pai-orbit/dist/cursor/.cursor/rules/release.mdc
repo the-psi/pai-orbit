@@ -43,11 +43,37 @@ After each service deploys:
 - Report: service URL, response status, any warnings from deploy output
 - If health check fails: surface the logs, do not silently proceed
 
-### 4. Report
+### 4. Board sync
+
+A ticket that shipped to production but still sits in the backlog makes every status
+report wrong. This step is where that gets fixed, and it is not optional.
+
+Once the health checks in step 3 pass:
+
+1. **Resolve the shipped issues.** Collect the commits in the deployed range
+   (`git log <last-deployed-tag-or-sha>..HEAD`) and extract every `refs #N` / `closes #N`
+   trailer and merged-PR reference. Those are the tickets this deploy shipped.
+2. For each one, run the **Board Sync Checkpoint** at stage `deployed` via `/board`. The
+   pre-filled comment carries the facts from this session: environment, timestamp, commit
+   SHA, and the health-check result.
+3. **Clear the shipped-but-dark markers.** `/build` records anything shipped-but-not-live in
+   `docs/domain/product-capabilities.md` with a greppable marker. For each capability this
+   deploy made live, remove its marker — nothing else clears them, so they accumulate and
+   the file stops answering "what is built but not live?".
+
+Skip this step only for a staging or preview deploy, unless the project's `lifecycle:` map
+declares a stage for that environment. Never skip it on a production deploy: if no issue
+can be resolved from the deployed range, say so explicitly in the report rather than
+passing over it in silence.
+
+### 5. Report
 
 List every service deployed with:
 - ✅ Deployed and healthy — URL
 - ❌ Failed — error summary and recommended next step
+
+Then the board outcome, one line per ticket: moved, already correct, skipped, or failed
+(with the permission it needs). A production deploy that synced no tickets says so.
 
 ---
 

@@ -66,6 +66,23 @@ Read PR conventions from `.claude/pai-orbit-config.md`. Defaults:
 - Body: what changed, why, how to test, closes #N
 - Squash merge by default; merge commit only if history granularity matters
 
+## Board sync
+
+`closes #N` in a commit is a text convention, not a status update. It auto-closes an issue
+on GitHub and GitLab but does nothing on Jira, Linear, or Notion, does not move a card into
+a review or done column on any board, and is easily lost when a squash merge rewrites the
+body. So the board is updated explicitly at two points:
+
+- **After creating a PR** — run the Board Sync Checkpoint at stage `review_open` via `/board`.
+  The pre-filled comment carries the PR URL.
+- **After merging to the base branch** — run it at stage `merged`, with the merge SHA.
+
+Both are mandatory steps, not offers. Do not treat `closes #N` in the commit body as a
+substitute, and do not defer the sync to the end of the session.
+
+Deployment is a separate stage owned by `/release` — do not mark anything `deployed` here.
+Merging is not shipping.
+
 ## Safety rules (always apply)
 
 - Never force-push to the main/protected branch

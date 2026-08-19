@@ -28,6 +28,21 @@ columns:
 <!-- Issues also live at github.com/the-psi/pai-orbit/issues with labels: bug, documentation,
      enhancement, good first issue, help wanted, invalid, question, wontfix -->
 
+lifecycle:
+<!-- Maps pai-orbit workflow stages to this project's columns above. -->
+<!-- `—` means this workflow has no such stage: it is a silent no-op, no checkpoint shown. -->
+<!-- Re-run /setup or edit this table if the workflow changes. -->
+| Stage | Column | Close issue? |
+|-------|--------|--------------|
+| ux_defined | — | no |
+| groomed | Ready | no |
+| designed | Ready | no |
+| build_start | In progress | no |
+| review_open | In review | no |
+| tested | — | no |
+| merged | In review | no |
+| deployed | Done | yes |
+
 ---
 
 ## Git
