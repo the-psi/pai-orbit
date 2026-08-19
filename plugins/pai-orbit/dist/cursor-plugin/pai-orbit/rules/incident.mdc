@@ -74,7 +74,8 @@ After deploying:
 
 ### 7. Post-mortem
 
-For P1 and P2 incidents, write `docs/incidents/postmortem-<slug>-<date>.md`:
+For P1 and P2 incidents, write `docs/incidents/postmortem-<slug>-<date>.md` — create `docs/incidents/`
+first if this is the first post-mortem in the project:
 
 ```
 ## Incident: <title>

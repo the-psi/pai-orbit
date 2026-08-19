@@ -36,6 +36,7 @@ rewrite_cursor_paths() {
     -e 's|\.claude/team\.md|.cursor/team.md|g' \
     -e 's|CLAUDE\.md|AGENTS.md|g' \
     -e 's|\.claude/skills/|pai-orbit plugin skills/|g' \
+    -e 's|\.claude/rules/|.cursor/rules/|g' \
     "$file"
 }
 
@@ -154,18 +155,33 @@ When working in a repository that contains `.cursor/pai-orbit-config.md`, read i
 If only legacy `.claude/pai-orbit-config.md` or `CLAUDE.md` exist (pre-migration repo), read those as fallback — but prefer `.cursor/pai-orbit-config.md` and `AGENTS.md`. Do not warn that Claude paths are "missing" when Cursor-native paths are the expected contract.
 EOF
 
-# Always-on ADR obligation rule — emitted from core template with alwaysApply: true
-DECISIONS_TPL="$CORE_DIR/templates/rules/decisions.md"
-if [ -f "$DECISIONS_TPL" ]; then
-  {
-    echo "---"
-    echo "description: ADR obligation — when and how to write Architecture Decision Records"
-    echo "alwaysApply: true"
-    echo "---"
-    echo ""
-    cat "$DECISIONS_TPL"
-  } > "$DIST_DIR/rules/decisions.mdc"
-fi
+# Always-on rules — emitted from core/templates/rules/*.md with alwaysApply: true.
+# Each is the plugin-shipped default; /setup writes an adapted project copy to
+# .cursor/rules/<name>.mdc, which Cursor loads alongside this one. Projects that adapt
+# the table (docs-taxonomy.md explicitly expects this) should treat their project copy
+# as authoritative — same relationship Claude Code has between this default and a
+# project's own .claude/rules/<name>.md.
+declare -A RULE_DESCRIPTIONS=(
+  [decisions]="ADR obligation — when and how to write Architecture Decision Records"
+  [docs-taxonomy]="Docs taxonomy — which directory each artifact goes in, what wip/ is for, when it is swept"
+)
+for rule_name in "${!RULE_DESCRIPTIONS[@]}"; do
+  rule_tpl="$CORE_DIR/templates/rules/${rule_name}.md"
+  if [ -f "$rule_tpl" ]; then
+    {
+      echo "---"
+      echo "description: ${RULE_DESCRIPTIONS[$rule_name]}"
+      echo "alwaysApply: true"
+      echo "---"
+      echo ""
+      cat "$rule_tpl"
+    } > "$DIST_DIR/rules/${rule_name}.mdc"
+    rewrite_cursor_paths "$DIST_DIR/rules/${rule_name}.mdc"
+    # This copy is never run through /setup's {{DOCS_ROOT}} substitution — it's the
+    # plugin-level default, not a project copy — so resolve it to the common-case default.
+    sed -i 's|{{DOCS_ROOT}}|docs|g' "$DIST_DIR/rules/${rule_name}.mdc"
+  fi
+done
 
 # Append Cursor-specific /arch output contract (exact warning wording for /arch view)
 for arch_file in "$DIST_DIR/commands/arch.md" "$DIST_DIR/rules/arch.mdc"; do

@@ -52,6 +52,7 @@ that never adapt the table's default rows may find them wrong for their taxonomy
 | Per-mode fix only — hardcode a better destination in each mode body, no shared table | No new file to maintain | Fixes today's six modes but repeats the original design flaw for the next one; no shared precedent for "wip/ vs subject folder" |
 | Dedicated `/archive` mode as the sweep trigger | Decouples archiving from release cadence, could run anytime | Requires someone to remember to invoke a mode with no other purpose; the whole problem was that manual triggers don't fire — this doesn't solve that |
 | Session-end sweep (every session checks `wip/` on close) | Runs more often than once per release | Most sessions don't know which referenced issues have closed; would either sweep too aggressively (guessing "done") or do nothing useful most of the time |
+| Reference doc, read on demand by doc-writing modes (no always-loaded rule) | Zero session-context cost when no doc is being written | Every mode would need to remember to read it; the whole point is that routing doesn't depend on a mode remembering — this is the per-mode-fix flaw one level up |
 
 ## Consequences
 
@@ -70,6 +71,14 @@ that never adapt the table's default rows may find them wrong for their taxonomy
 - Existing projects have no `docs/incidents/` directory and existing `wip/` post-mortems are left
   in place; the `/release` sweep will offer to promote them, but nothing forces that to happen
   immediately.
+- `.claude/rules/` is loaded into every session regardless of whether that session writes a
+  document, so this is ~80 always-on lines paid on every session for a benefit that only lands on
+  doc-writing ones. Accepted because the alternative (read on demand) reintroduces the "a mode has
+  to remember" flaw this decision exists to remove.
+- Binding the sweep to `/release` puts a documentation-archiving step inside a mode whose declared
+  headspace is deployment, not documentation — a mild violation of the mode-discipline rule this
+  project otherwise holds to. Accepted for the same reason the `/archive` option was rejected: a
+  correctly-scoped mode nobody remembers to invoke doesn't sweep anything.
 
 **Neutral:**
 - The table's default rows are explicitly a starting point, not a prescription — projects are

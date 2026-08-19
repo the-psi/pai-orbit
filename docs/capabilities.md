@@ -109,7 +109,7 @@ Shows query before running. Prefers read-only. Flags data quality issues explici
 
 **Headspace:** Project configuration  
 **Reads:** Repo root (stack detection), live board API  
-**Writes:** `.claude/pai-orbit-config.md`, `.claude/team.md`, `CLAUDE.md` stub, `.claude/agents/<service>-builder.md`, `.claude/hooks/*.sh`, `.claude/settings.json`, docs scaffold  
+**Writes:** `.claude/pai-orbit-config.md`, `.claude/team.md`, `CLAUDE.md` stub, `.claude/agents/<service>-builder.md`, `.claude/hooks/*.sh`, `.claude/settings.json`, `.claude/rules/decisions.md`, `.claude/rules/docs-taxonomy.md`, docs scaffold  
 **Switch to:** `/arch init` when setup is complete
 
 Discovers repo structure and tech stack, asks targeted questions in one block, queries the live board API for actual column/label taxonomy, generates all config and scaffold files. Creates and validates `.claude/hooks/` with all safety hooks wired into `.claude/settings.json`. Re-run when the stack or team changes significantly.
@@ -147,7 +147,7 @@ Produces sign-off documents the architect or tech lead can reference as an appro
 
 **Headspace:** Deployment  
 **Reads:** `.claude/pai-orbit-config.md → ## Deploy`, `.claude/rules/docs-taxonomy.md`  
-**Writes:** Deployment outputs (stdout); moves files within `docs/wip/` when sweeping  
+**Writes:** Deployment outputs (stdout); when sweeping, moves `docs/wip/` files to `docs/wip/archive/` or promotes them into their subject folder (feature, incident, architecture, etc. — see `.claude/rules/docs-taxonomy.md`)  
 **Switch to:** `/test` before deploying if tests haven't run, `/build` if a fix is needed, `/incident` if a post-deploy outage occurs
 
 Guided deployment with preflight (auth check, project guard, dirty working tree check, test confirmation) and post-deploy health check verification. Deploys multi-service projects in dependency order. Stops on first failure — never silently continues.

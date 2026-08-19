@@ -70,8 +70,10 @@ For each consumer found, classify:
 ### 4. Produce the impact report
 
 Write findings to `docs/features/<feature>/analysis-<issue>-<date>.md` — beside the requirements
-the analysis informed (or share in-session for quick checks). If the change has no feature folder
-and does not warrant one — a dependency bump, a CI sweep — it is short-lived: write it to
+the analysis informed (or share in-session for quick checks). This skill doesn't read the board, so
+`<issue>` is whatever the user gave it in-session; if there is no ticket yet — the common case for
+a pre-ticket "what breaks if..." question — use `<slug>` instead. If the change has no feature
+folder and does not warrant one — a dependency bump, a CI sweep — it is short-lived: write it to
 `docs/wip/` and let the `/release` sweep take it. A project's
 `.claude/rules/docs-taxonomy.md` overrides both.
 

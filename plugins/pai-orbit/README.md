@@ -46,6 +46,16 @@ Each adapter clears its own `dist/<adapter>/` subdir and rebuilds from `core/`. 
 
 `⚠️` means "carried over as reference text only" — the receiving tool has no command/skill/agent invocation system. See each `dist/<adapter>/README.md` for specifics.
 
+## Migration notes
+
+**1.4.0** — Adds `templates/rules/docs-taxonomy.md` (the `wip/` routing table and lifecycle) and
+`templates/docs/incidents/` to every adapter's `dist/`. Existing projects that already ran `/setup`
+are unaffected until they re-run it: `/setup` is additive and idempotent, so re-running it on an
+existing project only adds the new `.claude/rules/docs-taxonomy.md` (or `.cursor/rules/` for
+Cursor) and `docs/incidents/` — nothing already generated is touched or removed. Cursor-plugin
+installs pick up the corresponding `rules/docs-taxonomy.mdc` always-on default automatically on
+next plugin update, no `/setup` re-run required.
+
 ## Adding a new adapter
 
 1. `mkdir plugins/pai-orbit/adapters/<tool>` and write a `build.sh`.

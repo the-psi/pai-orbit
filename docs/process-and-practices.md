@@ -172,18 +172,20 @@ These skills cross-cut the sprint phases — they can be invoked from any point 
 docs/
 ├── architecture/  Declared system architecture — system.md (structure), constraints.md (rules), stack.md (tech)
 ├── domain/        Expert knowledge — the science or logic behind the product
-├── features/      One folder per feature: ux.md, requirements.md, design.md, test-plan.md
+├── features/      One folder per feature: ux.md, requirements.md, design.md, test-plan.md, analyses, spikes
 ├── decisions/     Architecture Decision Records (ADRs) — named YYYY-MM-DD-<slug>.md
+├── incidents/     Post-mortems — postmortem-<slug>-<date>.md
 ├── plans/         Planning and prioritisation notes
 ├── reports/       Data analysis findings
-├── ops/           Human-owned operational files — Claude does not modify these unless asked
+├── ops/           Human-owned operational files — Claude never modifies these
 ├── backlog/       Feature parking lot — promoted to task board by human decision only
-└── wip/           Ephemeral session captures, review reports, arch-validate reports, post-mortems
+└── wip/           Only what dies at merge or session end — session captures, reviews, drift
+                   reports. Swept at /release. See .claude/rules/docs-taxonomy.md.
 ```
 
 **`docs/architecture/constraints.md` is the enforcement contract.** Every code-generating command (`/build`) and every code-reviewing command (`/review`) reads it and treats violations as blocking. Declare it once with `/arch init`; update it with `/arch update` when the rules evolve.
 
-**`docs/ops/` is human-owned.** Files here (field actions, pending decisions, operational runbooks) are written and maintained by people, not by Claude. Claude reads them for context but does not modify them without explicit instruction.
+**`docs/ops/` is human-owned.** Files here (field actions, pending decisions, operational runbooks) are written and maintained by people, not by Claude. Claude reads them for context but never modifies them.
 
 **`docs/backlog/feature-ideas.md` is a parking lot**, not a task board. Ideas here are promoted to the task board by a human. Claude does not move entries autonomously.
 

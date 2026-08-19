@@ -6,25 +6,26 @@ Adapt it to whatever taxonomy this project actually wants. What matters is not t
 below — it is that a row exists for every artifact a mode can produce, so that no mode has to
 guess and no directory becomes the place things land by default.
 
+`{{DOCS_ROOT}}` in the table below stands for this project's docs home, resolved at `/setup` time.
+
 ## Routing table
 
 | Artifact | Destination | Filename |
 |---|---|---|
-| Requirements (`/groom`) | `docs/features/<feature>/` | `requirements.md` |
-| Design (`/design`) | `docs/features/<feature>/` | `design.md` |
-| UX notes (`/ux`) | `docs/features/<feature>/` | `ux.md` |
-| Test plan (`/test`) | `docs/features/<feature>/` | `test-plan.md` |
-| Impact analysis (`/analysis`) | `docs/features/<feature>/` | `analysis-<issue>-<date>.md` |
-| Spike result | `docs/features/<feature>/` | `spike-N-findings.md` |
-| Postmortem (`/incident`) | `docs/incidents/` | `postmortem-<slug>-<date>.md` |
-| Runbook | `docs/ops/` | human-owned — the assistant never writes here |
-| Data investigation (`/data`) | `docs/reports/` | `<topic>-<date>.md` |
-| Codebase-wide audit | `docs/architecture/` | `<audit>-<date>.md` |
-| ADR (`/arch`, `/design`) | `docs/decisions/` | per `.claude/rules/decisions.md` |
-| Planning notes (`/plan`) | `docs/plans/` | `<topic>-<date>.md` |
-| Epic (`/epic`) | `docs/epics/<name>/` | `EPIC.md` |
-| Domain knowledge (`/domain`) | `docs/domain/` | `<topic>.md` — undated, edited in place |
-| Session capture (`/build`), branch or PR review (`/review`), security review of a diff, architecture drift report (`/arch validate`), test-failure note (`/test`) | `docs/wip/` | existing prefixes |
+| Requirements (`/groom`) | `{{DOCS_ROOT}}/features/<feature>/` | `requirements.md` |
+| Design (`/design`) | `{{DOCS_ROOT}}/features/<feature>/` | `design.md` |
+| UX notes (`/ux`) | `{{DOCS_ROOT}}/features/<feature>/` | `ux.md` |
+| Test plan (`/test`) | `{{DOCS_ROOT}}/features/<feature>/` | `test-plan.md` |
+| Impact analysis (`/analysis`) | `{{DOCS_ROOT}}/features/<feature>/` | `analysis-<issue>-<date>.md`, or `analysis-<slug>-<date>.md` pre-ticket |
+| Postmortem (`/incident`) | `{{DOCS_ROOT}}/incidents/` | `postmortem-<slug>-<date>.md` |
+| Runbook | `{{DOCS_ROOT}}/ops/` | human-owned — the assistant never writes here |
+| Data investigation (`/data`) | `{{DOCS_ROOT}}/reports/` | `<topic>-<date>.md` |
+| ADR (`/arch`, `/design`) | `{{DOCS_ROOT}}/decisions/` | per `.cursor/rules/decisions.md` |
+| Planning notes (`/plan`) | `{{DOCS_ROOT}}/plans/` | `<topic>-<date>.md` |
+| Epic (`/epic`) | `{{DOCS_ROOT}}/epics/<name>/` | `EPIC.md` |
+| Feature idea, parking lot (`/groom`) | `{{DOCS_ROOT}}/backlog/` | `feature-ideas.md` — appended, promoted to the board by a human only |
+| Domain knowledge (`/domain`) | `{{DOCS_ROOT}}/domain/` | `domain-knowledge.md` — primary, appended with dated sections; a dedicated `<topic>.md` (e.g. `rule-engine.md`) for a large enough sub-topic, edited in place |
+| Session capture (`/build`), branch or PR review (`/review`), security review of a diff, architecture drift report (`/arch validate`), test-failure note (`/test`) | `{{DOCS_ROOT}}/wip/` | existing prefixes |
 
 **This file wins over a mode's own default.** Modes carry a hardcoded destination for the common
 case; when the two disagree, this table is the answer. Record any deliberate override here — for
@@ -55,20 +56,23 @@ it genuinely is short-lived: `wip/`, and retention takes it.
 ## Retention
 
 Without a trigger, nothing is ever swept. Bind the sweep to an event that already happens — the
-natural one is **`/release`**, because that is when issues close.
+natural one is **`/release`**, and only once it has actually succeeded — because that is when
+issues close. Skip the sweep after a partial or failed deploy; nothing has closed yet.
 
-At `/release`, for each file in `wip/`:
+At `/release`, for each file in `wip/` — excluding `wip/archive/` itself — resolve what it's tied
+to:
 
-- Has a `Related issue: #N` field → resolve by that issue's state.
-- No issue field → resolve by the branch or feature it names instead: still in progress → open;
-  merged, shipped, or abandoned → closed.
+- Has a `Related issue: #N` field, and a board is configured → resolve by that issue's state.
+- No issue field, or no board to check it against → resolve by the branch or feature it names
+  instead: still in progress → open; merged, shipped, or abandoned → closed.
 
-Then:
+Then, propose one of the following per file and wait for confirmation before moving it:
 
 - Still open → leave it.
 - Closed, content is dead → move to `wip/archive/`.
 - Closed, content is still true and has a subject → promote it to the subject
-  folder instead of archiving.
+  folder instead of archiving — except `ops/`, which is human-owned and is never a promotion
+  target regardless of what the routing table above says.
 
 Nothing is deleted. `wip/archive/` is the floor.
 

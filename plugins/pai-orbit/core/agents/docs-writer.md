@@ -41,11 +41,11 @@ The docs home is configured in `.claude/pai-orbit-config.md`. Two cases:
 ```
 docs/
 ├── domain/           Domain knowledge, expert science, rule/logic documentation
-├── features/         One folder per feature — requirements.md, design.md, analyses, spikes
+├── features/         One folder per feature — requirements.md, design.md, analyses
 ├── decisions/        ADRs — <slug>.md, date in frontmatter
-├── architecture/     system/constraints/stack + codebase-wide audits
+├── architecture/     system/constraints/stack
 ├── incidents/        Postmortems — postmortem-<slug>-<date>.md
-├── ops/              Human-owned operational files — do not modify without being asked
+├── ops/              Human-owned operational files — never modify
 ├── backlog/          Feature parking lot — feature-ideas.md
 ├── wip/              Only what dies when the branch merges or the session resumes;
 │                     swept at /release into wip/archive/
@@ -60,6 +60,6 @@ outlives the branch, it has a subject, and it belongs with the subject.
 
 ## What not to do
 
-- Do not write to `docs/ops/` without being explicitly asked — those files are human-owned
+- Do not write to `docs/ops/` — those files are human-owned; read them for context, never modify
 - Do not delete docs — flag stale content and ask
 - Do not summarise or paraphrase technical decisions — record them as stated; imprecise docs create bugs

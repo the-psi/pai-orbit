@@ -2,7 +2,7 @@
 
 A structured developer methodology harness for Claude Code that enforces disciplined working modes, prevents context loss, and produces local-first documentation at every stage of development.
 
-**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.3.4
+**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.4.0
 
 ---
 
@@ -161,7 +161,7 @@ Hooks are shell scripts wired to Claude Code tool use events. They run outside C
 ```
 docs/
 ├── domain/       Expert knowledge, business rules (produced by /domain)
-├── features/     One subfolder per feature, each with ux.md, requirements.md, design.md, test-plan.md
+├── features/     One subfolder per feature, each with ux.md, requirements.md, design.md, test-plan.md, analysis-<issue>-<date>.md
 ├── decisions/    Architecture Decision Records (ADRs)
 ├── epics/        Epic tracking files
 ├── incidents/    Post-mortems (produced by /incident) — postmortem-<slug>-<date>.md

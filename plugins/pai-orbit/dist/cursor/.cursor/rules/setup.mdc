@@ -172,11 +172,15 @@ Write the generated agent to `.claude/agents/<service>-builder.md`. Replace all 
 
 ### Project rules
 
-Copy `templates/rules/decisions.md` to `.claude/rules/decisions.md`.
+Resolve `{{DOCS_ROOT}}` from the Step 2 docs-home answer (item 6): the in-repo case resolves to
+`docs`; a dedicated docs repo resolves to the given path; Confluence or Notion also resolves to
+`docs` — those are publishing surfaces, and the local markdown mirror still lives in-repo.
+
+Copy `templates/rules/decisions.md` to `.claude/rules/decisions.md`, replacing `{{DOCS_ROOT}}`.
 
 This file defines when an ADR is required and how to create one. It is read by every session via the rules directory so the obligation applies regardless of which skill or agent is active.
 
-Copy `templates/rules/docs-taxonomy.md` to `.claude/rules/docs-taxonomy.md`.
+Copy `templates/rules/docs-taxonomy.md` to `.claude/rules/docs-taxonomy.md`, replacing `{{DOCS_ROOT}}` throughout the routing table.
 
 This file is the routing table: which directory each artifact goes in, what `wip/` is actually for, and when it gets swept. It is loaded the same way, so the routing applies regardless of which mode is active. Tell the user the table is a starting point and they should adapt it to the taxonomy this project wants — the point is that every artifact has a row, not that the default rows are right.
 

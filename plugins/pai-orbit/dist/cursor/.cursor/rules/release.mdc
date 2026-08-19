@@ -55,19 +55,29 @@ A release is when issues close, which makes it the only point in the workflow wh
 working note still live?" has an answer. Without this step nothing ever sweeps `wip/` and it grows
 without bound.
 
-For each file in `docs/wip/`, resolve what it's tied to:
+**Gate:** only run this step if every service in Step 4 reported ✅. If any service is ❌, skip the
+sweep entirely and say why — a partial or failed deploy is not the "issues closed" moment this step
+exists for, and referenced issues have not actually closed. Re-offer the sweep next time `/release`
+completes clean.
 
-- Has a `Related issue: #N` field → resolve by that issue's state.
-- No issue field (older files, or a type that predates this field) → resolve by the branch or
-  feature it names instead: still in progress → treat as open; merged, shipped, or abandoned →
-  treat as closed.
+For each file in `docs/wip/`, excluding `docs/wip/archive/` itself, resolve what it's tied to:
 
-Then act on that resolution:
+- Has a `Related issue: #N` field → resolve by that issue's state. If no board is configured
+  (`.claude/pai-orbit-config.md` has no `## Board` section), you cannot check issue state — fall
+  through to the branch/feature resolution below instead.
+- No issue field, or no board to check it against (older files, or a type that predates this
+  field) → resolve by the branch or feature it names instead: still in progress → treat as open;
+  merged, shipped, or abandoned → treat as closed.
+
+Then, for each file, propose one of the following and wait for confirmation before moving anything
+— this changes the working tree, so it follows the same confirm-before-acting rule as every other
+step in this mode:
 
 - Still open → leave it.
 - Closed, content is dead → move it to `docs/wip/archive/`.
-- Closed, content is still true and has a subject → promote it to the subject folder (see
-  `.claude/rules/docs-taxonomy.md`) rather than archiving it.
+- Closed, content is still true and has a subject → promote it to the subject folder per
+  `.claude/rules/docs-taxonomy.md` — except `docs/ops/`, which is human-owned; never promote into
+  it even if the table's routing would otherwise send it there.
 
 Never delete — `docs/wip/archive/` is the floor. Report what moved. If the project has a
 `docs-taxonomy.md` rule, its routing table governs where promoted files land.

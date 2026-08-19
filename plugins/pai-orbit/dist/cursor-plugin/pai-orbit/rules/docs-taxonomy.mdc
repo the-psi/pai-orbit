@@ -1,3 +1,8 @@
+---
+description: Docs taxonomy — which directory each artifact goes in, what wip/ is for, when it is swept
+alwaysApply: true
+---
+
 # Docs Taxonomy
 
 Every document this project produces has **one** destination. This file is the routing table.
@@ -6,26 +11,26 @@ Adapt it to whatever taxonomy this project actually wants. What matters is not t
 below — it is that a row exists for every artifact a mode can produce, so that no mode has to
 guess and no directory becomes the place things land by default.
 
-`{{DOCS_ROOT}}` in the table below stands for this project's docs home, resolved at `/setup` time.
+`docs` in the table below stands for this project's docs home, resolved at `/setup` time.
 
 ## Routing table
 
 | Artifact | Destination | Filename |
 |---|---|---|
-| Requirements (`/groom`) | `{{DOCS_ROOT}}/features/<feature>/` | `requirements.md` |
-| Design (`/design`) | `{{DOCS_ROOT}}/features/<feature>/` | `design.md` |
-| UX notes (`/ux`) | `{{DOCS_ROOT}}/features/<feature>/` | `ux.md` |
-| Test plan (`/test`) | `{{DOCS_ROOT}}/features/<feature>/` | `test-plan.md` |
-| Impact analysis (`/analysis`) | `{{DOCS_ROOT}}/features/<feature>/` | `analysis-<issue>-<date>.md`, or `analysis-<slug>-<date>.md` pre-ticket |
-| Postmortem (`/incident`) | `{{DOCS_ROOT}}/incidents/` | `postmortem-<slug>-<date>.md` |
-| Runbook | `{{DOCS_ROOT}}/ops/` | human-owned — the assistant never writes here |
-| Data investigation (`/data`) | `{{DOCS_ROOT}}/reports/` | `<topic>-<date>.md` |
-| ADR (`/arch`, `/design`) | `{{DOCS_ROOT}}/decisions/` | per `.claude/rules/decisions.md` |
-| Planning notes (`/plan`) | `{{DOCS_ROOT}}/plans/` | `<topic>-<date>.md` |
-| Epic (`/epic`) | `{{DOCS_ROOT}}/epics/<name>/` | `EPIC.md` |
-| Feature idea, parking lot (`/groom`) | `{{DOCS_ROOT}}/backlog/` | `feature-ideas.md` — appended, promoted to the board by a human only |
-| Domain knowledge (`/domain`) | `{{DOCS_ROOT}}/domain/` | `domain-knowledge.md` — primary, appended with dated sections; a dedicated `<topic>.md` (e.g. `rule-engine.md`) for a large enough sub-topic, edited in place |
-| Session capture (`/build`), branch or PR review (`/review`), security review of a diff, architecture drift report (`/arch validate`), test-failure note (`/test`) | `{{DOCS_ROOT}}/wip/` | existing prefixes |
+| Requirements (`/groom`) | `docs/features/<feature>/` | `requirements.md` |
+| Design (`/design`) | `docs/features/<feature>/` | `design.md` |
+| UX notes (`/ux`) | `docs/features/<feature>/` | `ux.md` |
+| Test plan (`/test`) | `docs/features/<feature>/` | `test-plan.md` |
+| Impact analysis (`/analysis`) | `docs/features/<feature>/` | `analysis-<issue>-<date>.md`, or `analysis-<slug>-<date>.md` pre-ticket |
+| Postmortem (`/incident`) | `docs/incidents/` | `postmortem-<slug>-<date>.md` |
+| Runbook | `docs/ops/` | human-owned — the assistant never writes here |
+| Data investigation (`/data`) | `docs/reports/` | `<topic>-<date>.md` |
+| ADR (`/arch`, `/design`) | `docs/decisions/` | per `.cursor/rules/decisions.md` |
+| Planning notes (`/plan`) | `docs/plans/` | `<topic>-<date>.md` |
+| Epic (`/epic`) | `docs/epics/<name>/` | `EPIC.md` |
+| Feature idea, parking lot (`/groom`) | `docs/backlog/` | `feature-ideas.md` — appended, promoted to the board by a human only |
+| Domain knowledge (`/domain`) | `docs/domain/` | `domain-knowledge.md` — primary, appended with dated sections; a dedicated `<topic>.md` (e.g. `rule-engine.md`) for a large enough sub-topic, edited in place |
+| Session capture (`/build`), branch or PR review (`/review`), security review of a diff, architecture drift report (`/arch validate`), test-failure note (`/test`) | `docs/wip/` | existing prefixes |
 
 **This file wins over a mode's own default.** Modes carry a hardcoded destination for the common
 case; when the two disagree, this table is the answer. Record any deliberate override here — for

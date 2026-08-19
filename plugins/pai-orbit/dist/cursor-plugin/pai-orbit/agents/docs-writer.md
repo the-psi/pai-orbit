@@ -41,11 +41,11 @@ The docs home is configured in `.cursor/pai-orbit-config.md`. Two cases:
 ```
 docs/
 ├── domain/           Domain knowledge, expert science, rule/logic documentation
-├── features/         One folder per feature — requirements.md, design.md, analyses, spikes
+├── features/         One folder per feature — requirements.md, design.md, analyses
 ├── decisions/        ADRs — <slug>.md, date in frontmatter
-├── architecture/     system/constraints/stack + codebase-wide audits
+├── architecture/     system/constraints/stack
 ├── incidents/        Postmortems — postmortem-<slug>-<date>.md
-├── ops/              Human-owned operational files — do not modify without being asked
+├── ops/              Human-owned operational files — never modify
 ├── backlog/          Feature parking lot — feature-ideas.md
 ├── wip/              Only what dies when the branch merges or the session resumes;
 │                     swept at /release into wip/archive/
@@ -53,13 +53,13 @@ docs/
 └── reports/          Data analysis findings
 ```
 
-If the project has a `.claude/rules/docs-taxonomy.md`, **that file is the authority** on where an
+If the project has a `.cursor/rules/docs-taxonomy.md`, **that file is the authority** on where an
 artifact goes — it may rename, add, or repurpose these directories. Read it before choosing a
 destination. `wip/` is never the answer to "I have nowhere better to put this": if the document
 outlives the branch, it has a subject, and it belongs with the subject.
 
 ## What not to do
 
-- Do not write to `docs/ops/` without being explicitly asked — those files are human-owned
+- Do not write to `docs/ops/` — those files are human-owned; read them for context, never modify
 - Do not delete docs — flag stale content and ask
 - Do not summarise or paraphrase technical decisions — record them as stated; imprecise docs create bugs
