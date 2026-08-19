@@ -74,7 +74,7 @@ Session close for init:
 - Confirm all three files are saved
 - Tell the user: "`constraints.md` is now the enforcement contract — `/build` and `/review` will read it before generating or reviewing code"
 - If the project is multi-repo: prompt to also run `/arch init` in each service repo, scoped to service level
-- **Offer to move the board issue.** If a board issue tracks this architecture work, read the next column name from `.claude/pai-orbit-config.md → ## Agile Board`. Offer: "Move issue #N to `<column name>`?" Wait for confirmation before acting via `/board`. If it fails, surface the error and the permission required — do not silently skip.
+- **Sync the board.** If a board issue tracks this architecture work, run the Board Sync Checkpoint at stage `designed` via `/board`. If the work landed an ADR without resolving a design, use the comment-only variant instead so the ADR link reaches the ticket without moving the card.
 
 ---
 
@@ -101,7 +101,7 @@ Procedure:
 4. Assess whether the change represents an irreversible architectural decision. If yes: draft a new ADR using the template at `templates/docs/decisions/ADR.md` and write it to `docs/decisions/YYYY-MM-DD-<slug>.md`.
 5. Write the updated file(s) after confirmation.
 6. Update `CLAUDE.md → ## Architecture` summary if the structural overview changed.
-7. **Offer to move the board issue.** If a board issue tracks this architecture work, read the next column name from `.claude/pai-orbit-config.md → ## Agile Board`. Offer: "Move issue #N to `<column name>`?" Wait for confirmation before acting via `/board`. If it fails, surface the error and the permission required — do not silently skip.
+7. **Sync the board.** If a board issue tracks this architecture work, run the Board Sync Checkpoint at stage `designed` via `/board`. If the work landed an ADR without resolving a design, use the comment-only variant instead so the ADR link reaches the ticket without moving the card.
 
 ADR naming: `docs/decisions/YYYY-MM-DD-<slug>.md`. Always use the date prefix — it enables chronological ordering without reading frontmatter.
 

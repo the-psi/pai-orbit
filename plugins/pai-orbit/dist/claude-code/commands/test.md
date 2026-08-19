@@ -123,7 +123,7 @@ When the test plan is signed off (all acceptance criteria covered, manual checkl
    ```
    Local commit only. Do not push yet.
 
-2. **Offer to move the board issue.** If a board issue is associated with this feature, read the next column name from `.claude/pai-orbit-config.md → ## Agile Board`. Offer: "Move issue #N to `<column name>`?" Wait for confirmation before acting via `/board`. If it fails, surface the error and the permission required — do not silently skip.
+2. **Sync the board.** If a board issue is associated with this feature, run the Board Sync Checkpoint at stage `tested` via `/board`.
 
 3. **Offer to push.** After the commit, ask: "Push this branch to remote?" Wait for explicit confirmation.
 

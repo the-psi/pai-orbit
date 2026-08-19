@@ -66,6 +66,23 @@ columns:
 <!-- The /board skill uses this map when moving cards — values must match live GitLab labels exactly -->
 <!-- END GITLAB -->
 
+lifecycle:
+<!-- Maps pai-orbit workflow stages to THIS project's columns. Applies to every board type. -->
+<!-- Column values must match the columns table above exactly (or the Jira Workflow states). -->
+<!-- Set Column to `—` for any stage this project's workflow does not have. That stage then -->
+<!-- becomes a silent no-op — /board shows no checkpoint and nothing is written to the ticket. -->
+<!-- Re-run /setup or edit this table if your workflow changes. -->
+| Stage | Column | Close issue? |
+|-------|--------|--------------|
+| ux_defined | {{LC_UX_DEFINED}} | no |
+| groomed | {{LC_GROOMED}} | no |
+| designed | {{LC_DESIGNED}} | no |
+| build_start | {{LC_BUILD_START}} | no |
+| review_open | {{LC_REVIEW_OPEN}} | no |
+| tested | {{LC_TESTED}} | no |
+| merged | {{LC_MERGED}} | no |
+| deployed | {{LC_DEPLOYED}} | yes |
+
 ---
 
 ## Git

@@ -26,6 +26,18 @@ plugins/pai-orbit/
 └── build.sh                    # runs every adapter in sequence
 ```
 
+## Migration notes
+
+### 1.5.0 — `lifecycle:` stage map
+
+`.claude/pai-orbit-config.md → ## Agile Board` gains a `lifecycle:` table mapping
+pai-orbit's workflow stages to the project's own columns, consumed by the Board Sync
+Checkpoint in `core/skills/board/SKILL.md`.
+
+Backward compatible: a project on an earlier version that has not re-run `/setup` has no
+such table. `/board` detects this, asks once per stage which column to use, and suggests
+re-running `/setup` — it does not error and does not skip the sync.
+
 ## Building
 
 ```bash

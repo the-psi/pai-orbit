@@ -57,7 +57,7 @@ Every design session should end by:
 
 3. **Create a build-phase board item.** If the design is approved, create a task board item for the implementation work via `/board`.
 
-4. **Offer to move the board issue.** If a board issue tracks this design work, read the next column name from `.claude/pai-orbit-config.md → ## Agile Board`. Offer: "Move issue #N to `<column name>`?" Wait for confirmation before acting via `/board`. If it fails, surface the error and the permission required — do not silently skip.
+4. **Sync the board.** If a board issue tracks this design work, run the Board Sync Checkpoint at stage `designed` via `/board`.
 
 5. **Offer to push.** After the commit, ask: "Push this branch to remote?" Wait for explicit confirmation.
 

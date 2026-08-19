@@ -187,7 +187,7 @@ Skills are operational procedures. Copilot has no skill-invocation system — ap
 | Skill | When to invoke |
 |-------|---------------|
 | `/analysis` | Change impact and dependency analysis — assess the blast radius of a proposed change before buildi |
-| `/board` | Task management — create issues, move cards, assign work, close on ship — using the project's co |
+| `/board` | Task management and ticket status sync — create issues, transition status, post comments, close on |
 | `/data-model` | Data model reference and schema change management — document the current schema, propose and valid |
 | `/epic` | Epic lifecycle management — create, load, update, and list epics in docs/epics/ |
 | `/git` | Git operations — commit, branch, PR, push — following the project's configured branching model a |

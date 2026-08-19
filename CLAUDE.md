@@ -2,7 +2,7 @@
 
 A structured developer methodology harness for Claude Code that enforces disciplined working modes, prevents context loss, and produces local-first documentation at every stage of development.
 
-**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.4.0
+**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.5.0
 
 ---
 
@@ -195,6 +195,19 @@ Marketplace.json points at `plugins/pai-orbit/dist/claude-code/`, which is the c
 Then run `/setup` in your target project to generate all config and scaffold files.
 
 For Cursor / GitHub Copilot / OpenAI Codex, install the corresponding bundle from `plugins/pai-orbit/dist/<tool>/` per its README.
+
+### Upgrading to 1.5.0 — `lifecycle:` stage map
+
+1.5.0 adds a `lifecycle:` table to `.claude/pai-orbit-config.md → ## Agile Board`. It binds
+pai-orbit's workflow stages (`ux_defined`, `groomed`, `designed`, `build_start`,
+`review_open`, `tested`, `merged`, `deployed`) to your project's own board columns, so the
+Board Sync Checkpoint can move a ticket without any mode hardcoding a column name.
+
+**Re-run `/setup`** to have it written for you from your existing columns, or add the table
+by hand using `plugins/pai-orbit/core/templates/pai-orbit-config.md.template` as reference.
+
+Nothing breaks if you don't: `/board` detects the missing map, asks once per stage which
+column to use, and suggests re-running `/setup`. Existing installs keep working unchanged.
 
 ---
 

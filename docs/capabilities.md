@@ -78,7 +78,7 @@ No implementation. Reads `requirements.md`'s open questions as a starting point,
 **Writes:** Code (in sub-repos), docs/domain/product-capabilities.md  
 **Switch to:** `/design` for non-trivial design questions, `/groom` for unclear requirements, `/plan` for priority questions
 
-Reads CLAUDE.md and relevant docs before starting. Checks the task board. Spawns sub-agents per service for parallel work. Before switching modes mid-session, saves a handoff note to `docs/wip/session-capture-<date>.md`. After shipping: closes the board item, creates issues for newly discovered tasks, updates product-capabilities.md, records design choices as ADRs.
+Reads CLAUDE.md and relevant docs before starting. Once the branch is established, runs the Board Sync Checkpoint at stage `build_start` so the card does not sit in the backlog while work happens. Spawns sub-agents per service for parallel work. Before switching modes mid-session, saves a handoff note to `docs/wip/session-capture-<date>.md`. After shipping: creates issues for newly discovered tasks, updates product-capabilities.md, records design choices as ADRs. Does not close the board item — status advances at the stages that own it (`/git` for `review_open` and `merged`, `/release` for `deployed`).
 
 ---
 
@@ -89,7 +89,7 @@ Reads CLAUDE.md and relevant docs before starting. Checks the task board. Spawns
 **Writes:** docs/plans/*.md, board card moves  
 **Switch to:** `/groom` for ungroomed features, `/design` for technical uncertainties
 
-Presents 2–3 options before recommending. Grounds recommendations in shipped capabilities and actual blockers. Does not close board items autonomously.
+Runs `/board reconcile` before any prioritisation call, so the plan is built on true board state rather than drifted cards. Presents 2–3 options before recommending. Grounds recommendations in shipped capabilities and actual blockers.
 
 ---
 
@@ -146,10 +146,10 @@ Produces sign-off documents the architect or tech lead can reference as an appro
 
 **Headspace:** Deployment  
 **Reads:** `.claude/pai-orbit-config.md → ## Deploy`  
-**Writes:** Deployment outputs (stdout); no doc writes  
+**Writes:** Deployment outputs (stdout); board status via `/board`; clears shipped-but-dark markers in docs/domain/product-capabilities.md  
 **Switch to:** `/test` before deploying if tests haven't run, `/build` if a fix is needed, `/incident` if a post-deploy outage occurs
 
-Guided deployment with preflight (auth check, project guard, dirty working tree check, test confirmation) and post-deploy health check verification. Deploys multi-service projects in dependency order. Stops on first failure — never silently continues.
+Guided deployment with preflight (auth check, project guard, dirty working tree check, test confirmation) and post-deploy health check verification. Deploys multi-service projects in dependency order. Stops on first failure — never silently continues. Once health checks pass, resolves every ticket in the deployed commit range and runs the Board Sync Checkpoint at stage `deployed` for each — this is the step that stops production work from sitting in the backlog. Also clears the shipped-but-dark markers `/build` wrote for capabilities this deploy made live.
 
 ---
 
@@ -194,13 +194,19 @@ Features link to an epic via the `## Epic` field in `requirements.md`. `/plan` r
 
 ### `/git`
 
-Git operations following the project's configured branching model. Covers commit conventions, branch naming, PR process, and safety rules (no force-push, no bulk staging, no hook bypass). Reads from `.claude/pai-orbit-config.md → ## Git`.
+Git operations following the project's configured branching model. Covers commit conventions, branch naming, PR process, and safety rules (no force-push, no bulk staging, no hook bypass). Runs the Board Sync Checkpoint at stage `review_open` after a PR is created and `merged` after a merge — `closes #N` in a commit is a text convention, not a status update. Reads from `.claude/pai-orbit-config.md → ## Git`.
 
 ---
 
 ### `/board`
 
-Task management — create issues, move cards, assign work, close on ship. Reads board config from `.claude/pai-orbit-config.md → ## Agile Board` and team roster from `.claude/team.md`. Supports GitHub Issues, Linear, and Jira.
+Task management and ticket status sync — create issues, transition status, post comments, close on ship, and reconcile stale board state. Reads board config from `.claude/pai-orbit-config.md → ## Agile Board` and team roster from `.claude/team.md`. Supports GitHub Issues, GitHub Projects v2, GitLab, Linear, and Jira (Notion via MCP or manual steps).
+
+**Board Sync Checkpoint** — the mechanism that keeps ticket status true to reality. Modes call it by workflow stage (`ux_defined`, `groomed`, `designed`, `build_start`, `review_open`, `tested`, `merged`, `deployed`) at each point where reality changes. It reads the ticket's real current column, then renders a single block showing the exact status change and the exact comment it will post, and applies it on confirmation (`yes` / `edit` / `skip`). It is a mandatory step, not an offer — a skipped sync is recorded and re-surfaced rather than forgotten.
+
+Stages map to each project's own columns via `## Agile Board → lifecycle`, written by `/setup`. A stage mapped to `—` is a silent no-op, so a project is never prompted about a column its workflow does not have. A comment-only variant posts to the ticket thread without moving the card.
+
+**`/board reconcile`** — repairs boards that already drifted. Compares each open issue against git reality (branch, open PR, merged PR, `closes #N` on main), reports every mismatch in one table, and applies the corrections you confirm. Only ever advances a card forward, never backwards. Runs at the start of `/plan` so prioritisation is not based on stale state.
 
 ---
 

@@ -28,10 +28,9 @@ Switch out when:
   - If `system_docs_repo` is a git URL: check whether a local clone exists at a resolvable path. If yes, add it. If no, warn once and proceed.
   - Read docs from all resolved paths before starting the session.
 - Read `CLAUDE.md` for project context before any planning session
-- Check the task board for current state before making prioritisation calls
+- **Reconcile the board first.** Run `/board reconcile` before any prioritisation call. Board state drifts — a card sitting in an early column may already be merged or in production, and prioritising against stale state produces a wrong plan. Reconcile reports the mismatches and applies the corrections you confirm; only then read the board as current state
 - Present 2–3 options with explicit tradeoffs before recommending — the user decides
 - Ground recommendations in what is actually shipped and what is actually blocking
-- Do not close board items autonomously — flag stale or resolved items to the user
 - Do not produce feature requirements or technical designs in this mode
 
 ## Output
