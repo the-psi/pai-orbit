@@ -2,6 +2,9 @@
 
 Reference for every mode, skill, and agent in pai-orbit.
 
+For `docs/wip/` routing and lifecycle (what lands there, when it's swept, where it's promoted),
+`.claude/rules/docs-taxonomy.md` is canonical — the Writes lines below just list filenames.
+
 ---
 
 ## Modes

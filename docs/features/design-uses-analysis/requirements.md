@@ -7,7 +7,7 @@ When Claude enters `/design` mode for a change that touches shared interfaces, A
 ## Scenarios in scope
 1. Developer enters `/design` for a change that touches a shared interface — an existing API endpoint, a data model field used by multiple services, or a cross-service contract. Claude invokes `/analysis` or blocks on it before presenting any design options.
 2. Developer enters `/design` for a purely additive new feature — no changes to existing shared interfaces, no existing consumers affected. Claude skips the analysis step and states this explicitly.
-3. Developer enters `/design` and a relevant analysis report already exists in `docs/wip/analysis-*.md` from a prior session. Claude reads the existing report rather than re-running `/analysis` from scratch.
+3. Developer enters `/design` and a relevant analysis report already exists in `docs/features/<feature>/analysis-<issue>-<date>.md` (or `docs/wip/` for changes with no feature folder) from a prior session. Claude reads the existing report rather than re-running `/analysis` from scratch.
 4. Developer enters `/design` and explicitly states the change is self-contained or that blast radius has already been handled. Claude acknowledges and proceeds without requiring `/analysis`.
 
 ## User stories / use cases
@@ -20,7 +20,7 @@ When Claude enters `/design` mode for a change that touches shared interfaces, A
 1. REQ-1 (Scenario 1): At session start, `/design` mode must assess whether the change under discussion touches a shared interface, existing API contract, data model field used across services, or cross-service boundary. If yes — or if uncertain — it must invoke `/analysis` or explicitly prompt the user to run it before presenting design options.
 2. REQ-2 (Scenario 1): `/design` must not present design options for a shared-interface change until an impact report is available in session context — either run inline or loaded from file.
 3. REQ-3 (Scenario 2): For purely additive changes (new endpoints, new fields, new services with no existing consumers), `/design` may skip the analysis step. The skip must be stated explicitly: "No shared interface changes detected — skipping analysis."
-4. REQ-4 (Scenario 3): At session start, `/design` must scan `docs/wip/` for an existing `analysis-<slug>-<date>.md` report relevant to the current change. If found, it must read and cite it rather than re-running `/analysis`.
+4. REQ-4 (Scenario 3): At session start, `/design` must scan `docs/features/<feature>/` (and `docs/wip/` for changes with no feature folder) for an existing `analysis-<issue>-<date>.md` report relevant to the current change. If found, it must read and cite it rather than re-running `/analysis`.
 5. REQ-5 (Scenario 4): If the developer explicitly states the change is self-contained or analysis is already handled, `/design` must acknowledge this and proceed without blocking.
 
 ## Non-functional requirements
@@ -41,7 +41,7 @@ The `/analysis` skill already exists at `plugins/pai-orbit/core/skills/analysis/
 - AC-1 (Scenario 1): Given a change touching an existing API or data model field, when `/design` starts, then Claude invokes `/analysis` or states it is required before presenting options.
 - AC-2 (Scenario 1): Given `/analysis` has not been run and the change touches a shared interface, when the user asks for design options, then Claude declines and redirects to analysis first.
 - AC-3 (Scenario 2): Given a purely additive new feature, when `/design` starts, then Claude explicitly states "No shared interface changes detected — skipping analysis" and proceeds.
-- AC-4 (Scenario 3): Given a relevant `docs/wip/analysis-*.md` exists, when `/design` starts, then Claude reads and cites it without re-running the skill.
+- AC-4 (Scenario 3): Given a relevant `docs/features/<feature>/analysis-<issue>-*.md` (or `docs/wip/analysis-*.md` for changes with no feature folder) exists, when `/design` starts, then Claude reads and cites it without re-running the skill.
 - AC-5 (Scenario 4): Given the developer states analysis is already done or the change is self-contained, when `/design` starts, then Claude acknowledges and proceeds without blocking.
 
 ---

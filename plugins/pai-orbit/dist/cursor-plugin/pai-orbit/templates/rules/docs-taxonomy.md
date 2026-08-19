@@ -59,9 +59,15 @@ natural one is **`/release`**, because that is when issues close.
 
 At `/release`, for each file in `wip/`:
 
-- Referenced issue still open → leave it.
-- Referenced issue closed, content is dead → move to `wip/archive/`.
-- Referenced issue closed, content is still true and has a subject → promote it to the subject
+- Has a `Related issue: #N` field → resolve by that issue's state.
+- No issue field → resolve by the branch or feature it names instead: still in progress → open;
+  merged, shipped, or abandoned → closed.
+
+Then:
+
+- Still open → leave it.
+- Closed, content is dead → move to `wip/archive/`.
+- Closed, content is still true and has a subject → promote it to the subject
   folder instead of archiving.
 
 Nothing is deleted. `wip/archive/` is the floor.

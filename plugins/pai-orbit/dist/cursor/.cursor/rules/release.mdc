@@ -55,7 +55,14 @@ A release is when issues close, which makes it the only point in the workflow wh
 working note still live?" has an answer. Without this step nothing ever sweeps `wip/` and it grows
 without bound.
 
-For each file in `docs/wip/`, resolve the issue it references:
+For each file in `docs/wip/`, resolve what it's tied to:
+
+- Has a `Related issue: #N` field → resolve by that issue's state.
+- No issue field (older files, or a type that predates this field) → resolve by the branch or
+  feature it names instead: still in progress → treat as open; merged, shipped, or abandoned →
+  treat as closed.
+
+Then act on that resolution:
 
 - Still open → leave it.
 - Closed, content is dead → move it to `docs/wip/archive/`.

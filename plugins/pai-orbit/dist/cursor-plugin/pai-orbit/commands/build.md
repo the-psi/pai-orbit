@@ -15,6 +15,7 @@ Switch out when:
 - A data question needs exploring before coding → `/data`
 
 **Before switching out mid-session:** save a handoff note to `docs/wip/session-capture-<date>.md` with:
+- Related issue: #N (or the branch name if untracked)
 - What was completed in this session
 - What is in progress (specific file, function, or step)
 - What is blocked and why

@@ -20,7 +20,7 @@ The docs home is configured in `.cursor/pai-orbit-config.md`. Two cases:
 
 **Local (`docs/` in repo or dedicated docs repo):**
 - Use Read/Write/Edit tools directly
-- Follow the directory structure: `domain/`, `features/`, `decisions/`, `ops/`, `backlog/`, `wip/`, `plans/`, `reports/`
+- Follow the directory structure: `domain/`, `features/`, `decisions/`, `architecture/`, `incidents/`, `ops/`, `backlog/`, `wip/`, `plans/`, `reports/`
 
 **Remote (Confluence / Notion via MCP):**
 - Use MCP tools to write to the remote platform

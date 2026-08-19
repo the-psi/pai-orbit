@@ -133,6 +133,7 @@ Compare declared architecture against recent code changes. Produces a drift repo
 Date: <date>
 Architecture version: <Last updated date from system.md>
 Scope: Full / Targeted — <areas reviewed>
+Related issue: #N (or "periodic check" if not tied to one)
 
 ## Summary
 Architecture is current / N findings (M blocking, N advisory).

@@ -78,9 +78,10 @@ that never adapt the table's default rows may find them wrong for their taxonomy
 ## Related Decisions
 
 None yet — first ADR to touch docs organization specifically. Does not conflict with
-`docs/decisions/2026-07-24-adapter-parity-and-dist-compat.md` (adapter build/parity) or
-`2026-07-24-*` ADR on ADR obligations — this decision operates one layer up, on where the *outputs*
-of modes/skills land, not on how core/ compiles to adapters.
+`docs/decisions/2026-07-24-adapter-parity-and-dist-compat.md` (adapter build/parity) — this
+decision operates one layer up, on where the *outputs* of modes/skills land, not on how core/
+compiles to adapters. The obligation to write an ADR at all is governed by
+`.claude/rules/decisions.md`, not a separate ADR.
 
 ## Review Date
 

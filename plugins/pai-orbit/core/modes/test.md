@@ -85,6 +85,7 @@ Edge cases or failure modes that are hard to test automatically and may need mon
 When a test run fails:
 
 1. Document the failure in `docs/wip/test-failure-<feature>-<date>.md`:
+   - Related issue: #N (or the branch name if untracked)
    - Which TC failed (ID + scenario)
    - Actual vs expected result
    - Stack trace or error message (abbreviated)
