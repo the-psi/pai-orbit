@@ -43,18 +43,27 @@ Full Cursor plugin at `plugins/pai-orbit/dist/cursor-plugin/pai-orbit/` — inst
 
 Legacy copy-rules install (lossy): `plugins/pai-orbit/dist/cursor/` — use only if you cannot install the plugin.
 
-### Other coding assistants (lossy)
+### GitHub Copilot (VS Code)
 
-GitHub Copilot and OpenAI Codex CLI bundles are reference instructions only:
+Full slash-command adapter — 29 invokable prompts (14 modes, 6 skills, 7 service-builder agents, 2 named agents: `/docs-writer` and `/cross-repo-impact`) + 5 auto-attaching instructions files + slim rule book at `.github/copilot-instructions.md`. Install with:
 
-- GitHub Copilot: `plugins/pai-orbit/dist/copilot/`
-- OpenAI Codex CLI (experimental): `plugins/pai-orbit/dist/codex/`
+```bash
+npx github:the-psi/pai-orbit init copilot
+```
+
+Also supports `update copilot` (refresh pai-orbit-owned files, preserve your config) and `migrate copilot` (migrate old `.github/pai-orbit/` layout to `.copilot/`). Full guide: [`docs/copilot-install-and-usage.md`](copilot-install-and-usage.md).
+
+**What Copilot users get vs Claude Code:** same modes, same skills, same `docs/` contracts. Copilot's project-context file is `AGENTS.md` at repo root (same content as Claude Code's `CLAUDE.md`; only the filename differs to match each tool's convention). **What they don't get:** runtime hook enforcement — `bash-guard` is advisory in Chat + commit-time lint/secret-tripwire via the optional `.husky/pre-commit`; not a full replacement for Claude Code's PreToolUse blocking.
+
+### OpenAI Codex CLI (experimental, lossy)
+
+Reference instructions only: `plugins/pai-orbit/dist/codex/` — copy `AGENTS.md` to your project root.
 
 ---
 
 ## First run: `/setup`
 
-Open Claude Code in your project directory and type `/setup`.
+Open Claude Code, Cursor, or Copilot Chat in your project directory and type `/setup`. All three now emit `/setup` — Business/Pro Copilot runs it agentically; Copilot Free renders it as advisory text. Copilot-only teams on Free tier should use `npx github:the-psi/pai-orbit init copilot --setup` to run the interview from the terminal instead.
 
 Setup will:
 

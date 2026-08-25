@@ -1,30 +1,39 @@
-# pai-orbit — GitHub Copilot adapter
+# pai-orbit — GitHub Copilot adapter (dist)
 
-This is a **condensed reference guide** for GitHub Copilot. It is not an execution environment.
+This directory is the **built output** of the Copilot adapter. Do not hand-edit. Regenerate by running:
 
-## What this is
+```bash
+bash plugins/pai-orbit/build.sh
+```
 
-A structured instruction file for Copilot Chat. It describes pai-orbit's modes (headspace + switch-out guidance) and skills (when to invoke). Copilot reads `.github/copilot-instructions.md` as custom instructions.
+## What ships
 
-## What's lost vs the Claude Code plugin
+- `.github/copilot-instructions.md` — slim rule book + Context discovery + prompt-library pointer
+- `.github/prompts/*.prompt.md` — invokable slash commands (mode, skill, agent — 29 total)
+- `.github/instructions/*.instructions.md` — auto-attaching guidance (5 total)
+- `.husky/pre-commit.template` — opt-in commit-time lint + weak secret tripwire (husky variant)
+- `.pre-commit-config.yaml.template` — same enforcement scope, pre-commit-framework variant
 
-- **No command system.** Modes cannot be invoked with a slash command — apply them by context.
-- **No skill invocation.** Skills are reference documentation only.
-- **No agents, no hooks, no scaffolding.** These require Claude Code's plugin infrastructure.
-- **No interactive `/setup`.** Create `.github/pai-orbit/pai-orbit-config.md` by hand using the template in the Claude Code plugin's `templates/` directory.
+## What's covered vs the Claude Code plugin
 
-## Path conventions for Copilot
+- Full mode set (14) — arch, build, data, design, domain, groom, incident, plan, release, review, setup, suggest-skills, test, ux. `/setup` and `/suggest-skills` emit as agent-mode prompts (Business tier agentic; Free tier advisory).
+- Full skill set (6) — analysis, board, data-model, epic, git, simplify. `git` and `data-model` also render as always-attached instructions files.
+- Named sub-agents (2) — `docs-writer` (edit tools), `cross-repo-impact` (read-only tools).
+- Service-builder templates (7) — django, express, fastapi, generic-service, infra, nextjs, react-vite.
+- ADR obligation rules — `.github/instructions/decisions.instructions.md` (always attached).
 
-When instructions reference `.claude/` paths:
+## Honest limitations vs Claude Code
 
-| Claude Code path | Copilot equivalent |
-|------------------|--------------------|
-| `.claude/pai-orbit-config.md` | `.github/pai-orbit/pai-orbit-config.md` |
-| `.claude/team.md` | `.github/pai-orbit/team.md` |
-| `.claude/agents/` | `.github/pai-orbit/agents/` |
-
-`CLAUDE.md` stays as is — it is tool-agnostic project documentation.
+- No runtime hook system in Copilot Chat. `bash-guard` intent lives as advisory text in `.github/copilot-instructions.md` — Copilot usually obeys, no guarantee. The opt-in `.husky/pre-commit` adds real enforcement at commit time (lint + weak secret regex) but cannot block `git push --force`, `git add -A`, or shell `rm -rf` — those need Claude Code's PreToolUse, a pre-push hook, or server-side branch protection.
+- Agent runtime parity is tier-dependent. `mode: agent` prompts run agentically on Copilot Pro/Business; on Free they degrade to regular prompts that still give correct manual guidance.
+- No editor-specific files (D33). VS Code users follow the 4-line lint-on-save recipe in the adoption page.
 
 ## How to install
 
-Copy `.github/copilot-instructions.md` into your project's `.github/` directory (or merge with an existing file). Copilot Chat picks it up automatically in supported editors.
+End users run the standalone install CLI from the project root:
+
+```bash
+npx github:the-psi/pai-orbit init copilot
+```
+
+Or, inside Claude Code / Cursor, run `/setup` and pick Copilot as a target.

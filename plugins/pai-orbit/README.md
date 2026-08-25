@@ -15,7 +15,7 @@ plugins/pai-orbit/
 │   ├── claude-code/build.sh    # full-fidelity; emits Claude Code plugin layout
 │   ├── cursor-plugin/build.sh  # Cursor plugin; emits dist/cursor-plugin/pai-orbit/
 │   ├── cursor/build.sh         # lossy legacy; emits .cursor/rules/*.mdc
-│   ├── copilot/build.sh        # lossy; emits .github/copilot-instructions.md
+│   ├── copilot/build.sh        # full: emits .github/{copilot-instructions.md, prompts/, instructions/} + husky/pre-commit templates
 │   └── codex/build.sh          # experimental; emits AGENTS.md
 ├── dist/                       # built outputs (committed)
 │   ├── claude-code/
@@ -42,10 +42,10 @@ Each adapter clears its own `dist/<adapter>/` subdir and rebuilds from `core/`. 
 | cursor-plugin | ✅ rules + commands | ✅ | ✅ | ⚠️ mapped | ✅ |
 | kiro-power | ✅ as `#skills` | ✅ as `#skills` | ❌ | ❌ | ✅ via steering |
 | cursor (legacy) | ⚠️ as rules (`.cursor/rules/*.mdc`) | ⚠️ as one rule | ❌ | ❌ | ✅ (verbatim) |
-| copilot     | ⚠️ as instructions | ⚠️ as appendix | ❌ | ❌ | ❌ |
+| copilot | ✅ as `.github/prompts/*.prompt.md` (invokable — full mode set incl. `/setup` and `/suggest-skills` as agent-mode prompts) | ✅ `/prompts/` + `/instructions/` auto-attach for `git`+`data-model`; ADR obligation rules in `decisions.instructions.md` (always attached) | ✅ 9 `[agent]` prompts (Pro/Business agentic; Free = regular prompt) — 7 service-builders + `/docs-writer` (edits) + `/cross-repo-impact` (read-only); `/setup` and `/suggest-skills` also run agentic | ⚠️ advisory in Chat + opt-in `.husky/pre-commit` (lint + weak secret tripwire; NOT force-push / `git add -A`) | ✅ (rendered via `pai-orbit init copilot` CLI; full parity with `/setup` — all 10 Step 2 questions incl. live board discovery) |
 | codex       | ⚠️ as instructions | ⚠️ as appendix | ❌ | ❌ | ❌ |
 
-`⚠️` means "carried over as reference text only" — the receiving tool has no command/skill/agent invocation system. See each `dist/<adapter>/README.md` for specifics.
+`⚠️` means either "carried over as reference text only" (cursor legacy, codex) or "partial — see cell text" (copilot agents/hooks; cursor-plugin hooks). The receiving tool's runtime capabilities determine fidelity. See each `dist/<adapter>/README.md` for specifics.
 
 ## Adding a new adapter
 

@@ -152,6 +152,18 @@ See [`docs/cursor-plugin-install-and-usage.md`](docs/cursor-plugin-install-and-u
 
 **Do not** use the legacy copy-rules install and the plugin together — duplicate mode rules will conflict.
 
+### GitHub Copilot (VS Code)
+
+Copilot users get real invokable slash commands (`/groom`, `/design`, `/build`, `/git`, …) — 29 prompts (14 modes, 6 skills, 7 service-builder agents, 2 named agents: `/docs-writer` and `/cross-repo-impact`) plus 5 auto-attaching instructions files. Install with one command from the project root:
+
+```bash
+npx github:the-psi/pai-orbit init copilot
+```
+
+This installs the pai-orbit files only. Then run `/setup` in Copilot Chat (Business/Pro tier runs it agentically, proposing file edits you accept). Copilot Free users can pass `--setup` to run the full interview from the terminal instead: `npx github:the-psi/pai-orbit init copilot --setup`. The setup step renders `.copilot/pai-orbit-config.md`, `.copilot/team.md`, `AGENTS.md`, and scaffolds `docs/`. Full adoption guide: [`docs/copilot-install-and-usage.md`](docs/copilot-install-and-usage.md).
+
+**Enforcement is honest:** Copilot has no runtime hook system, so `bash-guard` intent lives as advisory text in `.github/copilot-instructions.md` (Copilot usually obeys); the optional `.husky/pre-commit` adds commit-time lint + weak secret detection, but cannot block `git push --force` or `git add -A`. Details in the adoption page's Hook coverage matrix.
+
 ### Kiro
 
 **Option 1: As a Power (recommended)**
@@ -178,14 +190,13 @@ See [`plugins/pai-orbit/dist/kiro-power/POWER.md`](plugins/pai-orbit/dist/kiro-p
 
 ### Other coding assistants (lossy)
 
-The same plugin source is compiled to per-tool bundles under `plugins/pai-orbit/dist/`. Copilot and Codex bundles are **lossy** reference instructions only.
+The same plugin source is compiled to per-tool bundles under `plugins/pai-orbit/dist/`.
 
 | Tool | Path | How to install |
 |------|------|----------------|
 | Kiro (Power) | [`plugins/pai-orbit/dist/kiro-power/`](plugins/pai-orbit/dist/kiro-power/) | Install via Kiro powers: `https://github.com/the-psi/pai-orbit` |
 | Cursor (legacy) | [`plugins/pai-orbit/dist/cursor/`](plugins/pai-orbit/dist/cursor/) | Copy `.cursor/` into your project root — use only if you cannot install the plugin |
-| GitHub Copilot | [`plugins/pai-orbit/dist/copilot/`](plugins/pai-orbit/dist/copilot/) | Copy `.github/copilot-instructions.md` into your project |
-| OpenAI Codex CLI (experimental) | [`plugins/pai-orbit/dist/codex/`](plugins/pai-orbit/dist/codex/) | Copy `AGENTS.md` to your project root |
+| OpenAI Codex CLI (experimental) | [`plugins/pai-orbit/dist/codex/`](plugins/pai-orbit/dist/codex/) | Copy `AGENTS.md` to your project root (lossy — reference instructions only) |
 
 See [`plugins/pai-orbit/README.md`](plugins/pai-orbit/README.md) for adapter internals and how to rebuild the bundles.
 

@@ -3,6 +3,14 @@
 # Iterates adapters/*/build.sh and invokes each. Fails fast.
 set -euo pipefail
 
+# Pin locale so string-length operations (${#var}) count characters
+# consistently on Windows Git Bash, Linux, macOS, and CI. Multi-byte
+# characters in mode/skill descriptions (em-dashes, curly quotes) would
+# otherwise produce different truncation output under different LC_CTYPE
+# settings — the committed dist/ tree only reproduces under a pinned locale.
+export LC_ALL=C.UTF-8
+export LANG=C.UTF-8
+
 PLUGIN_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 if [ ! -d "$PLUGIN_DIR/core" ]; then
