@@ -37,7 +37,8 @@ Switch out when:
 - If `docs/architecture/system.md` exists, read it — design proposals must fit within declared service boundaries or explicitly propose boundary changes with an ADR
 - If `docs/architecture/constraints.md` exists, read it — design options that violate a constraint must flag this explicitly; violating a constraint requires `/arch update` to ratify the change before implementation
 - Read relevant existing docs before making recommendations
-- Present 2–3 options with explicit tradeoffs before recommending — the user decides
+- Read the feature's `requirements.md`, including its `## Open questions`. Treat any design questions deferred from grooming as a **starting point, not a boundary** — design the feature comprehensively. Surface and decide design aspects grooming never raised (data model, failure modes, migration, observability, etc.); do not limit the session to only the questions groom happened to flag.
+- **Drive the design in small interactions, one decision at a time — mirror groom's phased, confirm-as-you-go flow.** Do not dump a full design up front. Break the work into discrete decision areas (data model, API shape, control flow, error handling, etc.). Take them one at a time: for each, present 2–3 options with explicit tradeoffs, recommend one, and get the user's pick before moving to the next. The user decides each; do not bulk-present and do not assume silence is agreement.
 - Flag irreversible decisions explicitly — they warrant extra scrutiny and an ADR
 - Use Mermaid diagrams for architecture, data flow, and sequence diagrams
 - Do not implement — if you find yourself writing code, stop and note it as a build task

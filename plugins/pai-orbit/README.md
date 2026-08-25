@@ -40,6 +40,7 @@ Each adapter clears its own `dist/<adapter>/` subdir and rebuilds from `core/`. 
 |---------|-------|--------|--------|-------|-----------|
 | claude-code | ✅ as `/commands/` | ✅ | ✅ | ✅ | ✅ |
 | cursor-plugin | ✅ rules + commands | ✅ | ✅ | ⚠️ mapped | ✅ |
+| kiro-power | ✅ as `#skills` | ✅ as `#skills` | ❌ | ❌ | ✅ via steering |
 | cursor (legacy) | ⚠️ as rules (`.cursor/rules/*.mdc`) | ⚠️ as one rule | ❌ | ❌ | ✅ (verbatim) |
 | copilot | ✅ as `.github/prompts/*.prompt.md` (invokable — full mode set incl. `/setup` and `/suggest-skills` as agent-mode prompts) | ✅ `/prompts/` + `/instructions/` auto-attach for `git`+`data-model`; ADR obligation rules in `decisions.instructions.md` (always attached) | ✅ 9 `[agent]` prompts (Pro/Business agentic; Free = regular prompt) — 7 service-builders + `/docs-writer` (edits) + `/cross-repo-impact` (read-only); `/setup` and `/suggest-skills` also run agentic | ⚠️ advisory in Chat + opt-in `.husky/pre-commit` (lint + weak secret tripwire; NOT force-push / `git add -A`) | ✅ (rendered via `pai-orbit init copilot` CLI; full parity with `/setup` — all 10 Step 2 questions incl. live board discovery) |
 | codex       | ⚠️ as instructions | ⚠️ as appendix | ❌ | ❌ | ❌ |
