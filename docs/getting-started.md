@@ -43,12 +43,33 @@ Full Cursor plugin at `plugins/pai-orbit/dist/cursor-plugin/pai-orbit/` — inst
 
 Legacy copy-rules install (lossy): `plugins/pai-orbit/dist/cursor/` — use only if you cannot install the plugin.
 
+### OpenAI Codex CLI (full parity)
+
+pai-orbit ships as a full Codex CLI install — skills, hooks, subagents, MCP, and always-on rules all land natively. Requires Codex CLI v0.144.6+ and Node.js 18+.
+
+Single command, cross-platform:
+
+```bash
+npx github:the-psi/pai-orbit init codex
+```
+
+Pin a specific release with a git ref suffix: `npx github:the-psi/pai-orbit#v1.4.0 init codex`. Re-install with `update codex` in place of `init codex`.
+
+After install, launch `codex` in the project, trust the project when prompted, then:
+
+1. Run `/hooks` and trust the four hook registrations.
+2. Run `$setup` to fill in `.codex/pai-orbit-config.md`, `.codex/team.md`, and the lint hooks' repo paths.
+3. Run `/skills` — you should see all 20 skills (6 operational + 14 modes).
+
+Two modes are renamed to avoid ergonomic overlap with Codex's built-in slash commands: **`plan` → `orbit-plan`** (`/plan` is Codex's built-in planner) and **`review` → `orbit-review`** (`/review` is Codex's built-in code review). Invoke them as `$orbit-plan` and `$orbit-review`.
+
+See [`docs/codex-install-and-usage.md`](codex-install-and-usage.md) for the full walkthrough and honest parity notes vs Claude Code.
+
 ### Other coding assistants (lossy)
 
-GitHub Copilot and OpenAI Codex CLI bundles are reference instructions only:
+GitHub Copilot is reference instructions only:
 
 - GitHub Copilot: `plugins/pai-orbit/dist/copilot/`
-- OpenAI Codex CLI (experimental): `plugins/pai-orbit/dist/codex/`
 
 ---
 

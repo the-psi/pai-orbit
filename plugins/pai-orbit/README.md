@@ -14,12 +14,14 @@ plugins/pai-orbit/
 ├── adapters/
 │   ├── claude-code/build.sh    # full-fidelity; emits Claude Code plugin layout
 │   ├── cursor-plugin/build.sh  # Cursor plugin; emits dist/cursor-plugin/pai-orbit/
+│   ├── kiro-power/build.sh     # Kiro Power; emits skills/ + steering/ + POWER.md
 │   ├── cursor/build.sh         # lossy legacy; emits .cursor/rules/*.mdc
 │   ├── copilot/build.sh        # lossy; emits .github/copilot-instructions.md
-│   └── codex/build.sh          # experimental; emits AGENTS.md
+│   └── codex/build.sh          # full-parity; emits AGENTS.md + .agents/skills/ + .codex/
 ├── dist/                       # built outputs (committed)
 │   ├── claude-code/
 │   ├── cursor-plugin/
+│   ├── kiro-power/
 │   ├── cursor/
 │   ├── copilot/
 │   └── codex/
@@ -43,7 +45,7 @@ Each adapter clears its own `dist/<adapter>/` subdir and rebuilds from `core/`. 
 | kiro-power | ✅ as `#skills` | ✅ as `#skills` | ❌ | ❌ | ✅ via steering |
 | cursor (legacy) | ⚠️ as rules (`.cursor/rules/*.mdc`) | ⚠️ as one rule | ❌ | ❌ | ✅ (verbatim) |
 | copilot     | ⚠️ as instructions | ⚠️ as appendix | ❌ | ❌ | ❌ |
-| codex       | ⚠️ as instructions | ⚠️ as appendix | ❌ | ❌ | ❌ |
+| codex       | ✅ as `$mode` skills | ✅ as `.agents/skills/` | ✅ TOML (`.codex/agents/`) | ✅ (manual `/hooks` trust) | ✅ |
 
 `⚠️` means "carried over as reference text only" — the receiving tool has no command/skill/agent invocation system. See each `dist/<adapter>/README.md` for specifics.
 

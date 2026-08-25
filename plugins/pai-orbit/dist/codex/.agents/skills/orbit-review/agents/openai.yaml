@@ -1,0 +1,7 @@
+interface:
+  display_name: "orbit-review"
+  short_description: "pai-orbit mode: orbit-review"
+  default_prompt: "Use $orbit-review to enter this mode."
+
+policy:
+  allow_implicit_invocation: false

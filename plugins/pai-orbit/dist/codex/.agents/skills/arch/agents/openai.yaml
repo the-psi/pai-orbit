@@ -1,0 +1,7 @@
+interface:
+  display_name: "arch"
+  short_description: "pai-orbit mode: arch"
+  default_prompt: "Use $arch to enter this mode."
+
+policy:
+  allow_implicit_invocation: false

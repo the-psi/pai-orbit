@@ -1,0 +1,7 @@
+interface:
+  display_name: "orbit-plan"
+  short_description: "pai-orbit mode: orbit-plan"
+  default_prompt: "Use $orbit-plan to enter this mode."
+
+policy:
+  allow_implicit_invocation: false

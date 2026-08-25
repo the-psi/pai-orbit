@@ -68,10 +68,19 @@ of the parity bar today — tracked as an open question in
 
 ## Related Decisions
 
-None yet — first ADR in this repo since `docs/decisions/` was scaffolded in
-this PR.
+- `docs/decisions/2026-07-19-codex-adapter-decisions.md` — the Codex adapter
+  upgrade that partially resolves this ADR's Review Date trigger by bringing
+  Codex from experimental to full parity (see DC1–DC10, especially DC8 for
+  the parity/zero-core-edit stance). The `cursor` (legacy) side of the
+  original gap remains — it is now a documented deliberate lossy fallback
+  (see `constraints.md` rule 6 comment, updated 2026-07-30).
 
 ## Review Date
 
-Revisit once `cursor`/`codex` reach parity or the open question in
-`docs/architecture/system.md` is otherwise resolved.
+~~Revisit once `cursor`/`codex` reach parity or the open question in
+`docs/architecture/system.md` is otherwise resolved.~~ — **Partial trigger
+met 2026-07-30**: `codex` reached full parity via the upgrade in the ADR
+linked above; the `cursor` (legacy) gap is now an explicit documented
+exception rather than a to-be-fixed item. This ADR remains open for future
+revisit if the `cursor` (legacy) path is either removed or brought to
+parity, or if a new adapter is added.

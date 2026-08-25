@@ -1,0 +1,7 @@
+interface:
+  display_name: "suggest-skills"
+  short_description: "pai-orbit mode: suggest-skills"
+  default_prompt: "Use $suggest-skills to enter this mode."
+
+policy:
+  allow_implicit_invocation: false

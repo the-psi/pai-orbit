@@ -39,7 +39,7 @@ pai-orbit/                          # repo = marketplace
 │       │   ├── cursor-plugin/      # Cursor plugin (rules, skills, commands, agents, hooks)
 │       │   ├── cursor/             # lossy legacy; .cursor/rules/*.mdc
 │       │   ├── copilot/            # lossy; .github/copilot-instructions.md
-│       │   └── codex/              # experimental; AGENTS.md
+│       │   └── codex/              # full parity; .agents/skills/, .codex/agents/, hooks, npx install.js
 │       ├── dist/                   # COMMITTED build outputs (one subdir per adapter)
 │       ├── build.sh                # runs every adapter
 │       └── README.md               # plugin-level README
@@ -73,7 +73,7 @@ graph LR
     core --> cursorplugin[adapters/cursor-plugin]
     core --> cursor[adapters/cursor — lossy legacy]
     core --> copilot[adapters/copilot — lossy]
-    core --> codex[adapters/codex — experimental]
+    core --> codex[adapters/codex — full parity]
     claudecode --> distcc[dist/claude-code/]
     cursorplugin --> distcp[dist/cursor-plugin/]
     cursor --> distc[dist/cursor/]
@@ -194,7 +194,17 @@ Marketplace.json points at `plugins/pai-orbit/dist/claude-code/`, which is the c
 
 Then run `/setup` in your target project to generate all config and scaffold files.
 
-For Cursor / GitHub Copilot / OpenAI Codex, install the corresponding bundle from `plugins/pai-orbit/dist/<tool>/` per its README.
+For Cursor, install the plugin from `plugins/pai-orbit/dist/cursor-plugin/pai-orbit/` per [docs/cursor-plugin-install-and-usage.md](docs/cursor-plugin-install-and-usage.md).
+
+For OpenAI Codex CLI (v0.144.6+, full parity), single command cross-platform (requires Node.js 18+):
+
+```bash
+npx github:the-psi/pai-orbit init codex
+```
+
+Pin a ref with `#<branch|tag|sha>`; re-install with `update codex` in place of `init codex`. See [docs/codex-install-and-usage.md](docs/codex-install-and-usage.md) for the full walkthrough (hook trust flow, `$setup`, `orbit-plan` / `orbit-review` renames, parity notes).
+
+For GitHub Copilot (lossy), copy `plugins/pai-orbit/dist/copilot/.github/copilot-instructions.md` into your repo.
 
 ---
 
