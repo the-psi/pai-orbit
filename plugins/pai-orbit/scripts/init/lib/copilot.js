@@ -622,7 +622,7 @@ function reportFullSetup(ctx, lifecycle, answers, huskyResult, pcResult, docsCre
       '  2. Try `/groom` in Copilot Chat — the slash picker should list 29 pai-orbit prompts.',
       '  3. Commit the new files. Suggested commit message:',
       '       feat(copilot): install pai-orbit Copilot adapter',
-      '  4. Fill in remaining TODO markers in CLAUDE.md and docs/architecture/*.md.',
+      '  4. Fill in remaining TODO markers in AGENTS.md and docs/architecture/*.md.',
       '  5. Manual edits welcome — .copilot/pai-orbit-config.md and .copilot/team.md are yours to refine.',
       '',
     ].join('\n'),

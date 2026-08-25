@@ -136,45 +136,63 @@ No API query needed. Ask the user to provide their workflow stages (column names
 
 ## Step 2c — Copilot install questions
 
-Before scaffolding, additionally ask:
+**First: read `.copilot/settings.json` if it exists.** The `npx github:the-psi/pai-orbit init copilot` CLI writes this file at install time with the user's earlier answers. If the file exists and contains `install_mode: "install-only"`, use its values instead of re-asking:
+
+- `husky_opted_in` (boolean) → skip the husky question below
+- `precommit_installer` (`"husky"` / `"pre-commit"` / `"both"` / `"neither"`) → skip the installer question below
+- `detected_languages` → treat as authoritative for language detection; still cross-check against Step 1's file scan for services added since install
+- `pai_orbit_version` → note whether this is a re-run of the same version or an upgrade
+
+Only ask the questions below if `.copilot/settings.json` is absent, or the fields above are missing from it, or the user has explicitly re-invoked `/setup` to change these answers:
 
 - **"Install the optional `.husky/pre-commit` hook (commit-time lint + weak secret tripwire; does NOT block `git push --force` or `git add -A`)?"** Default: `yes` if the project has `.git/`, `no` otherwise.
 - **"Choose pre-commit installer: husky / pre-commit framework / both / neither"**. Detection-driven defaults: `husky` if `.husky/` exists or `package.json` has a husky dep; `pre-commit` if `.pre-commit-config.yaml` already exists; `husky` otherwise.
 
 ## Step 3 — Generate
 
-Create the following files. Tell the user what was created and what they need to fill in by hand.
+Create the `.copilot/*`, `AGENTS.md`, and `docs/` files. Tell the user what was created and what they need to fill in by hand.
 
-The Copilot adapter output lives in `plugins/pai-orbit/dist/copilot/` and is copied verbatim into the project, then `.copilot/` config files are rendered from the Step 2 interview answers.
+### Files already installed by the CLI — do not touch
 
-### Files to write
+The `npx github:the-psi/pai-orbit init copilot` step writes these files before `/setup` runs:
 
-Copy from the built `dist/copilot/` tree:
+- `.github/copilot-instructions.md` — always-loaded rule book
+- `.github/prompts/*.prompt.md` — 29 slash-command prompt files
+- `.github/instructions/*.instructions.md` — 5 auto-attaching guidance files
+- `.husky/pre-commit.template` and `.pre-commit-config.yaml.template` — inert hook templates
 
-| Source | Destination | Behaviour |
-|--------|-------------|-----------|
-| `dist/copilot/.github/copilot-instructions.md` | `<project>/.github/copilot-instructions.md` | **Overwrite** — pai-orbit owns this. |
-| `dist/copilot/.github/prompts/` | `<project>/.github/prompts/` | **Overwrite** the pai-orbit-emitted `*.prompt.md` files. Leave any user-authored prompts alone. |
-| `dist/copilot/.github/instructions/` | `<project>/.github/instructions/` | **Overwrite** the pai-orbit-emitted `*.instructions.md` files. Leave any user-authored instructions alone. |
-| `dist/copilot/.husky/pre-commit.template` | `<project>/.husky/pre-commit.template` | **Always copy** as the inert `.template`. If the user opted in to `husky`, additionally rename to `.husky/pre-commit`, `chmod +x`, and run `git update-index --add --chmod=+x .husky/pre-commit` so the exec bit is tracked. |
-| `dist/copilot/.pre-commit-config.yaml.template` | `<project>/.pre-commit-config.yaml.template` | **Always copy** as the inert `.template`. If the user opted in to `pre-commit framework`, rename to `.pre-commit-config.yaml` and instruct the user to run `pre-commit install` (this step does NOT install Python tooling itself). |
+**Do NOT re-copy, re-generate, or overwrite these files.** They are already the correct pai-orbit-emitted content. If any is missing, the correct action is to re-run the CLI (`npx github:the-psi/pai-orbit init copilot --ignore-existing`) — do not attempt to reconstruct the content by hand.
 
-Render from templates using the Step 2 answers:
+### Hook activation (only if the user opted in during Step 2c)
+
+- **husky:** rename `.husky/pre-commit.template` → `.husky/pre-commit`, run `chmod +x .husky/pre-commit`, then run `git update-index --add --chmod=+x .husky/pre-commit` so the exec bit is tracked in git.
+- **pre-commit framework:** rename `.pre-commit-config.yaml.template` → `.pre-commit-config.yaml`, then tell the user to run `pre-commit install` (this step does NOT install Python tooling itself).
+- **both:** perform both above.
+- **neither:** leave the inert `.template` files in place; the user can activate later.
 
 ### `.copilot/pai-orbit-config.md`
 
-Use the template at `templates/pai-orbit-config.md.template`. Fill all sections from the answers above and the board discovery in Step 2b.
+Synthesize this file directly from the Step 2 interview answers and the Step 2b board discovery. Do not attempt to read an external template — write the content from scratch.
 
-For the `## Agile Board → columns` table, use **only** the column names and labels confirmed in Step 2b — never write placeholder or example values. Delete the tool-specific comment blocks that don't apply to the chosen board type.
+The file has these top-level sections:
+
+- `# pai-orbit configuration` (title)
+- `## Agile Board` — `type:`, `url:`, and a `## Agile Board → columns` markdown table populated **only** from the column names/labels confirmed in Step 2b. Never write placeholder or example values.
+- `## Branching` — `model:` (github-flow / gitflow / trunk), `main:` (branch name), `pr_merge_strategy:`, `protected:` (list)
+- `## Deployment` — `provider:` and per-service target/image/deploy_cmd rows
+- `## Docs` — `home:` (`local` / `dedicated-repo` / `confluence` / `notion`) plus the appropriate path/URL field
+- `## Team defaults` — default assignees for eng and ops handles
+- `## System Docs` — see rules below
+- `## MCP` — see the MCP subsection later in this step
 
 For the `## System Docs` section:
-- If the user answered **no** to the multi-repo question: omit the `## System Docs` section entirely from the generated file (do not write it with blank values).
+- If the user answered **no** to the multi-repo question: omit the `## System Docs` section entirely (do not write it with blank values).
 - If the user answered **yes** and provided a **relative path**: check whether that directory exists before writing. If it does not exist, warn the user ("System docs path not found — writing the pointer anyway; ensure the repo is cloned before running commands") and write it as given.
 - If the user answered **yes** and provided a **git URL**: write it as-is. Do not attempt to clone or validate — note that the user must clone the repo locally before commands can read from it.
 
 ### `.copilot/team.md`
 
-Use the template at `templates/team.md.template`. Populate from team answers.
+Synthesize this file from the team roster the user gave in Step 2. The file is a markdown table with columns `Name | Role | GitHub | Linear | Jira | Notes` — one row per team member the user named. Also include `Default engineering lead:`, `Default domain expert:`, and `Default ops lead:` lines below the table populated from the roles the user assigned.
 
 ### `.copilot/settings.json`
 
@@ -195,13 +213,17 @@ This file is read on subsequent re-runs (`/setup` or `npx … init copilot`) to 
 
 ### `AGENTS.md`
 
-Use the template at `templates/CLAUDE.md.template` (source template kept under its historical name; the emitted file for the Copilot target is `AGENTS.md`). Fill in:
-- Project name and one-line description
-- Sub-projects / services table (name, path, stack, purpose)
-- Commands section (dev server, build, test for each service)
-- Leave architecture section with clear `<!-- TODO: fill in by hand -->` markers
+Synthesize this file at the project's repo root by combining the Step 2 answers with facts read from the actual project (service directories, package manifests, README, etc.). Do not attempt to read an external template.
 
-If a `AGENTS.md` already exists at repo root (legacy pre-D37 install), do not overwrite it. Create `AGENTS.md` alongside and tell the user to migrate content by hand — the Copilot adapter's `copilot-instructions.md` reads `AGENTS.md` first and falls back to `AGENTS.md`, so both files can coexist.
+Sections to write:
+
+- **`# <project name>`** — from Step 2 or inferred from the repo directory name
+- **One-line project description** — from Step 2 or a concise summary of what the repo does
+- **`## Sub-projects / services`** — markdown table with columns `Name | Path | Stack | Purpose`. One row per service the user named in Step 2 or that was discovered in Step 1. Real service names, paths, stacks — no placeholders.
+- **`## Commands`** — per-service subsections listing the actual dev / build / test / lint commands read from `package.json` scripts, `pyproject.toml`, `Makefile`, `.csproj`, or equivalent. If a command cannot be discovered, write `# TODO: fill in` next to that field rather than fabricating one.
+- **`## Architecture`** — leave a `<!-- TODO: run /arch init to complete this section -->` marker. `/arch init` populates it from `docs/architecture/*.md` once those exist.
+
+**Legacy project-context handling:** if a `Claude`-convention project-context markdown file already exists at repo root (from a Claude Code install predating D37 — the filename Claude Code uses is `Claude` + `.md` at the top of the repo), do NOT overwrite it. Create `AGENTS.md` alongside and tell the user to migrate their project context from that legacy file into `AGENTS.md` by hand. The Copilot adapter's `.github/copilot-instructions.md` reads `AGENTS.md` first; when `AGENTS.md` is absent it falls back to that Claude-convention file, so both files can coexist during the migration.
 
 ### MCP configuration
 
@@ -224,30 +246,35 @@ Omit the `## MCP` section entirely if all three answers are "none".
 
 ### Docs scaffold
 
-If `docs/` does not exist, copy the scaffold from `templates/docs/` to the configured docs path.
-If a dedicated docs repo path was given, create the scaffold there.
-If Confluence or Notion: skip the scaffold, note the MCP setup required (see Getting Started).
+If `docs/` does not exist, create the following subdirectories in the configured docs path (the location the user chose in Step 2 — in-repo `docs/` by default, or a dedicated docs repo):
 
-This includes `templates/docs/domain/product-capabilities.md`, the file `/build` appends to
-after every ship. Replace its placeholder surfaces in the Contents table and `##` sections with
-this product's actual surfaces — the axis that stays stable as the product grows. Leave its
-"How to maintain it" header intact: `/build` reads those rules to decide where a new entry goes,
-and without them the file drifts into a reverse-chronological build log.
+- `docs/architecture/` — see the next subsection
+- `docs/features/` — one subfolder per feature, populated by `/groom` / `/design` / `/build`
+- `docs/decisions/` — ADRs
+- `docs/epics/` — epic tracking files
+- `docs/plans/` — planning and prioritisation notes
+- `docs/ops/` — human-owned operational files
+- `docs/backlog/` with `feature-ideas.md` — parking lot
+- `docs/reports/` — data analysis outputs
+- `docs/wip/` — ephemeral session captures
+- `docs/domain/` with `product-capabilities.md` — the file `/build` appends to after every ship. Write its top-level structure as: a title, a Contents table listing this product's actual surfaces (the axis that stays stable as the product grows — populate from services detected in Step 1 / declared in Step 2), and a `## How to maintain it` section documenting the append rules (`/build` reads those rules to decide where a new entry goes; without them the file drifts into a reverse-chronological build log).
+
+If Confluence or Notion was chosen as the docs home: skip the local scaffold, note the MCP setup required, and point at the Getting Started guide.
 
 ### Architecture scaffold
 
-Copy `templates/docs/architecture/system.md`, `constraints.md`, and `stack.md` to `docs/architecture/` (replacing `{{PROJECT_NAME}}` and `{{DATE}}`).
+Write `docs/architecture/system.md`, `docs/architecture/constraints.md`, and `docs/architecture/stack.md` directly. Do not attempt to read an external template — synthesize each file from the interview answers and project scan.
 
-Populate `stack.md` from the language and framework info discovered in Step 1.
-
-If the user answered the architecture question (Step 2, item 8), pre-populate the service table in `system.md` and the rules in `constraints.md` from those answers. Otherwise leave as stubs.
+- **`system.md`** — title, last-updated date, `## Services` table (populated from Step 1 discovery + Step 2 answers with actual service name, path, stack summary, one-line purpose), `## Communication` table (populated from Step 2 architecture answer if the user gave one; otherwise write `<!-- TODO: run /arch init to populate -->`).
+- **`constraints.md`** — title, then hard rules from Step 2's architecture answer. If none were given, write `<!-- TODO: run /arch init to declare constraints -->` and leave the section empty.
+- **`stack.md`** — per-service subsections listing the language, framework, major dependencies read from `package.json`, `pyproject.toml`, `.csproj`, `go.mod`, etc.
 
 Tell the user: "Run `/arch init` to complete your architecture declaration. Once declared, `/build` and `/review` will read `constraints.md` to enforce architectural rules automatically."
 
 ### What is NOT written for the Copilot target
 
-- **No `.copilot/` folder.** That is the Claude Code path.
-- **No `.cursor/` folder.** That is the Cursor path.
+- **No `.claude` folder.** That is the Claude Code target's path; Copilot uses `.copilot/` instead.
+- **No `.cursor` folder.** That is the Cursor target's path; Copilot uses `.copilot/` instead.
 - **No native hooks (`.claude/hooks/`).** Copilot has no hook event surface. `bash-guard` intent lives in `.github/copilot-instructions.md` as always-loaded advisory text plus the optional `.husky/pre-commit` (or `.pre-commit-config.yaml`). `arch-drift` intent lives in `.github/copilot-instructions.md` and `.github/instructions/arch-drift.instructions.md`. Lint hooks rely on the project's own linter config invoked at commit time by the pre-commit hook — the linter config (`pyproject.toml`, `.eslintrc.json`) is owned by the project, never authored by pai-orbit.
 - **No editor-specific files (`.vscode/`, `.idea/`, etc.).** Editor settings are owned by the team. VS Code users who want lint-on-save follow the 4-line copy-paste recipe in `docs/copilot-install-and-usage.md`.
 - **Service-builder prompts already ship as `.github/prompts/<stack>-builder.prompt.md`** under the Copilot adapter. On Pro/Business Copilot they run as multi-step agents (read `AGENTS.md`, detect the service, propose file edits); on Free they degrade to regular prompts that still give correct manual scaffolding guidance.
