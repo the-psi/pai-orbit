@@ -1,6 +1,6 @@
 {
   "name": "pai-orbit",
-  "version": "1.3.4",
+  "version": "1.4.0",
   "description": "Structured development methodology: groom, design, build, review, deploy",
   "author": {
     "name": "Pratham Software (PSI)",

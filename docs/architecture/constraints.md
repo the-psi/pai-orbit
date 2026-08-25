@@ -1,5 +1,5 @@
 # Architectural Constraints: pai-orbit
-Last updated: 2026-07-24
+Last updated: 2026-08-18
 
 <!-- Violations of the rules below are treated as blocking issues in /review and /build. -->
 
@@ -10,8 +10,12 @@ Last updated: 2026-07-24
 3. Each adapter under `plugins/pai-orbit/adapters/<tool>/` reads only from `${CORE_DIR:-../../core}` and writes only to `${DIST_DIR:-../../dist/<tool>}` — no cross-adapter reads.
 4. Modes must not bleed into each other — no design debate inside `/build`, no implementation inside `/design`. If the conversation drifts, switch modes explicitly.
 5. Hook changes must be tested locally before committing — a broken hook (e.g. `bash-guard.sh`) blocks the entire tool-use flow for every user of the plugin.
-6. **Full adapter parity is required.** A new or changed mode, skill, agent, or hook in `core/` must be fully supported — not lossy, not experimental — by every adapter (`claude-code`, `cursor-plugin`, `cursor`, `copilot`, `codex`) before the PR merges. No adapter may ship a partial or degraded implementation as a permanent state.
-   <!-- Status as of 2026-07-30: codex is now full-parity via native skills, hooks, subagents, and npx installer (see docs/decisions/2026-07-19-codex-adapter-decisions.md). cursor (legacy) remains a deliberate lossy fallback for teams that cannot install the cursor-plugin build; the Cursor plugin adapter is the full-parity path for Cursor users. Rule 6 is met by every recommended adapter (claude-code, cursor-plugin, codex, copilot-plugin-adapter when it lands); the legacy cursor fallback is a documented exception. -->
+6. **Full adapter parity is required.** A new or changed mode, skill, agent, or hook in `core/` must be fully supported — not lossy, not experimental — by every adapter (`claude-code`, `cursor-plugin`, `kiro-power`, `cursor`, `copilot`, `codex`) before the PR merges. No adapter may ship a partial or degraded implementation as a permanent state.
+   <!-- Status as of 2026-08-25 (combines the 2026-07-30 codex status with the 2026-08-18 kiro-power note):
+        • codex is now full-parity via native skills, hooks, subagents, and npx installer — see docs/decisions/2026-07-19-codex-adapter-decisions.md.
+        • cursor (legacy) remains a deliberate lossy fallback for teams that cannot install the cursor-plugin build; the Cursor plugin adapter is the full-parity path for Cursor users.
+        • kiro-power ships with no agent/hook support (Kiro has no equivalent primitive), accepted at introduction — see docs/decisions/2026-08-18-add-kiro-power-adapter.md.
+        Rule 6 is met by every recommended adapter (claude-code, cursor-plugin, codex, copilot-plugin-adapter when it lands). The legacy cursor fallback and kiro-power's agent/hook gap are documented, deliberate exceptions — see Open Questions in system.md. -->
 7. **`dist/` output must remain backward compatible.** A project that installed an earlier version and has not re-run `/setup` must not silently break. Any structural change to an adapter's `dist/<tool>/` output requires a version bump in `plugin.json` and a migration note (README and/or CLAUDE.md).
 
 ## Trust Boundaries
