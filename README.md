@@ -1,4 +1,4 @@
-# pai-orbit · v1.4.0
+# pai-orbit · v1.4.1
 
 A structured developer methodology harness, distributed as a Claude Code plugin and as rule/instruction bundles for Cursor, GitHub Copilot, and OpenAI Codex.
 
@@ -202,7 +202,8 @@ After installing, run `/setup` in your project directory. It will:
    - **Jira / GitHub Issues / Notion**: prompts you to enter column names manually
 4. Generate `.claude/pai-orbit-config.md`, `.claude/team.md`, a `CLAUDE.md` stub, stack-specific agents, a `docs/` scaffold, and a `docs/architecture/` stub
 5. Create `.claude/hooks/`, write all safety hook scripts, wire them into `.claude/settings.json`, and validate each hook path — with a clear recovery message if anything is missing
-6. Tell you exactly what to fill in by hand
+6. If your deploy provider is **Azure** or **AWS**, auto-fill the CLI auth check command and run a warn-only verification pass (CLI installed? authenticated? deploy MCP server connected this session?) — informational only, never blocks setup
+7. Tell you exactly what to fill in by hand
 
 Then run `/arch init` to complete your architecture declaration — a guided interview that writes `docs/architecture/system.md` (service map), `constraints.md` (enforcement rules), and `stack.md`. Once declared, `/build` reads the constraints before generating code and `/review` checks every diff against them.
 

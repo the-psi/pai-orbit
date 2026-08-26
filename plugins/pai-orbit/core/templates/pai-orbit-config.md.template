@@ -107,7 +107,9 @@ Services:
 <!-- Add one row per deployable service -->
 
 Auth check command: {{AUTH_CHECK_CMD}}
-<!-- e.g.: gcloud auth list | vercel whoami | fly auth whoami -->
+<!-- e.g.: gcloud auth list | vercel whoami | fly auth whoami | az account show | aws sts get-caller-identity -->
+<!-- For Azure/AWS, /setup auto-populates this (az account show / aws sts get-caller-identity)
+     and runs a verification pass — see "Deploy verification" in the setup mode. -->
 
 Health check:
 | Service | URL | Expected response |
@@ -158,6 +160,11 @@ board: {{BOARD_MCP_SERVER}}
 
 docs: {{DOCS_MCP_SERVER}}
 <!-- Choose one: confluence | notion | none -->
+
+deploy: {{DEPLOY_MCP_SERVER}}
+<!-- No canonical product name for deploy (unlike git/board/docs) — Azure and AWS each have
+     more than one MCP server in circulation. Value is the actual server name the user gave
+     (e.g. "azure-mcp-server"), or "none". -->
 
 ---
 
