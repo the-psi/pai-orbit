@@ -1,5 +1,6 @@
 ## Epic
 Parent epic: docs/epics/mcp-support/EPIC.md
+Issue: https://github.com/the-psi/pai-orbit/issues/59
 <!-- Answers this epic's open question: "Should /deploy MCP support be scoped to a single provider in the first
      iteration or attempted for all four?" — this feature scopes the first iteration to Azure + AWS, config
      capture and auth verification only. GCP, Vercel, fly.io remain deferred per the epic's phasing note
