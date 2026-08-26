@@ -162,7 +162,9 @@ docs: {{DOCS_MCP_SERVER}}
 <!-- Choose one: confluence | notion | none -->
 
 deploy: {{DEPLOY_MCP_SERVER}}
-<!-- Choose one: azure | aws | none -->
+<!-- No canonical product name for deploy (unlike git/board/docs) — Azure and AWS each have
+     more than one MCP server in circulation. Value is the actual server name the user gave
+     (e.g. "azure-mcp-server"), or "none". -->
 
 ---
 
