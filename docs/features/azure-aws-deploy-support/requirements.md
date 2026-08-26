@@ -26,7 +26,7 @@ Give pai-orbit projects deploying to Azure or AWS a documented CLI-first, MCP-op
 3. REQ-3 (Scenario 1): When a deploy MCP server is specified, `/setup` must write it to `.claude/pai-orbit-config.md → ## MCP → deploy`, following the same key structure as `git`, `board`, `docs`.
 4. REQ-4 (Scenario 1): When the deploy provider is Azure or AWS, `/setup` must populate `## Deploy → Auth check command` automatically (`az account show` for Azure, `aws sts get-caller-identity` for AWS) rather than leaving it for manual entry.
 5. REQ-5 (Scenario 2): When the deploy provider is Azure or AWS, `/setup` must run a verification step after config generation that checks: (a) the provider CLI is installed, (b) the CLI is authenticated, and (c) if a deploy MCP server is configured, that it is reachable.
-6. REQ-6 (Scenario 2): Verification must prefer the configured deploy MCP server when present, and fall back to the CLI auth-check command when MCP is unconfigured or unreachable — mirroring the MCP-vs-shell pattern documented in `/git` and `/board` SKILL.md.
+6. REQ-6 (Scenario 2): **Amended during `/design` (see ADR `docs/decisions/2026-08-26-mcp-reachability-check-pattern.md`).** The CLI auth-check always runs when the provider is Azure/AWS, regardless of whether a deploy MCP server is configured — the MCP check (a presence-in-session test, not a live call) only confirms the server is connected, not that it's authenticated, so it cannot substitute for the CLI check. Both results are reported as independent signals rather than one preferring/falling back to the other. This departs from the "prefer MCP over CLI" framing documented in `/git` and `/board` SKILL.md, which applies to performing a real operation, not to this diagnostic verification step.
 7. REQ-7 (Scenario 2): A failed verification must not block `/setup` from completing — it produces a warning and `/setup` proceeds to Step 3 (Generate) and Step 4 (Report) normally. This differs from the existing hooks validation, which does block on failure.
 8. REQ-8 (Scenario 3): The verification output must distinguish and name each failure cause separately: CLI not installed, CLI installed but not authenticated, and MCP configured but unreachable.
 9. REQ-9 (Scenario 3): Verification results — success or the specific failure cause — must be surfaced in `/setup`'s Step 4 Report, using the same ✅/⚠️ convention as the existing hooks-validation output.
@@ -56,12 +56,12 @@ Give pai-orbit projects deploying to Azure or AWS a documented CLI-first, MCP-op
 - AC-2 (Scenario 1): If the user specifies an Azure or AWS MCP server at Step 2, `.claude/pai-orbit-config.md → ## MCP → deploy` contains that server name; if the user answers "none", the `deploy` key is still present with value `none`, consistent with how `git`/`board`/`docs` are written.
 - AC-3 (Scenario 1): `## Deploy → Auth check command` is populated with `az account show` for Azure or `aws sts get-caller-identity` for AWS without manual entry.
 - AC-4 (Scenario 2): When Azure/AWS provider is selected, `/setup`'s Step 4 Report includes a verification line for the deploy CLI/MCP path, marked ✅ or ⚠️.
-- AC-5 (Scenario 2): When a deploy MCP server is configured and reachable, verification uses the MCP path and does not invoke the CLI auth-check command.
-- AC-6 (Scenario 2): When no deploy MCP server is configured, or it is unreachable, verification runs the CLI auth-check command as fallback.
+- AC-5 (Scenario 2, amended per D1/ADR): The CLI auth-check command always runs when the provider is Azure/AWS, regardless of deploy MCP configuration — it is never skipped in favor of the MCP path.
+- AC-6 (Scenario 2, amended per D1/ADR): When a deploy MCP server is configured, verification additionally checks whether it appears among the session's currently connected tools (a presence check, not a live call) and reports that as a separate ✅/⚠️ line alongside the CLI result — not as a fallback triggered by CLI failure.
 - AC-7 (Scenario 2): A failed verification (any cause) does not prevent `/setup` from writing config files or completing Steps 3–4 — `/setup` finishes and reports the warning.
 - AC-8 (Scenario 3): When the CLI is not installed, the warning explicitly states "not installed" as the cause.
 - AC-9 (Scenario 3): When the CLI is installed but not authenticated, the warning explicitly states "not authenticated" as the cause.
-- AC-10 (Scenario 3): When a deploy MCP server is configured but unreachable, the warning explicitly states "MCP unreachable" and confirms the CLI fallback was attempted.
+- AC-10 (Scenario 3, amended per D1/ADR): When a deploy MCP server is configured but not connected in the current session, the warning explicitly states it is not connected this session and that it will be attempted at first real use — not that it is "unreachable" or broken.
 
 ---
 Status: Groomed — ready for /design

@@ -46,6 +46,10 @@ Ask all unresolved questions in a single block — do not ask one at a time. Cov
     - **Git**: GitHub MCP / GitLab MCP / none
     - **Board**: GitHub Projects MCP / Linear MCP / Jira MCP / none
     - **Docs**: Confluence MCP / Notion MCP / none
+    - **Deploy**: Azure MCP server name, or AWS MCP server name, or none
+    <!-- No single canonical MCP product is named for Deploy (unlike Git/Board) — Azure and
+         AWS each have more than one MCP server in circulation; ask for whatever name the
+         user has configured rather than asserting a specific product. -->
 
     If MCP servers are configured, they will be preferred over CLI shell commands at runtime (with shell as fallback). If none are configured, all operations use shell commands — no MCP setup is required.
 
@@ -261,9 +265,45 @@ board: {{BOARD_MCP_SERVER}}
 
 docs: {{DOCS_MCP_SERVER}}
 <!-- Choose one: confluence | notion | none -->
+
+deploy: {{DEPLOY_MCP_SERVER}}
+<!-- Choose one: azure | aws | none -->
 ```
 
-Omit the `## MCP` section entirely if all three answers are "none" — do not write a section with all-none values.
+Omit the `## MCP` section entirely if all **four** answers are "none" — do not write a section with all-none values. (A project generated before the `deploy` key existed, or one where it was left "none", has no `deploy` line — any future reader must treat a missing `deploy` key the same as `deploy: none`.)
+
+### Deploy verification (Azure / AWS only)
+
+Only run this subsection if the Step 2 deployment answer (item 5) is **Azure** or **AWS**. For every other provider, leave `## Deploy → Auth check command` as manual entry, unchanged from today.
+
+**Step A — Auto-populate the auth check command.** Set `## Deploy → Auth check command` to a single runnable command — never a piped/compound value:
+- Azure → `az account show`
+- AWS → `aws sts get-caller-identity`
+
+**Step B — Check the CLI.**
+
+```bash
+command -v az   # or: command -v aws
+```
+
+- Not found → `⚠️  Azure CLI not installed — install it, then re-run /setup` (substitute AWS/`aws` as appropriate). Skip Step C.
+- Found → run the auth check command from Step A with a 10-second timeout (matching the `bash-guard.sh` PreToolUse hook timeout used elsewhere in this file):
+
+```bash
+timeout 10 az account show   # or: timeout 10 aws sts get-caller-identity
+```
+
+  - Success (exit 0) → `✅ Azure CLI authenticated`
+  - Failure or timeout → `⚠️  Azure CLI installed but not authenticated — run \`az login\`` (AWS: `` `aws configure` `` or `` `aws sso login` ``, whichever the project uses)
+
+**Step C — Check the deploy MCP server, if one was configured in Step 2 item 10.** Do not issue a live tool call to it — check whether a tool from that server appears among this session's currently connected MCP tools (e.g. a tool name prefixed `mcp__<server>__...`, or via `ListMcpResourcesTool`):
+
+- Connected this session → `✅ MCP "<server name>" connected`
+- Not connected this session → `⚠️  MCP "<server name>" configured but not connected this session — will be attempted at first use`
+
+This checks presence only, not reachability — `/git` and `/board` have no equivalent proactive check either; both only attempt the real MCP call at actual use and fall back if it fails. See `docs/decisions/2026-08-26-mcp-reachability-check-pattern.md`.
+
+**This verification is advisory only.** A ⚠️ in Steps B or C must never block `/setup` from completing — proceed to Docs scaffold and Step 4 regardless. This differs from the hooks validation above (Step E), which does block.
 
 ### Docs scaffold
 
@@ -309,6 +349,10 @@ Hooks:
 - ✅ Generated — `.claude/settings.json` — wires all hooks to Claude Code tool-use events
 
 If any hook shows ⚠️ in the Step 3 validation output, surface it here with instructions: "`.claude/hooks/<name>.sh` is missing. Re-run `/setup` or manually copy the file from the pai-orbit plugin's `hooks/` directory and run `chmod +x` on it."
+
+Deploy verification (only if the deploy provider is Azure or AWS):
+- Include the ✅/⚠️ lines from Step 3's "Deploy verification" subsection as-is (CLI check, and MCP check if a deploy MCP server was configured).
+- A ⚠️ here is informational — it never means setup failed. If both the CLI and any configured MCP server show ⚠️, add one line: "Deploy auth isn't fully set up yet — fine for now, but resolve before running `/release`."
 
 End with: "Run `/suggest-skills` after a few sessions to discover operational skills worth adding."
 

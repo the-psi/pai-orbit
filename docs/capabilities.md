@@ -111,7 +111,7 @@ Shows query before running. Prefers read-only. Flags data quality issues explici
 **Writes:** `.claude/pai-orbit-config.md`, `.claude/team.md`, `CLAUDE.md` stub, `.claude/agents/<service>-builder.md`, `.claude/hooks/*.sh`, `.claude/settings.json`, docs scaffold  
 **Switch to:** `/arch init` when setup is complete
 
-Discovers repo structure and tech stack, asks targeted questions in one block, queries the live board API for actual column/label taxonomy, generates all config and scaffold files. Creates and validates `.claude/hooks/` with all safety hooks wired into `.claude/settings.json`. Re-run when the stack or team changes significantly.
+Discovers repo structure and tech stack, asks targeted questions in one block, queries the live board API for actual column/label taxonomy, generates all config and scaffold files. Creates and validates `.claude/hooks/` with all safety hooks wired into `.claude/settings.json`. If the deploy provider is Azure or AWS, auto-populates the auth check command and runs a warn-only verification pass (CLI installed/authenticated, deploy MCP server connected this session) — see `## MCP → deploy` in the generated config. Re-run when the stack or team changes significantly.
 
 ---
 
