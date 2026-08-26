@@ -286,17 +286,17 @@ Only run this subsection if the Step 2 deployment answer (item 5) is **Azure** o
 command -v az   # or: command -v aws
 ```
 
-- Not found → `⚠️  Azure CLI not installed — install it, then re-run /setup` (substitute AWS/`aws` as appropriate). Skip Step C.
+- Not found → `⚠️  Azure CLI not installed — install it, then re-run /setup` (substitute AWS/`aws` as appropriate).
 - Found → run the auth check command from Step A with a 10-second timeout (matching the `bash-guard.sh` PreToolUse hook timeout used elsewhere in this file):
 
 ```bash
 timeout 10 az account show   # or: timeout 10 aws sts get-caller-identity
 ```
 
-  - Success (exit 0) → `✅ Azure CLI authenticated`
-  - Failure or timeout → `⚠️  Azure CLI installed but not authenticated — run \`az login\`` (AWS: `` `aws configure` `` or `` `aws sso login` ``, whichever the project uses)
+  - Success (exit 0) → `✅ Azure CLI authenticated` (AWS: `✅ AWS CLI authenticated`)
+  - Failure or timeout → `⚠️  Azure CLI installed but not authenticated — run az login` (AWS: `⚠️  AWS CLI installed but not authenticated — run aws configure or aws sso login`, whichever the project uses)
 
-**Step C — Check the deploy MCP server, if one was configured in Step 2 item 10.** Do not issue a live tool call to it — check whether a tool from that server appears among this session's currently connected MCP tools (e.g. a tool name prefixed `mcp__<server>__...`, or via `ListMcpResourcesTool`):
+**Step C — Check the deploy MCP server, if one was configured in Step 2 item 10.** Run this regardless of Step B's outcome — the MCP check is an independent signal, never skipped or gated on CLI presence/auth status. Do not issue a live tool call to it — check whether a tool from that server appears among this session's currently connected MCP tools (e.g. a tool name prefixed `mcp__<server>__...`, or via `ListMcpResourcesTool`):
 
 - Connected this session → `✅ MCP "<server name>" connected`
 - Not connected this session → `⚠️  MCP "<server name>" configured but not connected this session — will be attempted at first use`
