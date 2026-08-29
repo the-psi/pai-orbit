@@ -28,7 +28,7 @@ cp -r steering/ ~/.kiro/steering/
 
 ## Features
 
-- **20 Skills**: All modes (`groom-mode`, `build-mode`, etc.) + operational skills (`git-skill`, `analysis-skill`, etc.)
+- **21 Skills**: All modes (`groom-mode`, `build-mode`, etc.) + operational skills (`git-skill`, `analysis-skill`, etc.)
 - **Auto-loading methodology**: Steering files provide guidance and suggest mode switches
 - **Structured documentation**: Consistent `docs/` output across all AI tools
 - **3-phase grooming**: Improved requirements process (Purpose → Scenarios → Requirements)

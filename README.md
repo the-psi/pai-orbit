@@ -1,4 +1,4 @@
-# pai-orbit · v1.4.0
+# pai-orbit · v1.5.0
 
 A structured developer methodology harness, distributed as a Claude Code plugin and as rule/instruction bundles for Cursor, GitHub Copilot, and OpenAI Codex.
 
@@ -11,6 +11,9 @@ pai-orbit gives your project a shared vocabulary for how work gets done — dist
 Software teams waste context constantly: half-designed features get built, build sessions derail into planning debates, agronomic (or domain) questions get answered with guesses. pai-orbit imposes a light discipline: **each slash command puts Claude into a distinct headspace with a defined output destination.** Switching is explicit. Outputs are saved. Nothing important lives only in a conversation.
 
 ```
+Session start
+/catchup         → read-only briefing — what the team shipped, open PRs, what's assigned to you, what to pick next
+
 Backlog
 /arch            → architecture declaration — produces docs/architecture/ (system, constraints, stack)
 /domain          → domain knowledge — produces docs/domain/

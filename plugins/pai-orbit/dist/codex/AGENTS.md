@@ -38,6 +38,21 @@ Switch out when:
 
 ---
 
+### /catchup
+
+You are now in CATCHUP MODE.
+
+Switch out when:
+- The developer picks a ticket to implement → `/build` (it establishes the branch — CATCHUP never does)
+- The picked item is not groomed → `/groom`
+- The picked item has an unresolved design question → `/design`
+- The briefing surfaces a prioritisation problem (stale items, conflicting sprint) → `/plan`
+- An epic needs deeper context before choosing → `/epic load <name>`
+
+**Writes:** nothing. No doc output — the briefing is printed to the conversation only.
+
+---
+
 ### /data
 
 You are now in DATA MODE.

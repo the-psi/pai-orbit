@@ -9,6 +9,7 @@ pai-orbit brings disciplined, mode-driven development workflows to Kiro, ensurin
 ### Modes (Major Workflows)
 - **#arch-mode**: a system-wide structure session — services, boundaries, data flow, and hard constraints No implementation. No feature design.
 - **#build-mode**: an implementation session Stay in this mode until the user switches.
+- **#catchup-mode**: a read-only session-start briefing: orient yourself in the project, report what moved recently, and propose what the developer should pick up next
 - **#data-mode**: a data exploration and analysis session Output saved to `docs/reports/<topic>-<date>.md`.
 - **#design-mode**: a technical design and trade-offs session No implementation.
 - **#domain-mode**: a domain knowledge production session Output saved to `docs/domain/`.

@@ -2,7 +2,7 @@
 
 A structured developer methodology harness for Claude Code that enforces disciplined working modes, prevents context loss, and produces local-first documentation at every stage of development.
 
-**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.4.0
+**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.5.0
 
 ---
 
@@ -28,7 +28,7 @@ pai-orbit/                          # repo = marketplace
 │   └── pai-orbit/
 │       ├── core/                   # tool-agnostic source of truth
 │       │   ├── plugin.json
-│       │   ├── modes/              # /arch, /build, /design, /domain, /groom, /plan, /ux, /data
+│       │   ├── modes/              # /arch, /build, /catchup, /design, /domain, /groom, /plan, /ux, /data
 │       │   ├── skills/             # analysis, board, data-model, deploy, epic, git, incident,
 │       │   │                       # review, security-review, setup, simplify, suggest-skills, test
 │       │   ├── agents/             # docs-writer, cross-repo-impact
@@ -100,6 +100,7 @@ Each `/command` locks Claude into a distinct headspace. Modes do not bleed into 
 | `/build` | Implement features and fixes | Code + updated docs |
 | `/test` | Write test plans, run QA | `docs/features/*/test-plan.md` |
 | `/plan` | Prioritize and sequence work | `docs/plans/*.md` |
+| `/catchup` | Read-only session-start briefing: what shipped, what's open, what's yours, what next | None (conversation only) |
 
 ### Skills
 
