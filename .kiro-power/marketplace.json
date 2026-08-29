@@ -2,7 +2,7 @@
   "name": "pai-orbit",
   "displayName": "pai-orbit Structured Development",
   "description": "Structured development methodology with mode discipline, local-first documentation, and 3-phase grooming",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "author": "Pratham Software (PSI)",
   "keywords": ["methodology", "development", "documentation", "architecture", "requirements"],
   "powerPath": "plugins/pai-orbit/dist/kiro-power",
@@ -12,6 +12,7 @@
     "modes": [
       "arch-mode",
       "build-mode",
+      "catchup-mode",
       "data-mode",
       "design-mode",
       "domain-mode",

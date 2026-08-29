@@ -93,6 +93,17 @@ Presents 2–3 options before recommending. Grounds recommendations in shipped c
 
 ---
 
+### `/catchup` — Catchup Mode
+
+**Headspace:** Session-start orientation — read-only  
+**Reads:** CLAUDE.md, `.claude/rules/`, `.claude/pai-orbit-config.md`, `.claude/team.md`, docs/architecture/, docs/decisions/, docs/plans/, docs/epics/, docs/domain/, docs/wip/session-capture-\*.md, git history, task board (via `/board`), PRs (via `/git`)  
+**Writes:** Nothing — briefing is printed to the conversation  
+**Switch to:** `/build` when the developer picks an item, `/groom` if it is ungroomed, `/design` if it has open design questions, `/plan` if priorities need rework
+
+Orients both Claude and the developer at the start of a session. Three phases: silently read the project baseline; report the project pulse (merges to the main branch, open and recently merged PRs, notable ADRs — last 7 days); then identify the developer from git identity + `team.md`, list their recent work, their open PRs, reviews waiting on them, items assigned to them on the board (falls back to `docs/plans/` + `docs/epics/` and says which source it used), and anything in flight. Ends with a ranked "suggested next" — finish in-flight PRs, unblock teammates' reviews, resume the last session capture, then sprint/priority/unblocked/smallest — and stops. Never creates a branch or starts work. Variants: `/catchup yesterday`, `/catchup me`.
+
+---
+
 ### `/data` — Data Mode
 
 **Headspace:** Data exploration and analysis  
