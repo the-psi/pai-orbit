@@ -4,7 +4,7 @@
 **Branch:** `feat/groom-product-context`
 **Issue:** [#35](https://github.com/the-psi/pai-orbit/issues/35) — assigned to `chetansharmapsi`, In progress
 **Modes used:** `/board`, `/git`, `/design`, `/arch update`, `/build`
-**Next mode:** `/test` (live exercise), then `/git` to open the PR
+**Next mode:** none — work is complete and in review as [PR #62](https://github.com/the-psi/pai-orbit/pull/62)
 
 ---
 
@@ -47,9 +47,14 @@ D4 scope gate is Phase 1b.
   producer/consumer contract line both still described draft-then-confirm and the old read
   set. Left alone they would have contradicted the shipped mode text.
 
-**AC coverage check (by inspection, no test harness exists):** all 12 ACs trace to text in
-`core/modes/groom.md`. AC-8's "states which capabilities source it used" lands in the
-`## Behaviour` read-set bullet rather than in Phase 1 step 2.
+**Verification — complete.** All 12 ACs pass, verified by a live run of the built mode against
+issue #48 plus a board overlap check for #55. Full evidence, including two genuine conflicts
+the run surfaced and two findings, is in
+[test-plan.md](../features/groom-product-context/test-plan.md).
+
+The `gh` token was fixed mid-session (`gh auth refresh -h github.com -s read:project,project`
+on the `chetansharmapsi` account — note `refresh` has no `-u` flag, so the account must be
+switched first). Board reads now work, which closed AC-8's remaining half.
 
 ---
 
@@ -61,21 +66,16 @@ Nothing mid-edit. Tasks 1–6 are complete and self-consistent.
 
 ## What is blocked
 
-**Nothing.** Tasks 7 and 8 were unblocked by decision, not by the PRs merging.
+**Nothing.** All 8 build tasks are done, verification passed, and the work is in review as
+[PR #62](https://github.com/the-psi/pai-orbit/pull/62).
 
-The user directed on 2026-09-03 that PRs #34 and #51 cannot be merged and that #35 should
-proceed regardless, handling any PR conflicts later. Recorded as
-[ADR 2026-09-03](../decisions/2026-09-03-ship-groom-phase1b-ahead-of-adapter-parity.md).
+Tasks 7 and 8 were unblocked by decision on 2026-09-03, not by PRs #34/#51 merging — recorded
+in [ADR 2026-09-03](../decisions/2026-09-03-ship-groom-phase1b-ahead-of-adapter-parity.md).
+The rebuild then showed D1's stated conflict cost did not exist: 14 files touched, **none**
+under `dist/copilot/` or `dist/codex/`, so no conflict surface was added to either PR.
 
-**The conflict cost D1 was avoiding turned out not to exist.** The rebuild touches 14 files
-and **none** are under `dist/copilot/` or `dist/codex/` — those adapters' output is
-byte-identical before and after, precisely because `emit_mode_summary()` drops
-`## Session flow`, which is where all of this feature lives. So this commit adds **zero**
-merge-conflict surface to either PR.
-
-**What is real is the parity gap.** `copilot` and `codex` now ship a `/groom` with no Phase 1
-product-context reasoning and no Phase 1b gate — a live `constraints.md` rule 6 exception on
-`main`, closed only when #34 and #51 merge and `build.sh` is re-run.
+**The parity gap is real and still open.** `copilot` and `codex` ship `/groom` without this
+feature until #34 and #51 merge and `build.sh` is re-run.
 
 | Adapter | Carries Phase 1b |
 |---|---|
@@ -86,18 +86,16 @@ product-context reasoning and no Phase 1b gate — a live `constraints.md` rule 
 
 ## Next concrete action
 
-Build tasks 1–8 are all complete. Remaining work to close #35:
+Nothing outstanding on this branch. Waiting on review of PR #62.
 
-1. **Live-exercise** per `design.md` → Verification, none of which has been run yet:
-   a bug-labelled issue (AC-7), a new-feature issue (AC-8), and a run in this repo where
-   `docs/domain/` holds only `.gitkeep` (AC-3 and D3's fallback).
-2. Open the PR against `upstream/main`, `closes #35`. Link the parity ADR in the body so a
-   reviewer sees the rule 6 exception rather than finding it.
-3. **After PRs #34 and #51 merge:** re-run `bash plugins/pai-orbit/build.sh` and confirm
-   Phase 1b text appears in `dist/copilot/` and `dist/codex/`. Then mark ADR 2026-09-03
-   resolved.
-4. `/arch` pass on `constraints.md` rule 6 — its "known gaps" note still describes the
+**After PR #62 merges:**
+1. When #34 and #51 land, re-run `bash plugins/pai-orbit/build.sh` and confirm Phase 1b text
+   reaches `dist/copilot/` and `dist/codex/`. Then mark ADR 2026-09-03 resolved.
+2. `/arch` pass on `constraints.md` rule 6 — its known-gaps note still frames the
    copilot/codex gap as prospective; it is now a shipped state.
+3. Delete this session capture — `docs/wip/` is ephemeral. The durable records are
+   [design.md](../features/groom-product-context/design.md),
+   [test-plan.md](../features/groom-product-context/test-plan.md), and the two ADRs.
 
 ---
 

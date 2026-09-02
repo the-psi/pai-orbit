@@ -3,11 +3,20 @@
 **Date:** 2026-08-18
 **Issue:** [#35](https://github.com/the-psi/pai-orbit/issues/35) — "Groom should have domain knowledge"
 **Requirements:** [requirements.md](./requirements.md) (status: Groomed — ready for /design)
-**Branch:** `feat/groom-product-context` (synced to `e4eadb3`)
-**Status:** Designed — ready for /build
-**Blocked on:** nothing to start. Build task 7 (rebuild `dist/`) is gated on PRs
-[#34](https://github.com/the-psi/pai-orbit/pull/34) and
-[#51](https://github.com/the-psi/pai-orbit/pull/51) merging — see D1.
+**Branch:** `feat/groom-product-context`
+**Status:** Built and verified — in review as [PR #62](https://github.com/the-psi/pai-orbit/pull/62)
+**Blocked on:** nothing. All 8 build tasks are complete.
+
+> **D1 was overtaken on 2026-09-03.** Build task 7 (rebuild `dist/`) was gated on PRs
+> [#34](https://github.com/the-psi/pai-orbit/pull/34) and
+> [#51](https://github.com/the-psi/pai-orbit/pull/51) merging. Neither could be merged, and
+> the feature shipped ahead of them by decision. The rebuild then showed D1's stated cost did
+> not exist: it touches 14 files, **none** under `dist/copilot/` or `dist/codex/`, because
+> those adapters drop `## Session flow` — so it adds no conflict surface to either PR. What
+> remains is the parity gap itself: `copilot` and `codex` ship `/groom` without this feature
+> until those PRs land. See
+> [ADR 2026-09-03](../../decisions/2026-09-03-ship-groom-phase1b-ahead-of-adapter-parity.md)
+> and [test-plan.md](./test-plan.md).
 
 ---
 
