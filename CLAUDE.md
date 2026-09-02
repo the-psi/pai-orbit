@@ -125,7 +125,7 @@ Every mode declares what it reads and what it writes. This is the discipline tha
 /arch   → produces docs/architecture/ (system.md, constraints.md, stack.md) + ADRs
 /domain → produces docs/domain/*.md
 /ux     → consumes domain docs → produces docs/features/*/ux.md
-/groom  → consumes ux + domain + architecture → produces requirements.md
+/groom  → consumes ux + domain + architecture (+ product-capabilities + roadmap for new features) → produces requirements.md
 /design → consumes requirements + domain + architecture → produces design.md + ADRs
 /build  → consumes all docs + constraints.md + board → produces code + updated docs
 /test   → consumes requirements → produces test-plan.md

@@ -35,11 +35,11 @@ Leads with the user's goal and context before discussing interface. Describes fl
 ### `/groom` — Groom Mode
 
 **Headspace:** Feature requirements  
-**Reads:** CLAUDE.md, docs/domain/, docs/features/ (existing)  
+**Reads:** CLAUDE.md, docs/domain/, docs/features/ (existing), docs/epics/, ux.md; for new-feature issues also docs/domain/product-capabilities.md, docs/plans/, and the board  
 **Writes:** docs/features/*/requirements.md  
 **Switch to:** `/domain` for unresolved expert knowledge, `/design` when ready, `/plan` for priority decisions
 
-Runs in three gated phases with explicit transitions: establish purpose (propose from epic/ux/domain or ask), confirm each scenario in scope with examples (granularity: distinct if acceptance criteria differ), then analyze requirements with traceability mapping. Enhanced pre-flight audit provides actionable error messages. Session-close pre-flight blocks groomed status if purpose or scenarios are incomplete; new scenarios in Phase 3 return to Phase 2. Scopes to minimal deliverable. Captures open questions with owners. Does not design solutions.
+Runs in three gated phases with explicit transitions, with a scope gate (Phase 1b) closing Phase 1. **Phase 1** classifies the issue first (new feature vs bug/small enhancement, from labels or by asking), reads product context to match — always CLAUDE.md, domain docs, `ux.md` and the parent epic; for new features also the capabilities registry (`docs/domain/product-capabilities.md`, falling back to `docs/features/*`) and both roadmap sources — then reasons about the *why* **before** drafting anything, asking direct why-questions when context is sparse and offering a stated-assumption-vs-open-question choice when it is genuinely undocumented. Overlaps and conflicts name the specific epic, feature, plan file, or board item and block until resolved. **Phase 1b** produces a discrete list of what will be changed or newly implemented and requires explicit confirmation. **Phase 2** confirms each scenario in scope with examples (granularity: distinct if acceptance criteria differ); **Phase 3** analyzes requirements with traceability mapping. Roadmap precedence is per-field — board for status/ownership/existence, `docs/plans/*.md` for sequencing rationale; an unreachable board degrades to plans-only with the caveat recorded, never a failed phase. Session-close pre-flight blocks groomed status if purpose, scope, or scenarios are incomplete; new scenarios in Phase 3 return to Phase 2. Scopes to minimal deliverable. Captures open questions with owners. Does not design solutions.
 
 ---
 
