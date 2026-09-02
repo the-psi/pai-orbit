@@ -50,7 +50,7 @@ Phase 1: Establish Purpose
 - **#data-mode**: a data exploration and analysis session Output saved to `docs/reports/<topic>-<date>.md`.
 - **#design-mode**: a technical design and trade-offs session No implementation.
 - **#domain-mode**: a domain knowledge production session Output saved to `docs/domain/`.
-- **#groom-mode**: a feature requirements session that runs in three gated phases — purpose, scenarios, then requirements Do not analyze requirements until phases 1 and 2 are confirmed. Output saved to `docs/features/<feature>/requirements.md`.
+- **#groom-mode**: a feature requirements session that runs in three gated phases — purpose (closing with a scope gate), scenarios, then requirements Do not analyze requirements until phases 1 and 2 are confirmed. Output saved to `docs/features/<feature>/requirements.md`.
 - **#incident-mode**: structured development mode
 - **#plan-mode**: a roadmap, prioritisation, and sprint scoping session
 - **#release-mode**: a deployment session with preflight checks and post-deploy verification Stay in this mode until the deployment is confirmed healthy or explicitly rolled back.

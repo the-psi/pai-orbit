@@ -5,7 +5,7 @@ description: You are now in GROOM MODE.
 
 You are now in GROOM MODE.
 
-This is a feature requirements session that runs in three gated phases — purpose, scenarios, then requirements. Do not analyze requirements until phases 1 and 2 are confirmed. Output saved to `docs/features/<feature>/requirements.md`.
+This is a feature requirements session that runs in three gated phases — purpose (closing with a scope gate), scenarios, then requirements. Do not analyze requirements until phases 1 and 2 are confirmed. Output saved to `docs/features/<feature>/requirements.md`.
 
 Switch out when:
 - Domain or expert knowledge is needed to resolve a requirement → `/domain`
@@ -14,24 +14,54 @@ Switch out when:
 
 ## Session flow
 
-Grooming runs in three phases. **Do not skip ahead.** Do not draft functional requirements, acceptance criteria, or open questions until Phases 1 and 2 are complete.
+Grooming runs in three phases, with a scope gate (Phase 1b) closing Phase 1. **Do not skip ahead.** Do not draft functional requirements, acceptance criteria, or open questions until Phases 1 and 2 are complete.
 
 ### Phase 1 — Establish purpose
 
 Before any scoping or requirements work:
 
-1. State the feature's purpose in one or two sentences: why it exists, who it serves, and what problem it solves.
-2. Sources to draw purpose from, in order of precedence: parent epic's `## Summary` (or `## Purpose` if present), existing `ux.md`, domain docs. If purpose can be drafted from these, propose it and confirm with the user (don't silently adopt). If nothing is available — **ask the user explicitly** and wait for an answer.
-3. Do not proceed to Phase 2 until purpose is agreed.
-4. **Phase 1 Complete**: Announce "✅ Purpose established. Moving to Phase 2: Scenario Confirmation" and proceed. Do not write to the output file mid-session — all file writes happen at session close once all phases are complete.
+1. **Classify the issue first — it decides how much context to read.** If the session is tied to a board issue, read its labels (via `/board`). Labels such as `bug` or `fix` mean *bug fix / small enhancement*; a label such as `feature`, or `enhancement` on genuinely new capability, means *new feature*. If labels are absent, or ambiguous about which of the two this is, **ask the user directly** — "Is this a new feature/capability, or a bug fix / small enhancement?" — and wait for an answer. Do not infer it from the issue title.
+
+2. **Read product context before forming any opinion.** Always read: `AGENTS.md` (who the product serves and what it is), `docs/domain/*.md` (business rules bearing on this issue), the feature's existing `ux.md`, and the parent epic in `docs/epics/`.
+
+   **Additionally, only when classified as a new feature/capability:**
+   - `docs/domain/product-capabilities.md` — the canonical record of what the product already does. Read it first when checking for overlap. If it does not exist, fall back to scanning `docs/features/*` for features that already cover this ground.
+   - Roadmap position, from both sources: `docs/plans/*.md` and the board. See `## Behaviour` for which source is authoritative for what, and for the mandatory behaviour when the board cannot be read.
+
+   For bug fixes and small enhancements, **skip the capabilities and roadmap reads** unless something in the base context gives a specific reason to check — and if you do check, state what that reason was.
+
+3. **Reason about the why before drafting anything.** Do not produce a purpose statement at this step. Work out, from what you just read: who this serves, what problem it solves for them, why it matters now, and how it relates to what the product already does and where it sits on the roadmap. Cite the specific content supporting each conclusion. A paraphrase of the issue title is not a purpose — if all you can say restates the title, the reasoning is not finished.
+   - **When context is sparse or absent, ask direct why-directed questions** — "Who is this for?", "Why now?", "What problem does it solve?", "What stays broken if we don't build it?" — and wait for answers. An empty or missing `docs/domain`, `docs/plans`, or `ux.md` triggers questions; it is never grounds for silently bypassing this step.
+   - **When the user cannot answer** because the context genuinely does not exist anywhere — not merely unread, but undocumented and unknown to them — offer an explicit choice: (a) proceed with a stated assumption, recorded under `## Context`, or (b) record the gap under `## Open questions` with an owner. Let the user pick; do not pick for them, and do not proceed on an unstated assumption.
+
+4. **Surface conflicts and overlaps before proposing anything.** If the reasoning finds work that overlaps or conflicts — already shipped per the capabilities registry, already planned or in flight per the roadmap, or covered by another epic or feature — **name the specific item** (`docs/epics/<name>`, `docs/features/<name>`, `docs/plans/<file>.md`, or board issue #N) when raising it. Raise it as a question and **do not finalize purpose while it is unresolved**. A contradiction between the two roadmap sources — the board says shipped, a plan says upcoming — is such a conflict: name both items and block.
+
+5. **Only now propose the purpose statement** — one or two sentences: why it exists, who it serves, what problem it solves — presented together with the reasoning that produced it. Confirm with the user; don't silently adopt. If the user rejects or amends it, return to step 3 rather than patching the wording.
+
+6. Do not proceed to Phase 1b until purpose is agreed.
+
+7. **Phase 1 Complete**: Announce "✅ Purpose established. Moving to Phase 1b: Scope Confirmation" and proceed. Do not write to the output file mid-session — all file writes happen at session close once all phases are complete.
 
 Hold the agreed purpose in conversation context; it will be written to `## Purpose` at session close.
 
+### Phase 1b — Confirm the scope of changes
+
+Once purpose is agreed, and before any scenarios are proposed:
+
+1. Produce an explicit list of **what will be changed or newly implemented**, as discrete items — specific screens, jobs, endpoints, files, components, or behaviours — not a single prose scope statement.
+2. Ground the list in the same product-context reasoning that produced the purpose. Where that reasoning identified an existing capability this feature deliberately does not touch or duplicate, **name that specific item** in the exclusions rather than silently omitting it.
+3. Present inclusions and exclusions together: what this delivers, and what it explicitly does not include.
+4. **Get explicit user confirmation of the list** — the same confirmation discipline as purpose and scenarios. Do not assume silence means agreement. If the user revises an item, re-present the amended list and confirm again.
+5. Do not proceed to Phase 2 until the list is confirmed.
+6. **Phase 1b Complete**: Announce "✅ Scope confirmed. Moving to Phase 2: Scenario Confirmation" before proceeding.
+
+Hold the confirmed list in conversation context; it will be written to `## Scope` at session close.
+
 ### Phase 2 — Confirm scenarios in scope
 
-Once purpose is established:
+Once purpose and scope are confirmed:
 
-1. Propose a numbered list of **scenarios to cover** in this grooming session. Derive from `ux.md`, the parent epic, domain docs, and discussion — include scenarios the user may not have named explicitly.
+1. Propose a numbered list of **scenarios to cover** in this grooming session. Derive from the Phase 1b scope list, `ux.md`, the parent epic, domain docs, and discussion — include scenarios the user may not have named explicitly. Every confirmed scope item should be reachable by at least one scenario; if one is not, say so rather than quietly dropping it.
 2. Present each scenario as a distinct, user-facing situation (who is doing what, under what conditions). **Granularity test:** two situations are distinct scenarios if their acceptance criteria would differ — not just their inputs.
    
    **Examples:**
@@ -48,14 +78,14 @@ Once purpose is established:
 5. Scenarios marked out of scope:
    - Same product surface, intentionally excluded from *this* feature → `## Out of scope`
    - Different feature idea that surfaced during discussion → `docs/backlog/feature-ideas.md`
-6. If all proposed scenarios are excluded, return to Phase 1 to revisit feature scope — do not proceed to Phase 3 with nothing confirmed.
+6. If all proposed scenarios are excluded, return to Phase 1b to revisit the confirmed scope — and to Phase 1 if the purpose itself is what's wrong. Do not proceed to Phase 3 with nothing confirmed.
 7. **Phase 2 Complete**: Announce "✅ All scenarios confirmed. Moving to Phase 3: Requirements Analysis" before proceeding.
 
 Hold confirmed scenarios in conversation context; they will be written to `## Scenarios in scope` at session close.
 
 ### Phase 3 — Requirements and decisions
 
-Only after purpose is agreed and all scenarios are confirmed:
+Only after purpose is agreed, scope is confirmed, and all scenarios are confirmed:
 
 1. **For each confirmed scenario**, derive specific requirements with traceability:
    - Label requirements with scenario reference: "REQ-1 (Scenario 1): User must..."
@@ -72,7 +102,12 @@ Only after purpose is agreed and all scenarios are confirmed:
   - If `system_docs_repo` is a relative path: check whether the directory exists. If yes, add `<system_docs_repo>/<system_docs_path>` to the doc read set. If no, warn once ("System docs path unreachable — continuing with local docs only") and proceed.
   - If `system_docs_repo` is a git URL: check whether a local clone exists at a resolvable path. If yes, add it. If no, warn once and proceed.
   - Read docs from all resolved paths before starting the session.
-- Read `AGENTS.md`, existing `docs/features/`, and the parent epic from `docs/epics/` (if one exists) before starting
+- Read `AGENTS.md`, existing `docs/features/`, `docs/domain/*.md`, and the parent epic from `docs/epics/` (if one exists) before starting — domain rules and the documented audience shape the purpose, not just the requirements
+- **Extra read set for issues classified as new features** (Phase 1 step 1). Bug fixes and small enhancements skip all of it unless the base context gives a specific reason to check:
+  - `docs/domain/product-capabilities.md` is the primary answer to "what does this product already do today" — read it before `docs/features/*`. Where it does not exist, `docs/features/*` is the fallback proxy; its coverage is weaker, so say which one you used when reporting overlap.
+  - Both roadmap sources are consulted and **neither wins outright**. The **board** is authoritative for status, ownership, and whether an item exists as tracked work at all. **`docs/plans/*.md`** is authoritative for sequencing rationale — why this order, what was traded against what. "Is it already shipped?" is answered by the capabilities registry, not by either roadmap source.
+  - A genuine contradiction between the two — the board says shipped, a plan says upcoming — is not settled by precedence. Treat it as a Phase 1 step 4 conflict: name the board item and the plan file, and block.
+  - **When the board cannot be read** — missing token scopes, no network, no CLI, or no board configured — do not fail the phase. Proceed on `docs/plans/*.md` alone, state in-session that the board was not consulted and why, and record that limitation under `## Context` in the output file. A requirements doc groomed without board visibility must say so on its face; never drop the caveat silently.
 - If `docs/architecture/system.md` exists, read it — reference service ownership to assign features to the right service and flag requirements that would cross declared boundaries
 - Flag ambiguity rather than assuming — requirements with hidden assumptions create build debt
 - Capture open questions explicitly with an owner (person or role)
@@ -83,10 +118,11 @@ Only after purpose is agreed and all scenarios are confirmed:
 
 Before marking a feature as groomed and ready for `/design`, run a readiness gate:
 
-0. **Pre-flight phase audit.** Before classifying open questions, write the output file from conversation context (purpose, scenarios, requirements derived so far), then verify:
+0. **Pre-flight phase audit.** Before classifying open questions, write the output file from conversation context (purpose, scope, scenarios, requirements derived so far), then verify:
    - `## Purpose` must match the wording agreed in Phase 1 — non-empty, no placeholders or TBD, and consistent with the last confirmed statement in conversation. If inconsistent or incomplete: "❌ Returning to Phase 1. File says: '[file text]'. Agreed wording was: '[conversation wording]'. Please re-confirm."
+   - `## Scope` must list the concrete changes confirmed in Phase 1b — non-empty, discrete items rather than a prose statement, no placeholders or TBD, and consistent with the last confirmed list in conversation. Where Phase 1 identified an overlapping existing capability, the exclusions must still name it. If inconsistent or incomplete: "❌ Returning to Phase 1b. File lists: '[file items]'. Confirmed list was: '[conversation items]'. Please re-confirm the scope."
    - Every entry in `## Scenarios in scope` must match what was explicitly confirmed in Phase 2. No scenario may sit unclassified or pending. If inconsistent: "❌ Returning to Phase 2. These scenarios need explicit confirmation: [list]. Please confirm each as In/Out/Revise."
-   - If either fails, return to the relevant phase — do NOT mark the feature as groomed or suggest switching to `/design`.
+   - If any of these fails, return to the relevant phase — do NOT mark the feature as groomed or suggest switching to `/design`.
 
 1. **Audit open questions.** For each item in the `## Open questions` list, classify it:
    - **Functional gap** — defines *what* the system does or for whom (thresholds, scope rules, edge case behaviour, which users are affected, what counts as success). These MUST be resolved before design. Chase the owner; do not exit groom with these open.
@@ -97,7 +133,7 @@ Before marking a feature as groomed and ready for `/design`, run a readiness gat
    - Do NOT mark the feature as groomed or suggest switching to `/design`.
    - Suggest the user resolve them (async with the owner) and return to `/groom` to close them out.
 
-3. **Mark ready only when phases 1–2 pass and functional questions are closed.** Once the pre-flight audit passes and all functional gaps are resolved (answers recorded in requirements, acceptance criteria updated to match), update the status line to `Groomed — ready for /design`.
+3. **Mark ready only when phases 1, 1b and 2 pass and functional questions are closed.** Once the pre-flight audit passes and all functional gaps are resolved (answers recorded in requirements, acceptance criteria updated to match), update the status line to `Groomed — ready for /design`.
 
 4. **Post open questions to the board issue.** If there are any remaining open questions (including design questions deferred to `/design`), post a comment on the parent board issue listing them, each tagged `[open question]`. This makes them trackable without leaving the issue thread. Example comment format:
 
@@ -134,6 +170,15 @@ Before marking a feature as groomed and ready for `/design`, run a readiness gat
 
 ## Purpose
 [Phase 1 Result] Why this feature exists, who it serves, and what problem it solves.
+
+## Scope
+[Phase 1b Result] The concrete changes and new implementations confirmed before scenarios were proposed — discrete items, not prose:
+- [Specific screen, job, endpoint, file, component, or behaviour being added or changed]
+
+What this does NOT include:
+- [Excluded item — name the specific existing capability or feature where the Phase 1 reasoning identified one]
+<!-- `## Scope` lists implementation items (what gets built). `## Out of scope` below lists
+     scenarios deliberately excluded from this feature. They are different lists — do not merge them. -->
 
 ## Scenarios in scope  
 [Phase 2 Results] Confirmed scenarios this feature must handle:

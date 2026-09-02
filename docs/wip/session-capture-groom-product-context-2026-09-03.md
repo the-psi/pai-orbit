@@ -4,7 +4,7 @@
 **Branch:** `feat/groom-product-context`
 **Issue:** [#35](https://github.com/the-psi/pai-orbit/issues/35) — assigned to `chetansharmapsi`, In progress
 **Modes used:** `/board`, `/git`, `/design`, `/arch update`, `/build`
-**Next mode:** `/build` again, once PRs #34 and #51 merge
+**Next mode:** `/test` (live exercise), then `/git` to open the PR
 
 ---
 
@@ -31,6 +31,8 @@ D4 scope gate is Phase 1b.
 | 4 — `## Scope` in `## Output format`, between `## Purpose` and `## Scenarios in scope` | `core/modes/groom.md` | Done |
 | 5 — session-close pre-flight audits `## Scope` | `core/modes/groom.md` | Done |
 | 6 — amend `requirements.md` REQ-10, AC-8, `## Context` per D3 | `docs/features/groom-product-context/requirements.md` | Done |
+| 7 — rebuild `dist/` | `plugins/pai-orbit/dist/` (14 files) | Done — ahead of #34/#51, per ADR 2026-09-03 |
+| 8 — version bump 1.4.0 → 1.5.0 | `core/plugin.json`, `CLAUDE.md`, `README.md`, `.kiro-power/marketplace.json` | Done |
 
 **Beyond the listed tasks**, three coherence edits the design implied but did not enumerate:
 
@@ -59,28 +61,43 @@ Nothing mid-edit. Tasks 1–6 are complete and self-consistent.
 
 ## What is blocked
 
-| Item | Blocker |
-|------|---------|
-| Build task 7 — `bash plugins/pai-orbit/build.sh` to rebuild `dist/` | PRs [#34](https://github.com/the-psi/pai-orbit/pull/34) and [#51](https://github.com/the-psi/pai-orbit/pull/51) are **both still OPEN** as of 2026-09-03. Rebuilding now regenerates `dist/copilot/` and `dist/codex/` in pre-PR layouts; those PRs rewrite 53 and 96 `dist/` files respectively, so an early rebuild creates hand-resolved conflicts in committed build output for no benefit. |
-| Build task 8 — version bump in `core/plugin.json` + README/CLAUDE.md refs | Sequenced with task 7. `plugin.json` is copied into `dist/`, so bumping it without rebuilding just widens the core/dist gap. |
+**Nothing.** Tasks 7 and 8 were unblocked by decision, not by the PRs merging.
 
-**This is a ship blocker, not a follow-up.** `dist/` is committed and is what consumers
-install, so #35 is not shippable while `core/modes/groom.md` and `dist/` disagree.
+The user directed on 2026-09-03 that PRs #34 and #51 cannot be merged and that #35 should
+proceed regardless, handling any PR conflicts later. Recorded as
+[ADR 2026-09-03](../decisions/2026-09-03-ship-groom-phase1b-ahead-of-adapter-parity.md).
+
+**The conflict cost D1 was avoiding turned out not to exist.** The rebuild touches 14 files
+and **none** are under `dist/copilot/` or `dist/codex/` — those adapters' output is
+byte-identical before and after, precisely because `emit_mode_summary()` drops
+`## Session flow`, which is where all of this feature lives. So this commit adds **zero**
+merge-conflict surface to either PR.
+
+**What is real is the parity gap.** `copilot` and `codex` now ship a `/groom` with no Phase 1
+product-context reasoning and no Phase 1b gate — a live `constraints.md` rule 6 exception on
+`main`, closed only when #34 and #51 merge and `build.sh` is re-run.
+
+| Adapter | Carries Phase 1b |
+|---|---|
+| `claude-code`, `cursor-plugin`, `cursor`, `kiro-power` | Yes |
+| `copilot`, `codex` | **No** — until #34 / #51 |
 
 ---
 
 ## Next concrete action
 
-1. Watch PRs #34 and #51. When both have merged, rebase this branch on `main`.
-2. Run `bash plugins/pai-orbit/build.sh`.
-3. Review the `dist/` diff: the new Phase 1 / Phase 1b text must appear in all six adapters'
-   groom output, with no structural change to any of them.
-4. Bump `plugins/pai-orbit/core/plugin.json` and the README / `CLAUDE.md` version references
-   (currently 1.4.0), then rebuild again so the bump reaches `dist/`.
-5. Live-exercise per `design.md` → Verification: a bug-labelled issue (AC-7), a new-feature
-   issue (AC-8), and a run in this repo where `docs/domain/` holds only `.gitkeep` (AC-3 and
-   D3's fallback).
-6. Open the PR, `closes #35`.
+Build tasks 1–8 are all complete. Remaining work to close #35:
+
+1. **Live-exercise** per `design.md` → Verification, none of which has been run yet:
+   a bug-labelled issue (AC-7), a new-feature issue (AC-8), and a run in this repo where
+   `docs/domain/` holds only `.gitkeep` (AC-3 and D3's fallback).
+2. Open the PR against `upstream/main`, `closes #35`. Link the parity ADR in the body so a
+   reviewer sees the rule 6 exception rather than finding it.
+3. **After PRs #34 and #51 merge:** re-run `bash plugins/pai-orbit/build.sh` and confirm
+   Phase 1b text appears in `dist/copilot/` and `dist/codex/`. Then mark ADR 2026-09-03
+   resolved.
+4. `/arch` pass on `constraints.md` rule 6 — its "known gaps" note still describes the
+   copilot/codex gap as prospective; it is now a shipped state.
 
 ---
 
