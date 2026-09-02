@@ -14,12 +14,14 @@ plugins/pai-orbit/
 ├── adapters/
 │   ├── claude-code/build.sh    # full-fidelity; emits Claude Code plugin layout
 │   ├── cursor-plugin/build.sh  # Cursor plugin; emits dist/cursor-plugin/pai-orbit/
+│   ├── kiro-power/build.sh     # Kiro Power; emits skills/ + steering/
 │   ├── cursor/build.sh         # lossy legacy; emits .cursor/rules/*.mdc
 │   ├── copilot/build.sh        # lossy; emits .github/copilot-instructions.md
 │   └── codex/build.sh          # experimental; emits AGENTS.md
 ├── dist/                       # built outputs (committed)
 │   ├── claude-code/
 │   ├── cursor-plugin/
+│   ├── kiro-power/
 │   ├── cursor/
 │   ├── copilot/
 │   └── codex/
