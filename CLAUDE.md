@@ -37,6 +37,7 @@ pai-orbit/                          # repo = marketplace
 │       ├── adapters/
 │       │   ├── claude-code/        # full fidelity
 │       │   ├── cursor-plugin/      # Cursor plugin (rules, skills, commands, agents, hooks)
+│       │   ├── kiro-power/         # Kiro Power; skills + steering, no agents/hooks
 │       │   ├── cursor/             # lossy legacy; .cursor/rules/*.mdc
 │       │   ├── copilot/            # lossy; .github/copilot-instructions.md
 │       │   └── codex/              # experimental; AGENTS.md
@@ -71,11 +72,13 @@ and `/review`): [docs/architecture/system.md](docs/architecture/system.md),
 graph LR
     core[core/ — modes, skills, agents, hooks, templates] --> claudecode[adapters/claude-code]
     core --> cursorplugin[adapters/cursor-plugin]
+    core --> kiropower[adapters/kiro-power]
     core --> cursor[adapters/cursor — lossy legacy]
     core --> copilot[adapters/copilot — lossy]
     core --> codex[adapters/codex — experimental]
     claudecode --> distcc[dist/claude-code/]
     cursorplugin --> distcp[dist/cursor-plugin/]
+    kiropower --> distkp[dist/kiro-power/]
     cursor --> distc[dist/cursor/]
     copilot --> distco[dist/copilot/]
     codex --> distcx[dist/codex/]
@@ -194,7 +197,7 @@ Marketplace.json points at `plugins/pai-orbit/dist/claude-code/`, which is the c
 
 Then run `/setup` in your target project to generate all config and scaffold files.
 
-For Cursor / GitHub Copilot / OpenAI Codex, install the corresponding bundle from `plugins/pai-orbit/dist/<tool>/` per its README.
+For Cursor / Kiro Power / GitHub Copilot / OpenAI Codex, install the corresponding bundle from `plugins/pai-orbit/dist/<tool>/` per its README.
 
 ---
 
