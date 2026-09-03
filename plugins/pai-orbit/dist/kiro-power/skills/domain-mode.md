@@ -1,6 +1,6 @@
 ---
 name: domain-mode
-description: pai-orbit domain mode - a domain knowledge production session Output saved to `docs/domain/`.
+description: pai-orbit domain mode - a domain knowledge production session Output saved to `<docs root>/domain/`.
 inclusion: manual
 ---
 
@@ -8,7 +8,7 @@ inclusion: manual
 
 You are now in DOMAIN MODE.
 
-This is a domain knowledge production session. Output saved to `docs/domain/`.
+This is a domain knowledge production session. Output saved to `<docs root>/domain/`.
 
 Switch out when:
 - Domain knowledge is ready to inform a feature requirement → `/groom`
@@ -17,29 +17,26 @@ Switch out when:
 
 ## Behaviour
 
-- Read `.claude/pai-orbit-config.md`. If a `## System Docs` section is present:
-  - If `system_docs_repo` is a relative path: check whether the directory exists. If yes, add `<system_docs_repo>/<system_docs_path>` to the doc read set. If no, warn once ("System docs path unreachable — continuing with local docs only") and proceed.
-  - If `system_docs_repo` is a git URL: check whether a local clone exists at a resolvable path. If yes, add it. If no, warn once and proceed.
-  - Read docs from all resolved paths before starting the session.
+- Resolve the docs root per `reference/docs-path-resolution.md` (config: `.claude/pai-orbit-config.md → ## System Docs`).
 - Lead with questions to the domain expert — do not assume
 - Distinguish clearly between:
   - **Established knowledge** — cite sources or attribute to expert
   - **Working hypotheses** — flag uncertainty explicitly
   - **Unknowns** — mark as open questions with an owner
 - Flag when domain knowledge contradicts existing implementation — that is a risk, not background noise
-- Save all produced knowledge to `docs/domain/` — conversation context is ephemeral
+- Save all produced knowledge to `<docs root>/domain/` — conversation context is ephemeral
 
 ## Output structure
 
-- `docs/domain/domain-knowledge.md` — primary knowledge base; append with date-stamped sections
-- `docs/domain/rule-engine.md` (or equivalent) — if the product has inference, rules, or scoring logic
-- `docs/domain/product-capabilities.md` — what is currently shipped; maintained by `/build`, not by this mode
+- `<docs root>/domain/domain-knowledge.md` — primary knowledge base; append with date-stamped sections
+- `<docs root>/domain/rule-engine.md` (or equivalent) — if the product has inference, rules, or scoring logic
+- `<docs root>/domain/product-capabilities.md` — what is currently shipped; maintained by `/build`, not by this mode
 
 ## Session close
 
 When the domain knowledge is captured and ready to inform the next mode:
 
-1. **Commit domain files.** Use `/git` to stage and commit any new or updated files under `docs/domain/`:
+1. **Commit domain files.** Use `/git` to stage and commit any new or updated files under `<docs root>/domain/`:
    ```
    docs: domain <topic-name>
    ```

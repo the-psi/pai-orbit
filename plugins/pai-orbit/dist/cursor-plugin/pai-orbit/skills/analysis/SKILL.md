@@ -12,6 +12,8 @@ Reads from:
 - Codebase — call sites, consumers, and dependencies
 - `docs/decisions/` — relevant ADRs that constrain the change
 
+Resolve the docs root per `reference/docs-path-resolution.md` (config: `.cursor/pai-orbit-config.md → ## System Docs`) before writing the impact report.
+
 ---
 
 ## When to use
@@ -57,7 +59,7 @@ For each consumer found, classify:
 
 ### 4. Produce the impact report
 
-Write findings to `docs/wip/analysis-<slug>-<date>.md` (or share in-session for quick checks):
+Write findings to `<docs root>/wip/analysis-<slug>-<date>.md` (or share in-session for quick checks):
 
 ```
 ## Impact Analysis: <change description>

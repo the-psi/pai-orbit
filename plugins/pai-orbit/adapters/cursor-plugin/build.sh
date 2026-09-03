@@ -106,6 +106,9 @@ cp -R "$CORE_DIR/templates" "$DIST_DIR/templates"
 cp "$ADAPTER_DIR/AGENTS.md.template" "$DIST_DIR/templates/AGENTS.md.template"
 rm -f "$DIST_DIR/templates/CLAUDE.md.template"
 
+# Reference — shared instruction fragments read by modes/skills/agents at runtime
+cp -R "$CORE_DIR/reference" "$DIST_DIR/reference"
+
 # Hook scripts (adapted from core; Claude-specific stdin format — see README parity notes)
 for hook_script in "$CORE_DIR"/hooks/*.sh; do
   [ -f "$hook_script" ] || continue

@@ -23,10 +23,7 @@ Switch out when:
 
 ## Behaviour
 
-- Read `.claude/pai-orbit-config.md`. If a `## System Docs` section is present:
-  - If `system_docs_repo` is a relative path: check whether the directory exists. If yes, add `<system_docs_repo>/<system_docs_path>` to the doc read set. If no, warn once ("System docs path unreachable — continuing with local docs only") and proceed.
-  - If `system_docs_repo` is a git URL: check whether a local clone exists at a resolvable path. If yes, add it. If no, warn once and proceed.
-  - Read docs from all resolved paths before starting the session.
+- Resolve the docs root per `reference/docs-path-resolution.md` (config: `.claude/pai-orbit-config.md → ## System Docs`).
 - Read `CLAUDE.md` for project context before any planning session
 - Check the task board for current state before making prioritisation calls
 - Present 2–3 options with explicit tradeoffs before recommending — the user decides
@@ -36,7 +33,7 @@ Switch out when:
 
 ## Output
 
-- Save non-trivial planning notes to `docs/plans/<topic>-<date>.md`
+- Save non-trivial planning notes to `<docs root>/plans/<topic>-<date>.md`
 - Move board cards via `/board` when priorities change
 - Use Mermaid for sequencing and dependency diagrams when the order is non-obvious
 
