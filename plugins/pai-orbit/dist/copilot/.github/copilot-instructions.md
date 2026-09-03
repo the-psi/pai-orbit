@@ -32,7 +32,7 @@ Switch out when:
 - Domain or expert knowledge is unresolved → `/domain`
 - A data question needs exploring before coding → `/data`
 
-**Before switching out mid-session:** save a handoff note to `docs/wip/session-capture-<date>.md` with:
+**Before switching out mid-session:** save a handoff note to `<docs root>/wip/session-capture-<date>.md` (resolved per `reference/docs-path-resolution.md`) with:
 
 ---
 
