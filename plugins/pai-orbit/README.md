@@ -40,6 +40,7 @@ Each adapter clears its own `dist/<adapter>/` subdir and rebuilds from `core/`. 
 |---------|-------|--------|--------|-------|-----------|
 | claude-code | ✅ as `/commands/` | ✅ | ✅ | ✅ | ✅ |
 | cursor-plugin | ✅ rules + commands | ✅ | ✅ | ⚠️ mapped | ✅ |
+| kiro-power | ✅ as `#skills` | ✅ as `#skills` | ❌ | ❌ | ✅ via steering |
 | cursor (legacy) | ⚠️ as rules (`.cursor/rules/*.mdc`) | ⚠️ as one rule | ❌ | ❌ | ✅ (verbatim) |
 | copilot     | ⚠️ as instructions | ⚠️ as appendix | ❌ | ❌ | ❌ |
 | codex       | ⚠️ as instructions | ⚠️ as appendix | ❌ | ❌ | ❌ |

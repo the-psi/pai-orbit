@@ -2,6 +2,8 @@
 
 Reference for every mode, skill, and agent in pai-orbit.
 
+**Tool Support**: pai-orbit works with Claude Code (full fidelity), Cursor (plugin), Kiro (skills/steering), GitHub Copilot (instructions), and OpenAI Codex CLI (experimental).
+
 ---
 
 ## Modes
@@ -65,7 +67,7 @@ Four sub-modes:
 **Writes:** docs/features/*/design.md, docs/decisions/YYYY-MM-DD-*.md  
 **Switch to:** `/groom` for unclear requirements, `/arch` for system-level boundary changes, `/build` when ready to implement
 
-No implementation. Presents 2–3 options with tradeoffs. Flags irreversible decisions. Reads `docs/architecture/constraints.md` — design options that violate a constraint are flagged explicitly. Uses Mermaid diagrams. Ends every session by listing open questions with owners.
+No implementation. Reads `requirements.md`'s open questions as a starting point, not a boundary — designs the feature comprehensively, surfacing decision areas grooming never raised. Drives the session in small interactions, one decision area at a time (mirroring `/groom`'s phased flow): presents 2–3 options with tradeoffs, recommends, and gets the user's pick before moving on. Flags irreversible decisions. Reads `docs/architecture/constraints.md` — design options that violate a constraint are flagged explicitly. Uses Mermaid diagrams. Ends every session by listing open questions with owners.
 
 ---
 
