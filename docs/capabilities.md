@@ -39,6 +39,8 @@ Leads with the user's goal and context before discussing interface. Describes fl
 **Writes:** docs/features/*/requirements.md  
 **Switch to:** `/domain` for unresolved expert knowledge, `/design` when ready, `/plan` for priority decisions
 
+Before Phase 1, an entry gate resolves the session's ticket number: checks context for one already referenced, otherwise asks the user directly and waits for an answer. Standalone/exploratory grooming with no ticket requires an explicit, confirmed opt-out — never inferred from silence. A resolved ticket becomes the parent board issue used later for posting open questions and offering a column move; an opted-out session skips those two steps.
+
 Runs in three gated phases with explicit transitions: establish purpose (propose from epic/ux/domain or ask), confirm each scenario in scope with examples (granularity: distinct if acceptance criteria differ), then analyze requirements with traceability mapping. Enhanced pre-flight audit provides actionable error messages. Session-close pre-flight blocks groomed status if purpose or scenarios are incomplete; new scenarios in Phase 3 return to Phase 2. Scopes to minimal deliverable. Captures open questions with owners. Does not design solutions.
 
 ---
