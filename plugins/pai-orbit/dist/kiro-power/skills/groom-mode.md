@@ -1,6 +1,6 @@
 ---
 name: groom-mode
-description: pai-orbit groom mode - a feature requirements session that runs in three gated phases — purpose, scenarios, then requirements Do not analyze requirements until phases 1 and 2 are confirmed. Output saved to `docs/features/<feature>/requirements.md`.
+description: pai-orbit groom mode - a feature requirements session that runs in three gated phases — purpose, scenarios, then requirements Do not analyze requirements until phases 1 and 2 are confirmed. Output saved to `<docs root>/features/<feature>/requirements.md`.
 inclusion: manual
 ---
 
@@ -8,7 +8,7 @@ inclusion: manual
 
 You are now in GROOM MODE.
 
-This is a feature requirements session that runs in three gated phases — purpose, scenarios, then requirements. Do not analyze requirements until phases 1 and 2 are confirmed. Output saved to `docs/features/<feature>/requirements.md`.
+This is a feature requirements session that runs in three gated phases — purpose, scenarios, then requirements. Do not analyze requirements until phases 1 and 2 are confirmed. Output saved to `<docs root>/features/<feature>/requirements.md`.
 
 Switch out when:
 - Domain or expert knowledge is needed to resolve a requirement → `/domain`
@@ -50,7 +50,7 @@ Once purpose is established:
 4. Do **not** begin requirements analysis, open questions, or acceptance criteria until **every** proposed scenario has been confirmed or explicitly excluded.
 5. Scenarios marked out of scope:
    - Same product surface, intentionally excluded from *this* feature → `## Out of scope`
-   - Different feature idea that surfaced during discussion → `docs/backlog/feature-ideas.md`
+   - Different feature idea that surfaced during discussion → `<docs root>/backlog/feature-ideas.md`
 6. If all proposed scenarios are excluded, return to Phase 1 to revisit feature scope — do not proceed to Phase 3 with nothing confirmed.
 7. **Phase 2 Complete**: Announce "✅ All scenarios confirmed. Moving to Phase 3: Requirements Analysis" before proceeding.
 
@@ -71,16 +71,13 @@ Only after purpose is agreed and all scenarios are confirmed:
 
 ## Behaviour
 
-- Read `.claude/pai-orbit-config.md`. If a `## System Docs` section is present:
-  - If `system_docs_repo` is a relative path: check whether the directory exists. If yes, add `<system_docs_repo>/<system_docs_path>` to the doc read set. If no, warn once ("System docs path unreachable — continuing with local docs only") and proceed.
-  - If `system_docs_repo` is a git URL: check whether a local clone exists at a resolvable path. If yes, add it. If no, warn once and proceed.
-  - Read docs from all resolved paths before starting the session.
-- Read `CLAUDE.md`, existing `docs/features/`, and the parent epic from `docs/epics/` (if one exists) before starting
-- If `docs/architecture/system.md` exists, read it — reference service ownership to assign features to the right service and flag requirements that would cross declared boundaries
+- Resolve the docs root per `reference/docs-path-resolution.md` (config: `.claude/pai-orbit-config.md → ## System Docs`).
+- Read `CLAUDE.md`, existing `<docs root>/features/`, and the parent epic from `<docs root>/epics/` (if one exists) before starting
+- If `<docs root>/architecture/system.md` exists, read it — reference service ownership to assign features to the right service and flag requirements that would cross declared boundaries
 - Flag ambiguity rather than assuming — requirements with hidden assumptions create build debt
 - Capture open questions explicitly with an owner (person or role)
 - Do not design solutions — only describe what the system should do and for whom. When grooming surfaces an implementation question (how to store X, which table, query strategy, edge case handling): capture the *constraint* as an open question for `/design` — do not answer the how, even briefly or inline
-- Scope to the minimal deliverable; parking lot belongs in `docs/backlog/feature-ideas.md`
+- Scope to the minimal deliverable; parking lot belongs in `<docs root>/backlog/feature-ideas.md`
 
 ## Session close
 
@@ -113,7 +110,7 @@ Before marking a feature as groomed and ready for `/design`, run a readiness gat
 
    Use `/board` to post this comment. Note: this requires board write permission. If it fails, surface the error and the permission required (e.g. `gh auth refresh -s project` for GitHub Projects, a Linear API token, etc.) — do not silently skip.
 
-5. **Commit the requirements file.** Use `/git` to stage and commit `docs/features/<feature>/requirements.md`:
+5. **Commit the requirements file.** Use `/git` to stage and commit `<docs root>/features/<feature>/requirements.md`:
 
    ```
    docs: groom <feature-name> — requirements
@@ -129,11 +126,11 @@ Before marking a feature as groomed and ready for `/design`, run a readiness gat
 
 ## Output format
 
-`docs/features/<feature>/requirements.md`:
+`<docs root>/features/<feature>/requirements.md`:
 
 ```
 ## Epic
-<!-- Parent epic if applicable: docs/epics/<name>/ — leave blank if standalone -->
+<!-- Parent epic if applicable: <docs root>/epics/<name>/ — leave blank if standalone -->
 
 ## Purpose
 [Phase 1 Result] Why this feature exists, who it serves, and what problem it solves.
@@ -175,3 +172,37 @@ Testable conditions that define done (must cover all confirmed scenarios):
 Activate this mode by using `#groom-mode` in your conversation or by typing "enter groom mode".
 
 The mode will guide you through the structured workflow and generate the appropriate documentation files.
+
+---
+
+## Appendix: docs path resolution
+
+Referenced above as `reference/docs-path-resolution.md` — inlined here since Kiro skills are flat files with no sibling-file lookup:
+
+# Docs path resolution
+
+Shared by every mode, skill, and agent that reads or writes project docs. Resolve once per session, reuse for every read and write in that session.
+
+## Config
+
+Read `.claude/pai-orbit-config.md`. If a `## System Docs` section is present, it defines `system_docs_repo` and `system_docs_path` (default `.`).
+
+## Resolve the docs root
+
+- No `## System Docs` section → docs root is local `docs/`.
+- `system_docs_repo` is a relative path → check whether `<system_docs_repo>/<system_docs_path>` exists **and** contains at least one of the expected subdirectories (`architecture/`, `decisions/`, `domain/`, `features/`, `plans/`, `wip/`, `backlog/`, `reports/`, `epics/`, `ops/`). A directory that exists but holds none of these is a stale pointer, not a docs root.
+  - Passes → docs root is `<system_docs_repo>/<system_docs_path>`.
+  - Fails → warn once ("System docs path unreachable — continuing with local docs only") and docs root is local `docs/`.
+- `system_docs_repo` is a git URL → same check against a local clone at a resolvable path. Passes → docs root is `<clone-path>/<system_docs_path>`. Fails → warn once and docs root is local `docs/`.
+
+## Reads
+
+Add the resolved docs root to the doc read set before starting the session.
+
+## Writes
+
+Every write targets `<docs root>/<relative path>` — never a hardcoded `docs/…` literal, and never with an extra interpolated `docs/` segment. The docs root already *is* the docs directory, local or remote.
+
+Examples: `<docs root>/backlog/feature-ideas.md`, `<docs root>/features/<feature>/design.md`, `<docs root>/decisions/YYYY-MM-DD-<slug>.md`, `<docs root>/wip/session-capture-<date>.md`.
+
+When `system_docs_path: .` (a docs repo flattened to its root), `<docs root>` is the repo root itself — writes land at `<system_docs_repo>/decisions/…`, not `<system_docs_repo>/docs/decisions/…`.

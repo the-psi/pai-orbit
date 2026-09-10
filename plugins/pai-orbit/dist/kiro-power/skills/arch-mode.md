@@ -30,20 +30,18 @@ If the user types `/arch` without a sub-mode, ask which they want: init, view, u
 ## Behaviour (all sub-modes)
 
 Before starting any sub-mode:
-- Read `.claude/pai-orbit-config.md`. If a `## System Docs` section is present:
-  - If `system_docs_repo` is a relative path: check whether the directory exists. If yes, add `<system_docs_repo>/<system_docs_path>` to the doc read set. If no, warn once and proceed.
-  - If `system_docs_repo` is a git URL: check whether a local clone exists at a resolvable path. If yes, add it. If no, warn once and proceed.
+- Resolve the docs root per `reference/docs-path-resolution.md` (config: `.claude/pai-orbit-config.md → ## System Docs`).
 - Read `CLAUDE.md → ## Architecture` for the current summary.
-- Read `docs/architecture/system.md`, `docs/architecture/constraints.md`, and `docs/architecture/stack.md` if they exist.
-- Read all ADRs in `docs/decisions/`.
+- Read `<docs root>/architecture/system.md`, `constraints.md`, and `stack.md` if they exist.
+- Read all ADRs in `<docs root>/decisions/`.
 
-**Graceful guard:** If `docs/architecture/system.md` does not exist and the sub-mode is not `init`, tell the user: "Architecture is not yet declared for this project. Run `/arch init` first."
+**Graceful guard:** If `<docs root>/architecture/system.md` does not exist and the sub-mode is not `init`, tell the user: "Architecture is not yet declared for this project. Run `/arch init` first."
 
 ---
 
 ## `/arch init` — Declare architecture
 
-Run when `docs/architecture/` is absent or empty. Asks all questions in a single block — do not ask one at a time:
+Run when `<docs root>/architecture/` is absent or empty. Asks all questions in a single block — do not ask one at a time:
 
 **Block 1 — Services and communication**
 1. What services or major components exist? For each: name, path or repo, one-line purpose.
@@ -56,19 +54,19 @@ Run when `docs/architecture/` is absent or empty. Asks all questions in a single
 6. What are the hard constraints? Things that must never happen, regardless of feature requirements.
 7. Any cross-cutting standards that apply to all services? (auth pattern, logging format, error handling, API versioning)
 
-**Block 3 — Stack (if docs/architecture/stack.md is not yet populated)**
+**Block 3 — Stack (if `<docs root>/architecture/stack.md` is not yet populated)**
 8. Tech stack per service — language, framework, key dependencies.
 9. Infrastructure — hosting, database providers, CI/CD toolchain.
 
 **Confirm** all captured answers before writing. Show what will be written to each file.
 
-**Multi-repo scope:** Ask — "Is this the architecture of this service only, or the whole multi-service system?" For system-level scope, write to `<system_docs_repo>/docs/architecture/` instead.
+**Multi-repo scope:** Ask — "Is this the architecture of this service only, or the whole multi-service system?" Service-level writes to the local `docs/architecture/`; system-level writes to `<docs root>/architecture/` (the resolved system docs root — no extra `docs/` segment).
 
 After confirmation, write:
-- `docs/architecture/system.md` — structural map with Mermaid data flow diagram
-- `docs/architecture/constraints.md` — rules list, trust boundaries, cross-cutting standards
-- `docs/architecture/stack.md` — tech stack per service and infra (skip if already complete)
-- Update `CLAUDE.md → ## Architecture` — replace placeholder Mermaid with actual flowchart, add one-paragraph summary, add reference: "Full declaration: [docs/architecture/system.md](docs/architecture/system.md)"
+- `<target>/architecture/system.md` — structural map with Mermaid data flow diagram
+- `<target>/architecture/constraints.md` — rules list, trust boundaries, cross-cutting standards
+- `<target>/architecture/stack.md` — tech stack per service and infra (skip if already complete)
+- Update `CLAUDE.md → ## Architecture` — replace placeholder Mermaid with actual flowchart, add one-paragraph summary, add reference: "Full declaration: [<target>/architecture/system.md](<target>/architecture/system.md)"
 
 Session close for init:
 - Confirm all three files are saved
@@ -81,9 +79,9 @@ Session close for init:
 ## `/arch view` — View current architecture
 
 No writes. Render a summary:
-1. List services from `docs/architecture/system.md` — name, stack, purpose
+1. List services from `<docs root>/architecture/system.md` — name, stack, purpose
 2. Show the Mermaid data flow diagram
-3. Show constraint count from `docs/architecture/constraints.md` and list the rules
+3. Show constraint count from `<docs root>/architecture/constraints.md` and list the rules
 4. Show last-updated date from each file
 
 If any file is missing: note it and suggest running `/arch init`.
@@ -98,14 +96,12 @@ Procedure:
 1. Ask what changed. (If the user describes the change, proceed; if vague, ask for specifics.)
 2. Read the relevant sections of `system.md`, `constraints.md`, or `stack.md`.
 3. Present a precise diff — what changes, what stays, what is removed. Wait for explicit confirmation.
-4. Assess whether the change represents an irreversible architectural decision. If yes: draft a new ADR using the template at `templates/docs/decisions/ADR.md` and write it to `docs/decisions/YYYY-MM-DD-<slug>.md`.
+4. Assess whether the change represents an irreversible architectural decision. If yes: draft a new ADR using the template at `templates/docs/decisions/ADR.md` and write it to `<target>/decisions/YYYY-MM-DD-<slug>.md`, where `<target>` is `docs` for a service-level change or the resolved docs root for a system-level change (cross-service contracts, shared auth patterns).
 5. Write the updated file(s) after confirmation.
 6. Update `CLAUDE.md → ## Architecture` summary if the structural overview changed.
 7. **Offer to move the board issue.** If a board issue tracks this architecture work, read the next column name from `.claude/pai-orbit-config.md → ## Agile Board`. Offer: "Move issue #N to `<column name>`?" Wait for confirmation before acting via `/board`. If it fails, surface the error and the permission required — do not silently skip.
 
-ADR naming: `docs/decisions/YYYY-MM-DD-<slug>.md`. Always use the date prefix — it enables chronological ordering without reading frontmatter.
-
-For system-level changes (cross-service contracts, shared auth patterns): write ADRs to `<system_docs_repo>/docs/decisions/` if configured.
+ADR naming: `<target>/decisions/YYYY-MM-DD-<slug>.md`. Always use the date prefix — it enables chronological ordering without reading frontmatter.
 
 ---
 
@@ -113,7 +109,7 @@ For system-level changes (cross-service contracts, shared auth patterns): write 
 
 Compare declared architecture against recent code changes. Produces a drift report.
 
-**Guard:** If `docs/architecture/system.md` does not exist, stop. Tell the user to run `/arch init` first.
+**Guard:** If `<docs root>/architecture/system.md` does not exist, stop. Tell the user to run `/arch init` first.
 
 **Scope:**
 - Ask: targeted review (user specifies what changed) or full review (since last-updated date in `system.md`)?
@@ -121,9 +117,9 @@ Compare declared architecture against recent code changes. Produces a drift repo
 - For targeted: work from the user-specified paths or recent `git diff`.
 
 **Check each changed area against:**
-- `docs/architecture/system.md` — new undeclared component? new undeclared communication path?
-- `docs/architecture/constraints.md` — any rule violated? any trust boundary crossed?
-- `docs/decisions/` — any ADR contradicted?
+- `<docs root>/architecture/system.md` — new undeclared component? new undeclared communication path?
+- `<docs root>/architecture/constraints.md` — any rule violated? any trust boundary crossed?
+- `<docs root>/decisions/` — any ADR contradicted?
 
 **Classify each finding:**
 
@@ -134,7 +130,7 @@ Compare declared architecture against recent code changes. Produces a drift repo
 | Unrecorded evolution | Architecture changed intentionally but declaration is stale | Advisory — run `/arch update` |
 | Conformant | No drift | Note what was checked |
 
-**Write drift report** to `docs/wip/arch-validate-<date>.md`:
+**Write drift report** to `<docs root>/wip/arch-validate-<date>.md`:
 
 ```
 ## Architecture Validation: <project>
@@ -171,14 +167,50 @@ After presenting the report:
 
 | File | Sub-mode | Notes |
 |------|----------|-------|
-| `docs/architecture/system.md` | init, update | Living document — services, comms, data stores, Mermaid |
-| `docs/architecture/constraints.md` | init, update | Enforcement contract — read by /build and /review |
-| `docs/architecture/stack.md` | init (if absent) | Tech stack — generated by /setup, refined here |
-| `docs/decisions/YYYY-MM-DD-<slug>.md` | update | ADR for irreversible decisions |
-| `docs/wip/arch-validate-<date>.md` | validate | Drift report |
+| `<target>/architecture/system.md` | init, update | Living document — services, comms, data stores, Mermaid |
+| `<target>/architecture/constraints.md` | init, update | Enforcement contract — read by /build and /review |
+| `<target>/architecture/stack.md` | init (if absent) | Tech stack — generated by /setup, refined here |
+| `<target>/decisions/YYYY-MM-DD-<slug>.md` | update | ADR for irreversible decisions |
+| `<docs root>/wip/arch-validate-<date>.md` | validate | Drift report |
 | `CLAUDE.md → ## Architecture` | init, update | Summary + Mermaid + pointer to system.md |
+
+`<target>` is `docs` for a service-level declaration, or `<docs root>` (resolved per `reference/docs-path-resolution.md`) for a system-level one. `<docs root>` is `docs` unless `system_docs_repo` is configured.
 
 ## Usage in Kiro
 Activate this mode by using `#arch-mode` in your conversation or by typing "enter arch mode".
 
 The mode will guide you through the structured workflow and generate the appropriate documentation files.
+
+---
+
+## Appendix: docs path resolution
+
+Referenced above as `reference/docs-path-resolution.md` — inlined here since Kiro skills are flat files with no sibling-file lookup:
+
+# Docs path resolution
+
+Shared by every mode, skill, and agent that reads or writes project docs. Resolve once per session, reuse for every read and write in that session.
+
+## Config
+
+Read `.claude/pai-orbit-config.md`. If a `## System Docs` section is present, it defines `system_docs_repo` and `system_docs_path` (default `.`).
+
+## Resolve the docs root
+
+- No `## System Docs` section → docs root is local `docs/`.
+- `system_docs_repo` is a relative path → check whether `<system_docs_repo>/<system_docs_path>` exists **and** contains at least one of the expected subdirectories (`architecture/`, `decisions/`, `domain/`, `features/`, `plans/`, `wip/`, `backlog/`, `reports/`, `epics/`, `ops/`). A directory that exists but holds none of these is a stale pointer, not a docs root.
+  - Passes → docs root is `<system_docs_repo>/<system_docs_path>`.
+  - Fails → warn once ("System docs path unreachable — continuing with local docs only") and docs root is local `docs/`.
+- `system_docs_repo` is a git URL → same check against a local clone at a resolvable path. Passes → docs root is `<clone-path>/<system_docs_path>`. Fails → warn once and docs root is local `docs/`.
+
+## Reads
+
+Add the resolved docs root to the doc read set before starting the session.
+
+## Writes
+
+Every write targets `<docs root>/<relative path>` — never a hardcoded `docs/…` literal, and never with an extra interpolated `docs/` segment. The docs root already *is* the docs directory, local or remote.
+
+Examples: `<docs root>/backlog/feature-ideas.md`, `<docs root>/features/<feature>/design.md`, `<docs root>/decisions/YYYY-MM-DD-<slug>.md`, `<docs root>/wip/session-capture-<date>.md`.
+
+When `system_docs_path: .` (a docs repo flattened to its root), `<docs root>` is the repo root itself — writes land at `<system_docs_repo>/decisions/…`, not `<system_docs_repo>/docs/decisions/…`.

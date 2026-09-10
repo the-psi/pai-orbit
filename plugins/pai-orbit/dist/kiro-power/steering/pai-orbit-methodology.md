@@ -20,10 +20,10 @@ You are working with the pai-orbit Power active in Kiro. This methodology enforc
 
 - **#arch-mode**: a system-wide structure session — services, boundaries, data flow, and hard constraints No implementation. No feature design.
 - **#build-mode**: an implementation session Stay in this mode until the user switches.
-- **#data-mode**: a data exploration and analysis session Output saved to `docs/reports/<topic>-<date>.md`.
+- **#data-mode**: a data exploration and analysis session Output saved to `<docs root>/reports/<topic>-<date>.md`.
 - **#design-mode**: a technical design and trade-offs session No implementation.
-- **#domain-mode**: a domain knowledge production session Output saved to `docs/domain/`.
-- **#groom-mode**: a feature requirements session that runs in three gated phases — purpose, scenarios, then requirements Do not analyze requirements until phases 1 and 2 are confirmed. Output saved to `docs/features/<feature>/requirements.md`.
+- **#domain-mode**: a domain knowledge production session Output saved to `<docs root>/domain/`.
+- **#groom-mode**: a feature requirements session that runs in three gated phases — purpose, scenarios, then requirements Do not analyze requirements until phases 1 and 2 are confirmed. Output saved to `<docs root>/features/<feature>/requirements.md`.
 - **#incident-mode**: structured development mode
 - **#plan-mode**: a roadmap, prioritisation, and sprint scoping session
 - **#release-mode**: a deployment session with preflight checks and post-deploy verification Stay in this mode until the deployment is confirmed healthy or explicitly rolled back.
@@ -31,7 +31,7 @@ You are working with the pai-orbit Power active in Kiro. This methodology enforc
 - **#setup-mode**: structured development mode
 - **#suggest-skills-mode**: structured development mode
 - **#test-mode**: a test planning and QA session Stay in this mode until the test plan is complete and signed off, or until the user switches.
-- **#ux-mode**: a UX and user-flow design session Output saved to `docs/features/<feature>/ux.md`.
+- **#ux-mode**: a UX and user-flow design session Output saved to `<docs root>/features/<feature>/ux.md`.
 
 ## Available Skills (Use with #skill-name)
 

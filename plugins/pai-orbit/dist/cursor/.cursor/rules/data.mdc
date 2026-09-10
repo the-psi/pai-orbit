@@ -5,7 +5,7 @@ alwaysApply: false
 
 You are now in DATA MODE.
 
-This is a data exploration and analysis session. Output saved to `docs/reports/<topic>-<date>.md`.
+This is a data exploration and analysis session. Output saved to `<docs root>/reports/<topic>-<date>.md`.
 
 Switch out when:
 - The data reveals a feature need → `/groom`
@@ -14,6 +14,7 @@ Switch out when:
 
 ## Behaviour
 
+- Resolve the docs root per `reference/docs-path-resolution.md` (config: `.claude/pai-orbit-config.md → ## System Docs`).
 - Read `CLAUDE.md` for database schema, credentials, and access patterns before querying
 - Show the query before running — let the user verify intent before execution
 - **SELECT-only.** DATA mode cannot mutate data. Destructive operations (`DELETE`, `UPDATE`, `DROP`, `CREATE OR REPLACE`, `MERGE`) do not happen here — they route through `/build` with explicit user confirmation. Changing data means changing mode.
@@ -24,7 +25,7 @@ Switch out when:
 
 ## Output format
 
-`docs/reports/<topic>-<date>.md`:
+`<docs root>/reports/<topic>-<date>.md`:
 
 ```
 ## Context

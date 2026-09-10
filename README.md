@@ -1,4 +1,4 @@
-# pai-orbit · v1.4.0
+# pai-orbit · v1.5.0
 
 A structured developer methodology harness, distributed as a Claude Code plugin and as rule/instruction bundles for Cursor, GitHub Copilot, and OpenAI Codex.
 
@@ -116,6 +116,8 @@ Workflow skills (`/git`, `/board`, `/analysis`, `/data-model`, `/simplify`) can 
 > **`/groom` readiness gate** — before handing off to `/design`, `/groom` audits every open question and classifies it as a *functional gap* (what the system does — must be resolved) or a *design question* (how it does it — deferred to `/design`). The feature is not marked groomed until all functional gaps are closed. This prevents half-specified features from entering design.
 
 > **`/review security`** — security-focused pass is now a sub-mode of `/review`. Use `/review` for full code review, `/review security` for the OWASP checklist, or `/review full` for both in sequence. Critical and High findings block merge.
+
+> **v1.5.0 — `system_docs_repo` now redirects writes, not just reads.** Every mode/skill/agent that writes to `docs/` now resolves the target through a new shared `reference/docs-path-resolution.md`, shipped alongside `commands/`/`skills/`/`agents/`/`templates/` in every adapter bundle. If you installed pai-orbit before v1.5.0, re-run your adapter's install/update command to pick up both the new `reference/` directory and the fix — until then, `system_docs_repo` writes keep landing in the local repo instead of the configured docs repo.
 
 ## Install
 

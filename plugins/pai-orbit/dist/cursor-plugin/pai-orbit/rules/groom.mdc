@@ -5,7 +5,7 @@ alwaysApply: false
 
 You are now in GROOM MODE.
 
-This is a feature requirements session that runs in three gated phases — purpose, scenarios, then requirements. Do not analyze requirements until phases 1 and 2 are confirmed. Output saved to `docs/features/<feature>/requirements.md`.
+This is a feature requirements session that runs in three gated phases — purpose, scenarios, then requirements. Do not analyze requirements until phases 1 and 2 are confirmed. Output saved to `<docs root>/features/<feature>/requirements.md`.
 
 Switch out when:
 - Domain or expert knowledge is needed to resolve a requirement → `/domain`
@@ -47,7 +47,7 @@ Once purpose is established:
 4. Do **not** begin requirements analysis, open questions, or acceptance criteria until **every** proposed scenario has been confirmed or explicitly excluded.
 5. Scenarios marked out of scope:
    - Same product surface, intentionally excluded from *this* feature → `## Out of scope`
-   - Different feature idea that surfaced during discussion → `docs/backlog/feature-ideas.md`
+   - Different feature idea that surfaced during discussion → `<docs root>/backlog/feature-ideas.md`
 6. If all proposed scenarios are excluded, return to Phase 1 to revisit feature scope — do not proceed to Phase 3 with nothing confirmed.
 7. **Phase 2 Complete**: Announce "✅ All scenarios confirmed. Moving to Phase 3: Requirements Analysis" before proceeding.
 
@@ -68,16 +68,13 @@ Only after purpose is agreed and all scenarios are confirmed:
 
 ## Behaviour
 
-- Read `.cursor/pai-orbit-config.md`. If a `## System Docs` section is present:
-  - If `system_docs_repo` is a relative path: check whether the directory exists. If yes, add `<system_docs_repo>/<system_docs_path>` to the doc read set. If no, warn once ("System docs path unreachable — continuing with local docs only") and proceed.
-  - If `system_docs_repo` is a git URL: check whether a local clone exists at a resolvable path. If yes, add it. If no, warn once and proceed.
-  - Read docs from all resolved paths before starting the session.
-- Read `AGENTS.md`, existing `docs/features/`, and the parent epic from `docs/epics/` (if one exists) before starting
-- If `docs/architecture/system.md` exists, read it — reference service ownership to assign features to the right service and flag requirements that would cross declared boundaries
+- Resolve the docs root per `reference/docs-path-resolution.md` (config: `.cursor/pai-orbit-config.md → ## System Docs`).
+- Read `AGENTS.md`, existing `<docs root>/features/`, and the parent epic from `<docs root>/epics/` (if one exists) before starting
+- If `<docs root>/architecture/system.md` exists, read it — reference service ownership to assign features to the right service and flag requirements that would cross declared boundaries
 - Flag ambiguity rather than assuming — requirements with hidden assumptions create build debt
 - Capture open questions explicitly with an owner (person or role)
 - Do not design solutions — only describe what the system should do and for whom. When grooming surfaces an implementation question (how to store X, which table, query strategy, edge case handling): capture the *constraint* as an open question for `/design` — do not answer the how, even briefly or inline
-- Scope to the minimal deliverable; parking lot belongs in `docs/backlog/feature-ideas.md`
+- Scope to the minimal deliverable; parking lot belongs in `<docs root>/backlog/feature-ideas.md`
 
 ## Session close
 
@@ -110,7 +107,7 @@ Before marking a feature as groomed and ready for `/design`, run a readiness gat
 
    Use `/board` to post this comment. Note: this requires board write permission. If it fails, surface the error and the permission required (e.g. `gh auth refresh -s project` for GitHub Projects, a Linear API token, etc.) — do not silently skip.
 
-5. **Commit the requirements file.** Use `/git` to stage and commit `docs/features/<feature>/requirements.md`:
+5. **Commit the requirements file.** Use `/git` to stage and commit `<docs root>/features/<feature>/requirements.md`:
 
    ```
    docs: groom <feature-name> — requirements
@@ -126,11 +123,11 @@ Before marking a feature as groomed and ready for `/design`, run a readiness gat
 
 ## Output format
 
-`docs/features/<feature>/requirements.md`:
+`<docs root>/features/<feature>/requirements.md`:
 
 ```
 ## Epic
-<!-- Parent epic if applicable: docs/epics/<name>/ — leave blank if standalone -->
+<!-- Parent epic if applicable: <docs root>/epics/<name>/ — leave blank if standalone -->
 
 ## Purpose
 [Phase 1 Result] Why this feature exists, who it serves, and what problem it solves.
