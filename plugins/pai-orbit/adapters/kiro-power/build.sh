@@ -24,6 +24,32 @@ mkdir -p "$DIST_DIR/steering"
 mode_entries=()
 skill_entries=()
 
+# Kiro skills are flat, self-contained files with no sibling-file convention —
+# unlike claude-code/cursor-plugin, a generated skill can't resolve a relative
+# "reference/docs-path-resolution.md" pointer at runtime. Inline the referenced
+# content as an appendix wherever a mode/skill body mentions it, so the file
+# stays self-contained the same way every other cross-reference here already is.
+docs_path_resolution_content=""
+if [ -f "$CORE_DIR/reference/docs-path-resolution.md" ]; then
+  docs_path_resolution_content="$(cat "$CORE_DIR/reference/docs-path-resolution.md")"
+fi
+
+append_reference_appendix() {
+  local target_file="$1"
+  if [ -n "$docs_path_resolution_content" ] && grep -q "reference/docs-path-resolution.md" "$target_file"; then
+    {
+      echo ""
+      echo "---"
+      echo ""
+      echo "## Appendix: docs path resolution"
+      echo ""
+      echo "Referenced above as \`reference/docs-path-resolution.md\` — inlined here since Kiro skills are flat files with no sibling-file lookup:"
+      echo ""
+      echo "$docs_path_resolution_content"
+    } >> "$target_file"
+  fi
+}
+
 # Convert modes to skills (same as regular Kiro adapter)
 echo "kiro-power: converting modes to skills..."
 for mode_file in "$CORE_DIR/modes"/*.md; do
@@ -49,6 +75,7 @@ Activate this mode by using \`#${mode_name}-mode\` in your conversation or by ty
 
 The mode will guide you through the structured workflow and generate the appropriate documentation files.
 EOF
+    append_reference_appendix "$DIST_DIR/skills/${mode_name}-mode.md"
     mode_entries+=("${mode_name}-mode|${mode_description}")
   fi
 done
@@ -101,6 +128,7 @@ ${skill_body}
 ## Usage in Kiro
 Activate this skill by using \`#${skill_name}-skill\` in your conversation or by requesting "${skill_name}" operations.
 EOF
+    append_reference_appendix "$DIST_DIR/skills/${skill_name}-skill.md"
     skill_entries+=("${skill_name}-skill|${description}")
   fi
 done

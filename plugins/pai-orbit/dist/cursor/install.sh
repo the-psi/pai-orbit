@@ -29,6 +29,10 @@ RULES=(
   ".cursor/rules/ux.mdc"
 )
 
+REFERENCE=(
+  "reference/docs-path-resolution.md"
+)
+
 echo "pai-orbit: installing Cursor rules from ${REPO}@${REF} ..."
 echo ""
 
@@ -39,8 +43,15 @@ for file in "${RULES[@]}"; do
   echo "  ✓ ${file}"
 done
 
+for file in "${REFERENCE[@]}"; do
+  dir="$(dirname "$file")"
+  mkdir -p "$dir"
+  curl -fsSL "${BASE}/${file}" -o "${file}"
+  echo "  ✓ ${file}"
+done
+
 echo ""
-echo "pai-orbit: ${#RULES[@]} rule file(s) installed to .cursor/rules/"
+echo "pai-orbit: ${#RULES[@]} rule file(s) installed to .cursor/rules/, ${#REFERENCE[@]} reference file(s) installed to reference/"
 echo ""
 echo "Next steps:"
 echo "  1. Download the project config template and fill it out:"
