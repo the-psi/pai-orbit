@@ -113,6 +113,8 @@ Two questions surfaced: (1) Should Codex adopt the same npx style as Copilot for
 
 **Solution shipped.** `plugins/pai-orbit/adapters/codex/install.js` — 170-line Node CLI, stdlib-only, zero third-party dependencies. Declared as the `pai-orbit` bin in repo-root `package.json`. Users install via `npx github:the-psi/pai-orbit init codex`. Old `install.sh` / `install.ps1` deleted from `dist/`. `install.js` git mode is `100755` (executable bit, checked in via `git update-index --chmod=+x`). When Copilot's PR merges, whoever merges second resolves a one-line `package.json` `bin` field conflict — recorded here as a follow-up, not a design coupling now.
 
+**Follow-up resolved 2026-09-13** (merging `feat/copilot-plugin-adapter` into `main`, as anticipated above). The `bin` entry unified to `plugins/pai-orbit/scripts/init/cli.js`, which already routes by target. A new `scripts/init/lib/codex.js` target forwards `init codex` / `update codex` to this installer in a child process (`execFileSync`, argv array, inherited cwd), so `npx github:the-psi/pai-orbit init codex` behaves exactly as documented here and the Codex install logic stays in this file. `migrate codex` is rejected with a message — there is no legacy Codex layout to migrate.
+
 ---
 
 ### DC8 — Zero-core-edit constraint enforced through every phase
