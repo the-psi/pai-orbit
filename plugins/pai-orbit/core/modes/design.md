@@ -16,7 +16,7 @@ Switch out when:
 
 **At session start — impact analysis gate (before any design discussion):**
 
-1. Scan `docs/wip/` for an existing `analysis-*.md` report relevant to the current change. If found, read and cite it — do not re-run `/analysis`.
+1. Scan `docs/features/<feature>/` (and `docs/wip/` for changes with no feature folder) for an existing `analysis-*.md` report relevant to the current change. If found, read and cite it — do not re-run `/analysis`.
 2. Assess whether the change touches a shared interface: an existing API endpoint, a data model field consumed by more than one service, or a cross-service contract. Use heuristic judgement from the change description. When uncertain, treat as shared-interface (conservative default).
 3. Apply the matching path:
    - **Shared-interface change and no analysis report in context:** invoke `/analysis` now, or state: "This change touches a shared interface. Run `/analysis` first — I will not present design options until an impact report is available." Do not present options until the report is in context.

@@ -59,7 +59,7 @@ Every mode either produces or consumes:
 | `/review` | `docs/wip/review-*.md` | Diff, CLAUDE.md, `docs/architecture/`, `docs/decisions/` |
 | `/plan` | `docs/plans/`, board card moves | All docs, task board state |
 | `/data` | `docs/reports/` | Database, `docs/domain/` |
-| `/incident` | Tracking issue, `docs/wip/postmortem-*.md` | Error logs, recent deploys |
+| `/incident` | Tracking issue, `docs/incidents/postmortem-*.md` | Error logs, recent deploys |
 
 `/plan` is the integrator — it consumes everything and decides what to work on next. It never produces domain knowledge, requirements, or designs.
 
@@ -134,7 +134,7 @@ When an issue receives a response, a reviewer requests changes, or an external d
 3. `/review` — focused review: does it fix the symptom, does it introduce new risk?
 4. `/deploy` — confirm environment and rollback plan before deploying
 5. Verify resolution; update the tracking issue
-6. `/incident` post-mortem — for P1/P2: write `docs/wip/postmortem-<slug>-<date>.md`; file follow-up items on the board
+6. `/incident` post-mortem — for P1/P2: write `docs/incidents/postmortem-<slug>-<date>.md`; file follow-up items on the board
 
 ### Starting a planning session
 
@@ -187,7 +187,11 @@ docs/
 
 **`docs/backlog/feature-ideas.md` is a parking lot**, not a task board. Ideas here are promoted to the task board by a human. Claude does not move entries autonomously.
 
-**`docs/wip/` is ephemeral.** Session captures, review reports, test failure notes, and post-mortems live here. They are working documents, not permanent records. Promote findings to the appropriate permanent location (decisions/, domain/, features/) when they stabilise.
+**`docs/wip/` holds what dies at merge.** Session captures, branch and PR reviews, architecture drift reports, test failure notes. The test is a question, not an adjective: *is this dead once the branch merges or the session resumes?* If no, it has a subject and belongs with the subject — an impact analysis with its feature, a post-mortem in `docs/incidents/`.
+
+`wip/` is never the answer to "I have nowhere better to put this". A directory that is every mode's default cannot also be a directory with a meaning, and the artifacts that land there by default are exactly the durable ones nobody later thinks to promote.
+
+`/release` sweeps it: closed issue and dead content goes to `docs/wip/archive/`; closed issue and live content gets promoted to its subject folder. Nothing is deleted. See `.claude/rules/docs-taxonomy.md`, which a project generates at `/setup` and adapts to the taxonomy it wants.
 
 ---
 
