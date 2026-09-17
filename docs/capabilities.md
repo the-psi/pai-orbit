@@ -2,7 +2,21 @@
 
 Reference for every mode, skill, and agent in pai-orbit.
 
-**Tool Support**: pai-orbit works with Claude Code (full fidelity), Cursor (plugin), Kiro (skills/steering), GitHub Copilot (instructions), and OpenAI Codex CLI (experimental).
+**Tool Support**: pai-orbit works with Claude Code (full fidelity), Cursor (plugin), GitHub Copilot (instructions), and OpenAI Codex CLI (experimental).
+
+---
+
+## Adapter parity matrix
+
+pai-orbit is a plugin marketplace with per-tool adapters. Each adapter compiles a common core into that tool's native primitives. Below is the current state:
+
+| Adapter | Support level | Skills | Hooks | Subagents | Slash-command modes | Notes |
+|---------|---------------|--------|-------|-----------|--------------------|-------|
+| **Claude Code** | Full (canonical) | Native | Native (auto-active) | Native | `/build`, `/design`, `/plan`, ... | Reference implementation. Everything else is measured against this. |
+| **Cursor (plugin)** | Full | Native | `beforeShellExecution` / `afterFileEdit` | Cursor subagents | `/build`, `/design`, ... as commands | See [docs/cursor-plugin-install-and-usage.md](cursor-plugin-install-and-usage.md). |
+| **OpenAI Codex CLI** | Full (near-parity) | Native (`.agents/skills/`) | Native (manual `/hooks` trust) | Native TOML (`.codex/agents/`) | Explicit `$mode-name` only (`/plan`, `/review` renamed to `$orbit-plan`, `$orbit-review` to avoid Codex built-ins) | See [docs/codex-install-and-usage.md](codex-install-and-usage.md). Requires Codex CLI v0.144.6+. |
+| **Cursor (legacy)** | Lossy | Concatenated skills.mdc | Not supported | Not supported | Rule documents only | Use only if Cursor plugin format is unavailable. |
+| **GitHub Copilot** | Lossy | Reference text only | Not supported | Not supported | Reference text only | `.github/copilot-instructions.md` bundle. |
 
 ---
 
@@ -38,6 +52,8 @@ Leads with the user's goal and context before discussing interface. Describes fl
 **Reads:** CLAUDE.md, docs/domain/, docs/features/ (existing)  
 **Writes:** docs/features/*/requirements.md  
 **Switch to:** `/domain` for unresolved expert knowledge, `/design` when ready, `/plan` for priority decisions
+
+Before Phase 1, an entry gate resolves the session's ticket number: checks context for one already referenced, otherwise asks the user directly and waits for an answer. Standalone/exploratory grooming with no ticket requires an explicit, confirmed opt-out — never inferred from silence. A resolved ticket becomes the parent board issue used later for posting open questions and offering a column move; an opted-out session skips those two steps.
 
 Runs in three gated phases with explicit transitions: establish purpose (propose from epic/ux/domain or ask), confirm each scenario in scope with examples (granularity: distinct if acceptance criteria differ), then analyze requirements with traceability mapping. Enhanced pre-flight audit provides actionable error messages. Session-close pre-flight blocks groomed status if purpose or scenarios are incomplete; new scenarios in Phase 3 return to Phase 2. Scopes to minimal deliverable. Captures open questions with owners. Does not design solutions.
 

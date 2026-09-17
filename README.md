@@ -1,4 +1,4 @@
-# pai-orbit · v1.5.0
+# pai-orbit · v1.7.0
 
 A structured developer methodology harness, distributed as a Claude Code plugin and as rule/instruction bundles for Cursor, GitHub Copilot, and OpenAI Codex.
 
@@ -155,40 +155,26 @@ See [`docs/cursor-plugin-install-and-usage.md`](docs/cursor-plugin-install-and-u
 
 **Do not** use the legacy copy-rules install and the plugin together — duplicate mode rules will conflict.
 
-### Kiro
+### GitHub Copilot (VS Code)
 
-**Option 1: As a Power (recommended)**
-
-Install directly from GitHub via Kiro's power system:
+Copilot users get real invokable slash commands (`/groom`, `/design`, `/build`, `/git`, …) — 30 prompts (15 modes, 6 skills, 7 service-builder agents, 2 named agents: `/docs-writer` and `/cross-repo-impact`) plus 5 auto-attaching instructions files. Install with one command from the project root:
 
 ```bash
-# Install pai-orbit power from GitHub
-kiroPowers configure
-# In the UI, add: https://github.com/the-psi/pai-orbit
-# Or use command if available:
-# kiro power install https://github.com/the-psi/pai-orbit
+npx github:the-psi/pai-orbit init copilot
 ```
 
-**Usage:**
-```bash
-#groom-mode     # Feature requirements (3-phase approach)
-#build-mode     # Implementation session
-#design-mode    # Technical decisions  
-#release-mode   # Deployment procedures
-```
+This installs the pai-orbit files only. Then run `/setup` in Copilot Chat (Business/Pro tier runs it agentically, proposing file edits you accept). Copilot Free users can pass `--setup` to run the full interview from the terminal instead: `npx github:the-psi/pai-orbit init copilot --setup`. The setup step renders `.copilot/pai-orbit-config.md`, `.copilot/team.md`, `AGENTS.md`, and scaffolds `docs/`. Full adoption guide: [`docs/copilot-install-and-usage.md`](docs/copilot-install-and-usage.md).
 
-See [`plugins/pai-orbit/dist/kiro-power/POWER.md`](plugins/pai-orbit/dist/kiro-power/POWER.md) and **[`docs/kiro-plugin-install-and-usage.md`](docs/kiro-plugin-install-and-usage.md)** for complete setup and usage guides.
+**Enforcement is honest:** Copilot has no runtime hook system, so `bash-guard` intent lives as advisory text in `.github/copilot-instructions.md` (Copilot usually obeys); the optional `.husky/pre-commit` adds commit-time lint + weak secret detection, but cannot block `git push --force` or `git add -A`. Details in the adoption page's Hook coverage matrix.
 
 ### Other coding assistants (lossy)
 
-The same plugin source is compiled to per-tool bundles under `plugins/pai-orbit/dist/`. Copilot and Codex bundles are **lossy** reference instructions only.
+The same plugin source is compiled to per-tool bundles under `plugins/pai-orbit/dist/`.
 
 | Tool | Path | How to install |
 |------|------|----------------|
-| Kiro (Power) | [`plugins/pai-orbit/dist/kiro-power/`](plugins/pai-orbit/dist/kiro-power/) | Install via Kiro powers: `https://github.com/the-psi/pai-orbit` |
 | Cursor (legacy) | [`plugins/pai-orbit/dist/cursor/`](plugins/pai-orbit/dist/cursor/) | Copy `.cursor/` into your project root — use only if you cannot install the plugin |
-| GitHub Copilot | [`plugins/pai-orbit/dist/copilot/`](plugins/pai-orbit/dist/copilot/) | Copy `.github/copilot-instructions.md` into your project |
-| OpenAI Codex CLI (experimental) | [`plugins/pai-orbit/dist/codex/`](plugins/pai-orbit/dist/codex/) | Copy `AGENTS.md` to your project root |
+| OpenAI Codex CLI (experimental) | [`plugins/pai-orbit/dist/codex/`](plugins/pai-orbit/dist/codex/) | Copy `AGENTS.md` to your project root (lossy — reference instructions only) |
 
 See [`plugins/pai-orbit/README.md`](plugins/pai-orbit/README.md) for adapter internals and how to rebuild the bundles.
 
@@ -236,7 +222,6 @@ Four shell hooks are included. Wire them in Claude Code's settings or copy them 
 
 ## Docs
 
-- **[Kiro Plugin Install & Usage Guide](docs/kiro-plugin-install-and-usage.md)** — complete installation and usage guide for Kiro
 - [Process & Practices](docs/process-and-practices.md) — the methodology: why modes, working style, how sessions should flow
 - [Capabilities](docs/capabilities.md) — reference for every mode, skill, and agent
 - [Getting Started](docs/getting-started.md) — installation, first `/setup` walkthrough, first session

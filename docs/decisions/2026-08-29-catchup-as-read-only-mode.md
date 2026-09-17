@@ -42,7 +42,7 @@ the board, and existing docs and can be regenerated at any time**.
 
 | Option | Pros | Cons |
 |--------|------|------|
-| (chosen) Core mode, read-only, config-driven | Fits "each command = one headspace"; auto-picked up by every adapter's `modes/*.md` glob; consistent with `/arch view` (read-only sub-mode) | Adds a 15th mode to the listing |
+| (chosen) Core mode, read-only, config-driven | Fits "each command = one headspace"; picked up by every adapter's `modes/*.md` glob (codex and copilot also need a one-line description entry); consistent with `/arch view` (read-only sub-mode) | Adds a 15th mode to the listing |
 | Skill (`core/skills/catchup/SKILL.md`) | Callable from any mode | Skills are procedures invoked *inside* a headspace; `/catchup` is the entry point *before* one — and its stop-and-wait contract is a headspace, not a procedure |
 | Mode that also writes `docs/wip/catchup-<date>.md` | Honours "written outputs" literally | Pure derivation of git + board + docs; a daily file per developer is noise in `docs/wip/` with no reader — regenerating is cheaper than storing |
 | Extend `/build`'s session-start block instead | No new command | Couples orientation to implementation; a developer catching up on a review queue or a sprint is not in a build headspace, and `/build` immediately creates a branch |
@@ -64,9 +64,11 @@ the board, and existing docs and can be regenerated at any time**.
 - No persisted artefact — a briefing cannot be diffed against yesterday's.
 
 **Neutral:**
-- No adapter changes required; all six adapters glob `core/modes/*.md`. `kiro-power`'s
-  hand-maintained `.kiro-power/marketplace.json` `capabilities.modes` list gained
-  `catchup-mode`.
+- All five adapters pick the mode up from `core/modes/*.md`. The codex and copilot adapters
+  additionally keep a per-mode description entry (`MODE_DESCRIPTIONS[...]`,
+  `mode_description()` / `mode_donot_line()`) and a prompt-count self-check, so each gained a
+  `catchup` entry and the count moved from 29 to 30 prompts (14 to 15 modes). The
+  claude-code, cursor-plugin and cursor (legacy) adapters needed no change.
 
 ## References
 
@@ -76,7 +78,7 @@ the board, and existing docs and can be regenerated at any time**.
 ## Related Decisions
 
 - [2026-07-24-adapter-parity-and-dist-compat.md](2026-07-24-adapter-parity-and-dist-compat.md) —
-  a new mode must ship with full adapter parity; satisfied via the existing mode glob.
+  a new mode must ship with full adapter parity; satisfied by the mode glob plus the codex and copilot description entries.
 
 ## Review Date
 

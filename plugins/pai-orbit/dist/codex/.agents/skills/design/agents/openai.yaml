@@ -1,0 +1,7 @@
+interface:
+  display_name: "design"
+  short_description: "pai-orbit mode: design"
+  default_prompt: "Use $design to enter this mode."
+
+policy:
+  allow_implicit_invocation: false

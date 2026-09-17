@@ -1,0 +1,7 @@
+interface:
+  display_name: "ux"
+  short_description: "pai-orbit mode: ux"
+  default_prompt: "Use $ux to enter this mode."
+
+policy:
+  allow_implicit_invocation: false

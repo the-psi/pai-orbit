@@ -1,10 +1,10 @@
 ---
-status: accepted
+status: superseded
 date: 2026-08-18
 deciders: [Punit Singhal]
 scope: system
 supersedes: ""
-superseded-by: ""
+superseded-by: "2026-09-14-remove-kiro-power-adapter.md"
 ---
 
 # ADR: Add a Kiro Power adapter, accepting no agent/hook fidelity at introduction

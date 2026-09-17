@@ -1,0 +1,7 @@
+interface:
+  display_name: "domain"
+  short_description: "pai-orbit mode: domain"
+  default_prompt: "Use $domain to enter this mode."
+
+policy:
+  allow_implicit_invocation: false

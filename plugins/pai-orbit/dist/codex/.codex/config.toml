@@ -1,0 +1,46 @@
+# Codex CLI config — pai-orbit defaults.
+# Location: .codex/config.toml (project scope) or ~/.codex/config.toml (user scope).
+# Project scope only loads when the project is trusted in Codex.
+
+# Approval policy for model-generated shell commands.
+# - untrusted:  only run trusted read-only commands without prompting; escalate the rest to the user
+# - on-request: the model asks for approval when it wants to escalate (pai-orbit default)
+# - never:      never ask; execution failures are returned to the model
+approval_policy = "on-request"
+
+# Sandbox mode for file writes and shell execution.
+# - read-only:         no writes, no network
+# - workspace-write:   writes limited to the project workspace (pai-orbit default)
+# - danger-full-access: no sandbox — only use inside an already-sandboxed CI environment
+sandbox_mode = "workspace-write"
+
+# Multi-agent bounds. Multi-agent collaboration tools (spawn_agent, send_input,
+# resume_agent, wait_agent, close_agent) are enabled by features.multi_agent
+# (stable, default true). These bounds keep parallel work from fanning out
+# uncontrollably.
+max_threads = 4
+max_depth = 2
+
+# ── MCP servers ────────────────────────────────────────────────────────────
+# Uncomment and configure servers per your team's tooling. pai-orbit ships no
+# MCP integrations by default; add them here as your setup requires.
+#
+# [mcp_servers.github]
+# command = "npx"
+# args = ["-y", "@modelcontextprotocol/server-github"]
+# startup_timeout_sec = 60
+#
+# [mcp_servers.github.env]
+# GITHUB_PERSONAL_ACCESS_TOKEN = "ghp_..."
+
+# ── Hook registration ──────────────────────────────────────────────────────
+# Hooks live at .codex/hooks/ and are registered in .codex/hooks.json.
+# See .codex/hooks.json for the full schema — this file only carries
+# CLI-level knobs.
+
+# ── Feature flags (optional overrides) ──────────────────────────────────────
+# Uncomment to override defaults. Consult `codex features list` for the full
+# list. multi_agent is stable+on by default — no need to force it here.
+#
+# [features]
+# multi_agent = true

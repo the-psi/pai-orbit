@@ -1,0 +1,7 @@
+interface:
+  display_name: "groom"
+  short_description: "pai-orbit mode: groom"
+  default_prompt: "Use $groom to enter this mode."
+
+policy:
+  allow_implicit_invocation: false

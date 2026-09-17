@@ -1,5 +1,5 @@
 # System Architecture: pai-orbit
-Last updated: 2026-08-18
+Last updated: 2026-09-14
 Status: declared
 
 ## Services
@@ -9,10 +9,9 @@ Status: declared
 | core | `plugins/pai-orbit/core/` | Markdown (modes/skills/agents) + bash (hooks) | Tool-agnostic source of truth for all modes, skills, agents, hooks, templates |
 | claude-code adapter | `plugins/pai-orbit/adapters/claude-code/` → `dist/claude-code/` | bash build script | Full-fidelity compile of core to the Claude Code plugin format |
 | cursor-plugin adapter | `plugins/pai-orbit/adapters/cursor-plugin/` → `dist/cursor-plugin/` | bash build script | Cursor plugin (rules, skills, commands, agents, hooks) |
-| kiro-power adapter | `plugins/pai-orbit/adapters/kiro-power/` → `dist/kiro-power/` | bash build script | Kiro Power (skills + auto-loading steering); no agent or hook fidelity today |
 | cursor adapter (legacy) | `plugins/pai-orbit/adapters/cursor/` → `dist/cursor/` | bash build script | Lossy `.cursor/rules/*.mdc` compile |
-| copilot adapter | `plugins/pai-orbit/adapters/copilot/` → `dist/copilot/` | bash build script | Lossy `.github/copilot-instructions.md` compile |
-| codex adapter | `plugins/pai-orbit/adapters/codex/` → `dist/codex/` | bash build script | Experimental `AGENTS.md` compile |
+| copilot adapter | `plugins/pai-orbit/adapters/copilot/` → `dist/copilot/` | bash build script + Node install CLI | Compiles 29 invokable prompts, 5 auto-attaching instructions files, and the `.github/copilot-instructions.md` rule book, with an `npx` installer; hooks degrade to advisory text + opt-in pre-commit |
+| codex adapter | `plugins/pai-orbit/adapters/codex/` → `dist/codex/` | bash build script + Node install CLI | Full-parity native compile (skills, hooks, subagents, `AGENTS.md`) with `npx` installer |
 
 ## Communication
 
@@ -32,13 +31,11 @@ None — this is a static content pipeline (markdown/bash in, markdown/bash out)
 graph LR
     core[core/ — modes, skills, agents, hooks, templates] --> claudecode[adapters/claude-code/build.sh]
     core --> cursorplugin[adapters/cursor-plugin/build.sh]
-    core --> kiropower[adapters/kiro-power/build.sh]
     core --> cursor[adapters/cursor/build.sh]
     core --> copilot[adapters/copilot/build.sh]
     core --> codex[adapters/codex/build.sh]
     claudecode --> distcc[dist/claude-code/]
     cursorplugin --> distcp[dist/cursor-plugin/]
-    kiropower --> distkp[dist/kiro-power/]
     cursor --> distc[dist/cursor/]
     copilot --> distco[dist/copilot/]
     codex --> distcx[dist/codex/]
@@ -56,5 +53,5 @@ graph LR
 
 ## Open Questions
 
-- [ ] `constraints.md` rule 6 requires full adapter parity, but `cursor` (legacy) is documented as "lossy" and `codex` as "experimental" today — both are known to fall short. Bring them to parity, or revisit the rule. — owner: unassigned
-- [ ] `kiro-power` ships with no agent or hook fidelity (`❌`/`❌` in `plugins/pai-orbit/README.md`'s adapter fidelity table) — same gap `copilot` and `codex` already carry. Accepted at introduction per `docs/decisions/2026-08-18-add-kiro-power-adapter.md` rather than blocking the adapter's addition; revisit alongside the `cursor`/`codex` parity question above. — owner: unassigned
+- [x] ~~`constraints.md` rule 6 requires full adapter parity, but `cursor` (legacy) is documented as "lossy" and `codex` as "experimental" today — both are known to fall short. Bring them to parity, or revisit the rule.~~ — **Partially resolved 2026-07-30 by the codex adapter upgrade.** Codex is now full-parity (native skills, hooks, subagents, npx installer) — see `docs/decisions/2026-07-19-codex-adapter-decisions.md`. `cursor` (legacy) remains a documented lossy path retained only for teams that cannot install the `cursor-plugin` build; the Cursor plugin adapter is full-parity and is the recommended install for Cursor users. Rule 6 is now met by all recommended install paths (`claude-code`, `cursor-plugin`, `codex`); the legacy `cursor` fallback is a deliberate documented exception.
+- [x] ~~`kiro-power` ships with no agent or hook fidelity — accepted at introduction per `docs/decisions/2026-08-18-add-kiro-power-adapter.md`; revisit when Kiro gains an agent/hook-equivalent primitive.~~ — **Resolved 2026-09-14 by removing the adapter.** Rather than carry the gap indefinitely, `kiro-power` was withdrawn — see `docs/decisions/2026-09-14-remove-kiro-power-adapter.md`. Kiro is no longer a supported target; Kiro users have no pai-orbit install path.

@@ -1,0 +1,7 @@
+interface:
+  display_name: "data"
+  short_description: "pai-orbit mode: data"
+  default_prompt: "Use $data to enter this mode."
+
+policy:
+  allow_implicit_invocation: false

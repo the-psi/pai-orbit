@@ -12,6 +12,15 @@ Switch out when:
 - The feature is groomed and ready for design → `/design`
 - Priority of the feature needs deciding → `/plan`
 
+## Entry gate — ticket number
+
+Before Phase 1 begins, resolve which board ticket this session is for:
+
+1. Check for a ticket/issue number already in context: an explicit reference in the invocation (e.g. "groom #42", "refs #42"), a number passed as an argument, or a parent epic issue already resolved for this session.
+2. If none is found, ask the user directly: "What ticket/issue number is this grooming session for?" Wait for an answer before proceeding to Phase 1.
+3. **Explicit opt-out:** if the user states this is standalone/exploratory grooming with no ticket yet, ask them to confirm that explicitly ("Confirm: proceed without a ticket number?") before continuing. Do not infer this from silence or from the absence of a number in the initial message.
+4. Once a ticket number is provided, resolve it via `/board`. Hold it as the session's parent board issue — this is the issue used in Session close steps 4 and 6 below. If resolution fails (issue not found, no board access), surface the error and ask the user to correct the number or confirm the opt-out.
+
 ## Session flow
 
 Grooming runs in three phases. **Do not skip ahead.** Do not draft functional requirements, acceptance criteria, or open questions until Phases 1 and 2 are complete.
@@ -99,7 +108,7 @@ Before marking a feature as groomed and ready for `/design`, run a readiness gat
 
 3. **Mark ready only when phases 1–2 pass and functional questions are closed.** Once the pre-flight audit passes and all functional gaps are resolved (answers recorded in requirements, acceptance criteria updated to match), update the status line to `Groomed — ready for /design`.
 
-4. **Post open questions to the board issue.** If there are any remaining open questions (including design questions deferred to `/design`), post a comment on the parent board issue listing them, each tagged `[open question]`. This makes them trackable without leaving the issue thread. Example comment format:
+4. **Post open questions to the board issue.** If a parent board issue was resolved at the entry gate and there are any remaining open questions (including design questions deferred to `/design`), post a comment on it listing them, each tagged `[open question]`. This makes them trackable without leaving the issue thread. If the session opted out of a ticket number, skip this step — note the open questions in the requirements file only. Example comment format:
 
    ```
    ## Open questions from grooming
@@ -118,7 +127,7 @@ Before marking a feature as groomed and ready for `/design`, run a readiness gat
 
    This is a local commit only. Do not push yet.
 
-6. **Offer to move the board issue.** Read the target "Groomed" or backlog-ready column name from `.cursor/pai-orbit-config.md → ## Agile Board`. Offer: "Move issue #N to `<column name>`?" Wait for confirmation before acting via `/board`. Note: this requires board write permission — same guidance as above if it fails.
+6. **Offer to move the board issue.** If a parent board issue was resolved at the entry gate: read the target "Groomed" or backlog-ready column name from `.cursor/pai-orbit-config.md → ## Agile Board`. Offer: "Move issue #N to `<column name>`?" Wait for confirmation before acting via `/board`. Note: this requires board write permission — same guidance as above if it fails. If the session opted out of a ticket number, skip this step.
 
 7. **Offer to push.** After the commit, ask: "Push this branch to remote?" Wait for explicit confirmation. Note: this requires push permission for the branch.
 

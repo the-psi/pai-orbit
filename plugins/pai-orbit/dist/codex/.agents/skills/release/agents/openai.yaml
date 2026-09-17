@@ -1,0 +1,7 @@
+interface:
+  display_name: "release"
+  short_description: "pai-orbit mode: release"
+  default_prompt: "Use $release to enter this mode."
+
+policy:
+  allow_implicit_invocation: false

@@ -43,18 +43,45 @@ Full Cursor plugin at `plugins/pai-orbit/dist/cursor-plugin/pai-orbit/` — inst
 
 Legacy copy-rules install (lossy): `plugins/pai-orbit/dist/cursor/` — use only if you cannot install the plugin.
 
-### Other coding assistants (lossy)
+### GitHub Copilot (VS Code)
 
-GitHub Copilot and OpenAI Codex CLI bundles are reference instructions only:
+Full slash-command adapter — 30 invokable prompts (15 modes, 6 skills, 7 service-builder agents, 2 named agents: `/docs-writer` and `/cross-repo-impact`) + 5 auto-attaching instructions files + slim rule book at `.github/copilot-instructions.md`. Install with:
 
-- GitHub Copilot: `plugins/pai-orbit/dist/copilot/`
-- OpenAI Codex CLI (experimental): `plugins/pai-orbit/dist/codex/`
+```bash
+npx github:the-psi/pai-orbit init copilot
+```
+
+Also supports `update copilot` (refresh pai-orbit-owned files, preserve your config) and `migrate copilot` (migrate old `.github/pai-orbit/` layout to `.copilot/`). Full guide: [`docs/copilot-install-and-usage.md`](copilot-install-and-usage.md).
+
+**What Copilot users get vs Claude Code:** same modes, same skills, same `docs/` contracts. Copilot's project-context file is `AGENTS.md` at repo root (same content as Claude Code's `CLAUDE.md`; only the filename differs to match each tool's convention). **What they don't get:** runtime hook enforcement — `bash-guard` is advisory in Chat + commit-time lint/secret-tripwire via the optional `.husky/pre-commit`; not a full replacement for Claude Code's PreToolUse blocking.
+
+### OpenAI Codex CLI (full parity)
+
+pai-orbit ships as a full Codex CLI install — skills, hooks, subagents, MCP, and always-on rules all land natively. Requires Codex CLI v0.144.6+ and Node.js 18+.
+
+Single command, cross-platform:
+
+```bash
+npx github:the-psi/pai-orbit init codex
+```
+
+Pin a specific release with a git ref suffix: `npx github:the-psi/pai-orbit#<tag> init codex`. Re-install with `update codex` in place of `init codex`.
+
+After install, launch `codex` in the project, trust the project when prompted, then:
+
+1. Run `/hooks` and trust the four hook registrations.
+2. Run `$setup` to fill in `.codex/pai-orbit-config.md`, `.codex/team.md`, and the lint hooks' repo paths.
+3. Run `/skills` — you should see all 21 skills (6 operational + 15 modes).
+
+Two modes are renamed to avoid ergonomic overlap with Codex's built-in slash commands: **`plan` → `orbit-plan`** (`/plan` is Codex's built-in planner) and **`review` → `orbit-review`** (`/review` is Codex's built-in code review). Invoke them as `$orbit-plan` and `$orbit-review`.
+
+See [`docs/codex-install-and-usage.md`](codex-install-and-usage.md) for the full walkthrough and honest parity notes vs Claude Code.
 
 ---
 
 ## First run: `/setup`
 
-Open Claude Code in your project directory and type `/setup`.
+Open Claude Code, Cursor, or Copilot Chat in your project directory and type `/setup`. All three now emit `/setup` — Business/Pro Copilot runs it agentically; Copilot Free renders it as advisory text. Copilot-only teams on Free tier should use `npx github:the-psi/pai-orbit init copilot --setup` to run the interview from the terminal instead.
 
 Setup will:
 
