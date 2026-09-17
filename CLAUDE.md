@@ -2,7 +2,7 @@
 
 A structured developer methodology harness for Claude Code that enforces disciplined working modes, prevents context loss, and produces local-first documentation at every stage of development.
 
-**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.6.0
+**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.7.0
 
 ---
 
@@ -28,7 +28,7 @@ pai-orbit/                          # repo = marketplace
 │   └── pai-orbit/
 │       ├── core/                   # tool-agnostic source of truth
 │       │   ├── plugin.json
-│       │   ├── modes/              # /arch, /build, /design, /domain, /groom, /plan, /ux, /data
+│       │   ├── modes/              # /arch, /build, /catchup, /design, /domain, /groom, /plan, /ux, /data
 │       │   ├── skills/             # analysis, board, data-model, deploy, epic, git, incident,
 │       │   │                       # review, security-review, setup, simplify, suggest-skills, test
 │       │   ├── agents/             # docs-writer, cross-repo-impact
@@ -100,6 +100,7 @@ Each `/command` locks Claude into a distinct headspace. Modes do not bleed into 
 | `/build` | Implement features and fixes | Code + updated docs |
 | `/test` | Write test plans, run QA | `docs/features/*/test-plan.md` |
 | `/plan` | Prioritize and sequence work | `docs/plans/*.md` |
+| `/catchup` | Read-only session-start briefing: what shipped, what's open, what's yours, what next | None (conversation only) |
 
 ### Skills
 
@@ -126,6 +127,7 @@ Every mode declares what it reads and what it writes. This is the discipline tha
 /design → consumes requirements + domain + architecture → produces design.md + ADRs
 /build  → consumes all docs + constraints.md + board → produces code + updated docs
 /test   → consumes requirements → produces test-plan.md
+/catchup → consumes all docs + board + git history → produces nothing (briefing in conversation only)
 ```
 
 ---
@@ -210,7 +212,7 @@ For GitHub Copilot (VS Code), single command from the project root (requires Nod
 npx github:the-psi/pai-orbit init copilot
 ```
 
-Installs 29 invokable prompts, 5 auto-attaching instructions files, and the rule book at `.github/copilot-instructions.md`. Also supports `update copilot` and `migrate copilot`. See [docs/copilot-install-and-usage.md](docs/copilot-install-and-usage.md) for the full walkthrough (Business vs Free tier behaviour, `/setup` in Chat, pre-commit hook templates).
+Installs 30 invokable prompts, 5 auto-attaching instructions files, and the rule book at `.github/copilot-instructions.md`. Also supports `update copilot` and `migrate copilot`. See [docs/copilot-install-and-usage.md](docs/copilot-install-and-usage.md) for the full walkthrough (Business vs Free tier behaviour, `/setup` in Chat, pre-commit hook templates).
 
 ---
 

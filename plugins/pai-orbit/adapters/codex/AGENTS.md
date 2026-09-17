@@ -4,7 +4,7 @@ pai-orbit — Codex CLI project rule book. Always loaded at project root.
 
 ## What this project uses
 
-- **Skills** live at `.agents/skills/`. Six operational skills (`analysis`, `board`, `data-model`, `epic`, `git`, `simplify`) can be invoked as `$skill-name` or fire implicitly on description match. Fourteen mode skills (`arch`, `build`, `data`, `design`, `domain`, `groom`, `incident`, `orbit-plan`, `orbit-review`, `release`, `setup`, `suggest-skills`, `test`, `ux`) are explicit-only — the user invokes them as `$mode-name` when they want to enter that headspace.
+- **Skills** live at `.agents/skills/`. Six operational skills (`analysis`, `board`, `data-model`, `epic`, `git`, `simplify`) can be invoked as `$skill-name` or fire implicitly on description match. Fifteen mode skills (`arch`, `build`, `catchup`, `data`, `design`, `domain`, `groom`, `incident`, `orbit-plan`, `orbit-review`, `release`, `setup`, `suggest-skills`, `test`, `ux`) are explicit-only — the user invokes them as `$mode-name` when they want to enter that headspace.
 - **Subagents** live at `.codex/agents/`. `docs-writer` handles documentation work; `cross-repo-impact` handles read-only cross-repository analysis. Codex spawns them via natural-language requests; use `/agent` to switch active agent threads.
 - **Hooks** live at `.codex/hooks/` (registered in `.codex/hooks.json`). Trust them via `/hooks` on first install. Every hook script edit invalidates trust — re-run `/hooks` after upgrades.
 - **Project config** lives at `.codex/pai-orbit-config.md` (board type, git model, deploy targets, docs home) and `.codex/team.md` (roster).

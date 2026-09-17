@@ -60,6 +60,7 @@ Every mode either produces or consumes:
 | `/plan` | `docs/plans/`, board card moves | All docs, task board state |
 | `/data` | `docs/reports/` | Database, `docs/domain/` |
 | `/incident` | Tracking issue, `docs/wip/postmortem-*.md` | Error logs, recent deploys |
+| `/catchup` | — (briefing in conversation only) | All docs, `docs/wip/session-capture-*.md`, git history, task board, open PRs |
 
 `/plan` is the integrator — it consumes everything and decides what to work on next. It never produces domain knowledge, requirements, or designs.
 
@@ -119,10 +120,16 @@ When an issue receives a response, a reviewer requests changes, or an external d
 4. `/test` — run the relevant test cases; log any failures
 5. `/deploy` — ship once the test pass is clean
 
+### Starting a work session
+
+1. Open Claude Code in your project directory
+2. `/catchup` — Claude reads the project baseline, reports what the team shipped and what is open, lists what is assigned to you and any reviews waiting on you, and proposes what to pick next. Read-only; nothing is written or branched.
+3. Pick an item — Claude switches to `/build` (or `/groom` / `/design` if the item is not ready)
+
 ### Starting a build session
 
 1. Open Claude Code in your project directory
-2. Check `/board` for the issue you're working on
+2. Check `/board` for the issue you're working on (or run `/catchup` first — see above)
 3. Type `/build` — Claude reads CLAUDE.md and any relevant docs before writing a line of code
 4. Claude confirms what it understood about the task before starting
 5. **If switching modes mid-session:** save a handoff note to `docs/wip/session-capture-<date>.md` before switching; read it when returning to `/build`
