@@ -100,6 +100,35 @@ rewrite_slash_cross_refs() {
   mv "$tmp" "$file"
 }
 
+# Codex skills are flat, self-contained SKILL.md files with no sibling-file
+# convention — a skill can't resolve a relative "reference/docs-path-resolution.md"
+# pointer at runtime. Inline the referenced content as an appendix wherever a
+# skill body mentions it, so the file stays self-contained the same way every
+# other cross-reference here already is.
+DOCS_PATH_RESOLUTION_CONTENT=""
+if [ -f "$CORE_DIR/reference/docs-path-resolution.md" ]; then
+  DOCS_PATH_RESOLUTION_CONTENT="$(cat "$CORE_DIR/reference/docs-path-resolution.md")"
+fi
+
+append_reference_appendix() {
+  local target_file="$1"
+  if [ -n "$DOCS_PATH_RESOLUTION_CONTENT" ] && grep -q "reference/docs-path-resolution.md" "$target_file"; then
+    {
+      echo ""
+      echo "---"
+      echo ""
+      echo "## Appendix: docs path resolution"
+      echo ""
+      echo "Referenced above as \`reference/docs-path-resolution.md\` — inlined here since Codex skills are flat files with no sibling-file lookup:"
+      echo ""
+      echo "$DOCS_PATH_RESOLUTION_CONTENT"
+    } >> "$target_file"
+    # The appendix carries its own `.claude/pai-orbit-config.md` reference —
+    # re-run the standard rewrite so it becomes `.codex/` like everything else.
+    rewrite_paths_in_place "$target_file"
+  fi
+}
+
 # ── Mode-skill descriptions ─────────────────────────────────────────────────
 # Hand-crafted descriptions surfaced in Codex's /skills picker. Under 400 chars
 # each; total mode-skill sum well under the 8000-char budget policy (checked
@@ -176,6 +205,7 @@ for skill_dir in "$CORE_DIR"/skills/*/; do
   while IFS= read -r -d '' f; do
     rewrite_paths_in_place "$f"
     rewrite_slash_cross_refs "$f"
+    append_reference_appendix "$f"
   done < <(find "$dest_dir" \( -name '*.md' -o -name '*.mdc' -o -name '*.template' \) -print0)
 done
 
@@ -226,6 +256,7 @@ YAML
   # Standard path rewrites + cross-reference rewrites on every mode body
   rewrite_paths_in_place "$skill_md"
   rewrite_slash_cross_refs "$skill_md"
+  append_reference_appendix "$skill_md"
 }
 
 # Emit all 14 mode skills. plan → orbit-plan; review → orbit-review.
@@ -269,6 +300,21 @@ markdown_agent_to_toml() {
     -e 's|\.claude/settings\.json|.codex/config.toml|g' \
     -e 's|\.claude/|.codex/|g' \
     -e 's|\bCLAUDE\.md\b|AGENTS.md|g')
+
+  # Inline the docs-path-resolution reference (see append_reference_appendix)
+  # if this agent body points at it — TOML subagents have no sibling-file lookup.
+  if [ -n "$DOCS_PATH_RESOLUTION_CONTENT" ] && printf '%s' "$body_rewritten" | grep -q "reference/docs-path-resolution.md"; then
+    # The appendix carries its own `.claude/pai-orbit-config.md` reference —
+    # apply the same rewrite so it becomes `.codex/` like the rest of the body.
+    local appendix_rewritten
+    appendix_rewritten=$(printf '%s' "$DOCS_PATH_RESOLUTION_CONTENT" | sed \
+      -e 's|\.claude/skills/|.agents/skills/|g' \
+      -e 's|\.claude/settings\.local\.json|.codex/config.toml|g' \
+      -e 's|\.claude/settings\.json|.codex/config.toml|g' \
+      -e 's|\.claude/|.codex/|g' \
+      -e 's|\bCLAUDE\.md\b|AGENTS.md|g')
+    body_rewritten="$(printf '%s\n\n---\n\n## Appendix: docs path resolution\n\nReferenced above as \`reference/docs-path-resolution.md\` — inlined here since Codex agents have no sibling-file lookup:\n\n%s' "$body_rewritten" "$appendix_rewritten")"
+  fi
 
   # Escape any occurrences of """ inside the body so the TOML triple-quoted
   # string closes correctly. Rare, but defensive.

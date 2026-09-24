@@ -34,6 +34,8 @@ Switch out when:
 
 #### 1. Scope the review
 
+Resolve the docs root per `reference/docs-path-resolution.md` (config: `.claude/pai-orbit-config.md → ## System Docs`).
+
 Ask (or infer from context):
 - Branch name or PR number
 - Which feature or issue this relates to
@@ -78,7 +80,7 @@ Check each changed file against:
 
 #### 4. Produce the review report
 
-Write to `docs/wip/review-<branch-or-pr>-<date>.md`:
+Write to `<docs root>/wip/review-<branch-or-pr>-<date>.md`:
 
 ```
 ## Review: <branch or PR title>
@@ -196,7 +198,7 @@ Work through each category. For each finding: report `file:line — description 
 
 ### Output format
 
-Write findings to `docs/wip/security-review-<branch>-<date>.md`:
+Write findings to `<docs root>/wip/security-review-<branch>-<date>.md`:
 
 ```
 ## Security Review: <branch or PR title>
