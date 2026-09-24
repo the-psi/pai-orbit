@@ -118,7 +118,7 @@ az extension show --name azure-devops >/dev/null 2>&1 \
 ```
 
 ```bash
-# Create — unverified, confirm against `az boards work-item create --help`
+# Create — flags confirmed against the az boards work-item create reference
 az boards work-item create \
   --title "<title>" \
   --type "<work-item-type>" \
@@ -127,28 +127,30 @@ az boards work-item create \
   --description "<body>" \
   --assigned-to "<handle>"
 
-# Read current state — unverified, confirm against `az boards work-item show --help`
+# Read current state — flags confirmed against the az boards work-item show reference
 az boards work-item show --id <N> --org https://dev.azure.com/<org>
 
-# Move card (transition) — unverified, confirm against `az boards work-item update --help`
+# Move card (transition) — flags confirmed against the az boards work-item update reference
 az boards work-item update --id <N> --state "<next-column-state>" --org https://dev.azure.com/<org>
 
 # Comment
 az boards work-item update --id <N> --discussion "<text>" --org https://dev.azure.com/<org>
 
-# Close — Azure has no dedicated close verb; transition to the process's terminal state instead
-az boards work-item update --id <N> --state "Closed" --org https://dev.azure.com/<org>
+# Close — Azure has no dedicated close verb; transition to the process's terminal state instead.
+# The terminal state name varies by process template (e.g. "Closed" for Agile, "Done" for Scrum) —
+# use whatever the column→state map names as the closing state, never hardcode "Closed".
+az boards work-item update --id <N> --state "<terminal-state-from-config>" --org https://dev.azure.com/<org>
 ```
 
-Column→state map is read from `## Agile Board → columns` in `.claude/pai-orbit-config.md`. If the map is absent, ask the user to supply it before moving. The environment these commands were written in did not have `az` installed — confirm every flag against `az boards work-item --help` before relying on it, and mark any command not yet confirmed live as unverified when reporting results.
+Column→state map is read from `## Agile Board → columns` in `.claude/pai-orbit-config.md`. If the map is absent, ask the user to supply it before moving.
 
 ## Auth preflight
 
-**Azure DevOps:** before the first board operation in a session, confirm the CLI is actually authenticated rather than letting a stale credential surface as a confusing mid-command failure:
+**Azure DevOps:** before the first board operation in a session, confirm the DevOps PAT is actually usable — `az account show` only checks ARM login and says nothing about the `az devops login`/`AZURE_DEVOPS_EXT_PAT` credential the `azure-devops` extension needs, so probe with a real, cheap DevOps call instead:
 
 ```bash
-az account show >/dev/null 2>&1 \
-  || echo "Not logged in — run 'az devops login' or set AZURE_DEVOPS_EXT_PAT, then retry."
+az devops project list --org https://dev.azure.com/<org> -o none \
+  || echo "Not authenticated to Azure DevOps — run 'az devops login' or set AZURE_DEVOPS_EXT_PAT, then retry."
 ```
 
 If the PAT is missing or expired, report the exact remedy above and stop — never report a create/transition/comment/close as applied without confirming the command's exit code.

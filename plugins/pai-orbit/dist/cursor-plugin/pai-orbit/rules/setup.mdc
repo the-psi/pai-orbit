@@ -136,16 +136,23 @@ az extension show --name azure-devops >/dev/null 2>&1 \
 
 If missing, stop here and report the remedy — do not guess column names or proceed with a manual list.
 
-Then list the work-item states of the project's process, so column names come from the live project rather than being typed by hand (unverified — confirm the exact invocation against `az boards --help` / `az devops invoke --help` during implementation, the environment this mode was authored in did not have `az` installed):
+Then list the work-item states of the project's process, so column names come from the live project rather than being typed by hand. `az devops invoke`'s `--area`/`--resource` values are internal location-service names, not literal REST path segments — never guess them. Discover the correct pair first:
 
 ```bash
-az devops invoke --area work-item-types --resource states \
-  --route-parameters project=<project> workItemType=<work-item-type> \
-  --org https://dev.azure.com/<org> \
+az devops invoke --org https://dev.azure.com/<org> \
+  --query "[?contains(area, 'wit') && contains(resourceName, 'workitemtypestates')]"
+```
+
+Then call it with the project and work-item type as route parameters (confirmed against the REST endpoint `GET .../_apis/wit/workitemtypes/{type}/states`, which takes `project` and `type`):
+
+```bash
+az devops invoke --org https://dev.azure.com/<org> \
+  --area <area-from-discovery> --resource <resourceName-from-discovery> \
+  --route-parameters project=<project> type=<work-item-type> \
   --query "value[].name" -o tsv
 ```
 
-Present the discovered states in process order and ask the user to confirm their board's column order (they may want to exclude terminal states like "Closed" from the active workflow). If the query fails, ask the user to list column names manually — never assume.
+Present the discovered states in process order and ask the user to confirm their board's column order (they may want to exclude terminal states like "Closed"/"Done" from the active workflow — the exact terminal state name varies by process template). If either query fails, ask the user to list column names manually — never assume.
 
 ### Jira / GitHub Issues / Notion / none
 
