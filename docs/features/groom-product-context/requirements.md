@@ -49,7 +49,7 @@ What this does NOT include:
 7. REQ-7 (Scenario 4): If the user can't answer a why-question because context is genuinely undocumented, `/groom` asks the user to choose: (a) proceed with a stated, documented assumption, or (b) record the gap as an open question.
 8. REQ-8 (Scenario 4): The outcome of REQ-7 is captured in the output file — assumptions under `## Context`, unresolved gaps under `## Open questions`.
 9. REQ-9 (Scenario 5): For issues classified as bug fixes/small enhancements, `/groom` defaults to skipping `docs/plans`/board consultation unless its own reasoning surfaces a specific reason to check.
-10. REQ-10 (Scenario 5): For issues classified as new features/capabilities, `/groom` checks `docs/features/*` (existing capabilities) and roadmap sources (`docs/plans/*.md` or board) for overlap before finalizing purpose.
+10. REQ-10 (Scenario 5): For issues classified as new features/capabilities, `/groom` checks existing capabilities and roadmap sources for overlap before finalizing purpose. Capabilities come from `docs/domain/product-capabilities.md` where it exists, falling back to `docs/features/*` where it does not. Roadmap sources are `docs/plans/*.md` **and** the board, merged per the per-field precedence in [ADR 2026-08-18](../../decisions/2026-08-18-groom-roadmap-source-precedence.md).
 11. REQ-11 (Scenario 5): Classification (new feature vs. bug/enhancement) uses existing issue labels when present; when absent or ambiguous, `/groom` asks the user directly.
 12. REQ-12 (Scenario 6): After purpose is agreed in Phase 1, `/groom` must produce an explicit list of what will be changed or newly implemented — as discrete items (e.g., specific screens, jobs, endpoints, files, or behaviors) rather than a single prose scope statement — before proposing any scenarios in Phase 2.
 13. REQ-13 (Scenario 6): The list of changes/new implementations must be informed by the same product-context reasoning used for purpose — exclusions should name specific overlapping capabilities/features where applicable, consistent with REQ-5.
@@ -62,10 +62,11 @@ What this does NOT include:
 
 ## Context
 - This repo's own `docs/domain/` is empty — a live test case for Scenario 2/4 behavior.
-- No canonical "product capabilities" doc exists in the current docs structure; `docs/features/*` is the closest proxy used by REQ-10.
+- `docs/domain/product-capabilities.md` is the canonical capabilities registry, established by [ADR 2026-08-03](../../decisions/2026-08-03-product-capabilities-placement-rule.md), which post-dates this doc's original drafting (2026-07-25). REQ-10 reads it first and falls back to `docs/features/*` only where it is absent — which is the path that actually executes in this repo, whose `docs/domain/` holds only `.gitkeep`.
 - Issue #35 itself has no labels, so REQ-11's ask-the-user fallback would trigger if this issue were groomed literally.
 - This feature is scoped to Phase 1 (purpose) only; Phase 3 (requirements/acceptance criteria) product-context reasoning is explicitly deferred (see Out of scope).
 - This is the first requirements doc to use the new `## Scope` section (see above) — it doubles as a worked example for future `/groom` sessions.
+- **Amended during `/build` (2026-09-03).** REQ-10, AC-8, and the capabilities note above were updated per decision D3 in [design.md](./design.md); the roadmap open question below was closed by [ADR 2026-08-18](../../decisions/2026-08-18-groom-roadmap-source-precedence.md). No scenario, purpose, or scope item changed.
 
 ## Out of scope
 - Extending product-context reasoning into Phase 3 (requirements/acceptance criteria drafting) — deferred to a future issue.
@@ -73,7 +74,7 @@ What this does NOT include:
 - Changes to `/design`, `/build`, or any other mode's behavior.
 
 ## Open questions
-- [ ] Design deferral: when both `docs/plans/*.md` and the board have relevant roadmap info, which takes precedence, or are they merged? — owner: `/design`.
+- [x] Design deferral: when both `docs/plans/*.md` and the board have relevant roadmap info, which takes precedence, or are they merged? — owner: `/design`. **Resolved 2026-08-18:** merged with per-field precedence — board authoritative for status/ownership/existence, `docs/plans/*.md` for sequencing rationale, contradictions block as a REQ-5 conflict. See [ADR 2026-08-18](../../decisions/2026-08-18-groom-roadmap-source-precedence.md).
 
 ## Acceptance criteria
 - AC-1 (Scenario 1): Given `docs/domain`, `ux.md`, `CLAUDE.md`, or `docs/epics` contain content relevant to the issue, `/groom`'s why-reasoning references specific content from them before presenting a draft purpose statement.
@@ -83,7 +84,7 @@ What this does NOT include:
 - AC-5 (Scenario 3): `/groom` does not proceed to Phase 2 while an identified conflict remains unresolved.
 - AC-6 (Scenario 4): Given the user indicates needed context doesn't exist and they can't answer a why-question, `/groom` explicitly offers the choice (proceed with stated assumption vs. record open question) and captures the result in `## Context` or `## Open questions` per the choice made.
 - AC-7 (Scenario 5): Given an issue classified as bug fix/small enhancement with no evident overlap, `/groom` does not require pulling `docs/plans` or board data unless its own reasoning surfaces a specific reason to check.
-- AC-8 (Scenario 5): Given an issue classified as new feature/capability, `/groom` checks `docs/features/*` and roadmap sources for overlap before finalizing purpose.
+- AC-8 (Scenario 5): Given an issue classified as new feature/capability, `/groom` checks the capabilities registry (`docs/domain/product-capabilities.md`, falling back to `docs/features/*`) and both roadmap sources for overlap before finalizing purpose, and states which capabilities source it used.
 - AC-9 (Scenario 5): Classification uses existing issue labels when present; `/groom` asks the user directly when labels are absent or ambiguous.
 - AC-10 (Scenario 6): After purpose is agreed, `/groom` presents an explicit bulleted list of concrete changes/new implementations (naming specific screens, jobs, endpoints, files, or components where relevant) and requires explicit user confirmation before proposing scenarios.
 - AC-11 (Scenario 6): The confirmed list is captured in a `## Scope` section of the output file, positioned between `## Purpose` and `## Scenarios in scope`, distinct from `## Out of scope`.

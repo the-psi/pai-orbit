@@ -1,6 +1,6 @@
 {
   "name": "pai-orbit",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Structured developer methodology harness — standalone install CLI that scaffolds the Copilot, Codex, Cursor, and Claude Code adapters into a project.",
   "bin": {
     "pai-orbit": "plugins/pai-orbit/scripts/init/cli.js"
