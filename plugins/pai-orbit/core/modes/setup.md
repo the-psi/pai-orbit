@@ -27,7 +27,7 @@ Ask all unresolved questions in a single block — do not ask one at a time. Cov
 
 1. **Repo structure** (if ambiguous): monorepo with these services, or separate repos?
 2. **Tech stack** (per service, if not clear from files): language + framework?
-3. **Task management**: GitHub Issues / GitHub Projects v2 / Linear / Jira / GitLab / Notion / none? Provide board URL(s). Do **not** ask for label taxonomy here — the board interview in Step 2b will query it from the API.
+3. **Task management**: GitHub Issues / GitHub Projects v2 / Linear / Jira / GitLab / Azure DevOps / Notion / none? Provide board URL(s). Do **not** ask for label taxonomy here — the board interview in Step 2b will query it from the API.
 4. **Branching model**: GitHub Flow (feature branches → main) / GitFlow (develop + release branches) / trunk-based (direct to main with flags)?
 5. **Deployment**: cloud provider + target (Cloud Run, Vercel, Railway, AWS ECS, bare VPS, etc.)? One command or per-service?
 6. **Docs home**: in-repo `docs/` / dedicated docs repo (provide path) / Confluence (provide space URL) / Notion (provide workspace)?
@@ -119,6 +119,28 @@ linear team list
 ```
 
 Present the team's workflow states and ask the user to confirm the ordered column list. If the CLI is unavailable, ask the user to copy the state names from their Linear workspace settings.
+
+### Azure DevOps
+
+First, verify the CLI can talk to Azure Boards at all — the `az devops`/`az boards` command group ships in the `azure-devops` extension, not in `az` core, and a missing extension fails with an unrelated-looking error rather than "command not found":
+
+```bash
+az extension show --name azure-devops >/dev/null 2>&1 \
+  || echo "MISSING: azure-devops extension — run 'az extension add --name azure-devops', then re-run /setup"
+```
+
+If missing, stop here and report the remedy — do not guess column names or proceed with a manual list.
+
+Then list the work-item states of the project's process, so column names come from the live project rather than being typed by hand (unverified — confirm the exact invocation against `az boards --help` / `az devops invoke --help` during implementation, the environment this mode was authored in did not have `az` installed):
+
+```bash
+az devops invoke --area work-item-types --resource states \
+  --route-parameters project=<project> workItemType=<work-item-type> \
+  --org https://dev.azure.com/<org> \
+  --query "value[].name" -o tsv
+```
+
+Present the discovered states in process order and ask the user to confirm their board's column order (they may want to exclude terminal states like "Closed" from the active workflow). If the query fails, ask the user to list column names manually — never assume.
 
 ### Jira / GitHub Issues / Notion / none
 

@@ -43,6 +43,7 @@ Read the column flow from config. Common flows:
 - **Linear:** `linear issue update --state <state>`
 - **Jira:** `jira issue transition`
 - **GitLab:** boards are label-driven — each column maps to a label (scoped like `workflow::In Progress` or standalone like `To Do`). Moving a card means removing the current column label and adding the next one. Read the column→label map from `## Agile Board → columns` in config, then run the GitLab label resolution step below before applying any label.
+- **Azure DevOps:** `az boards work-item update --id <N> --state "<state>"` — read the column→state map from `## Agile Board → columns` in config first; run the Azure CLI availability check below before the first call of the session.
 
 **GitLab label resolution (always run before applying a label):**
 1. Build the match list: column→label entries from config + any label name the user stated verbatim.
@@ -106,6 +107,51 @@ glab issue close <issue-id> --repo <namespace>/<project>
 ```
 
 Column→label map is read from `## Agile Board → columns` in `.codex/pai-orbit-config.md`. If the map is absent, ask the user to supply it before moving.
+
+**Azure DevOps:**
+
+Unlike the other board types, Azure Boards has no MCP path here and the `az boards` command group lives in an extension rather than `az` core — check it's present before the first call of the session:
+
+```bash
+az extension show --name azure-devops >/dev/null 2>&1 \
+  || echo "MISSING: azure-devops extension — run 'az extension add --name azure-devops'"
+```
+
+```bash
+# Create — unverified, confirm against `az boards work-item create --help`
+az boards work-item create \
+  --title "<title>" \
+  --type "<work-item-type>" \
+  --org https://dev.azure.com/<org> \
+  --project <project> \
+  --description "<body>" \
+  --assigned-to "<handle>"
+
+# Read current state — unverified, confirm against `az boards work-item show --help`
+az boards work-item show --id <N> --org https://dev.azure.com/<org>
+
+# Move card (transition) — unverified, confirm against `az boards work-item update --help`
+az boards work-item update --id <N> --state "<next-column-state>" --org https://dev.azure.com/<org>
+
+# Comment
+az boards work-item update --id <N> --discussion "<text>" --org https://dev.azure.com/<org>
+
+# Close — Azure has no dedicated close verb; transition to the process's terminal state instead
+az boards work-item update --id <N> --state "Closed" --org https://dev.azure.com/<org>
+```
+
+Column→state map is read from `## Agile Board → columns` in `.codex/pai-orbit-config.md`. If the map is absent, ask the user to supply it before moving. The environment these commands were written in did not have `az` installed — confirm every flag against `az boards work-item --help` before relying on it, and mark any command not yet confirmed live as unverified when reporting results.
+
+## Auth preflight
+
+**Azure DevOps:** before the first board operation in a session, confirm the CLI is actually authenticated rather than letting a stale credential surface as a confusing mid-command failure:
+
+```bash
+az account show >/dev/null 2>&1 \
+  || echo "Not logged in — run 'az devops login' or set AZURE_DEVOPS_EXT_PAT, then retry."
+```
+
+If the PAT is missing or expired, report the exact remedy above and stop — never report a create/transition/comment/close as applied without confirming the command's exit code.
 
 ## Conventions (always apply)
 
