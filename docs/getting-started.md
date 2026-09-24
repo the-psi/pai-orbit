@@ -45,7 +45,7 @@ Legacy copy-rules install (lossy): `plugins/pai-orbit/dist/cursor/` — use only
 
 ### GitHub Copilot (VS Code)
 
-Full slash-command adapter — 29 invokable prompts (14 modes, 6 skills, 7 service-builder agents, 2 named agents: `/docs-writer` and `/cross-repo-impact`) + 5 auto-attaching instructions files + slim rule book at `.github/copilot-instructions.md`. Install with:
+Full slash-command adapter — 30 invokable prompts (15 modes, 6 skills, 7 service-builder agents, 2 named agents: `/docs-writer` and `/cross-repo-impact`) + 5 auto-attaching instructions files + slim rule book at `.github/copilot-instructions.md`. Install with:
 
 ```bash
 npx github:the-psi/pai-orbit init copilot
@@ -71,7 +71,7 @@ After install, launch `codex` in the project, trust the project when prompted, t
 
 1. Run `/hooks` and trust the four hook registrations.
 2. Run `$setup` to fill in `.codex/pai-orbit-config.md`, `.codex/team.md`, and the lint hooks' repo paths.
-3. Run `/skills` — you should see all 20 skills (6 operational + 14 modes).
+3. Run `/skills` — you should see all 21 skills (6 operational + 15 modes).
 
 Two modes are renamed to avoid ergonomic overlap with Codex's built-in slash commands: **`plan` → `orbit-plan`** (`/plan` is Codex's built-in planner) and **`review` → `orbit-review`** (`/review` is Codex's built-in code review). Invoke them as `$orbit-plan` and `$orbit-review`.
 

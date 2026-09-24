@@ -14,6 +14,7 @@ BASE="https://raw.githubusercontent.com/${REPO}/${REF}/plugins/pai-orbit/dist/cu
 RULES=(
   ".cursor/rules/arch.mdc"
   ".cursor/rules/build.mdc"
+  ".cursor/rules/catchup.mdc"
   ".cursor/rules/data.mdc"
   ".cursor/rules/design.mdc"
   ".cursor/rules/domain.mdc"

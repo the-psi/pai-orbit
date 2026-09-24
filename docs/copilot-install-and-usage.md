@@ -132,7 +132,7 @@ Re-running the npx install is unnecessary and would only matter if the team lead
 |------|----------|---------|
 | `.copilot/` | pai-orbit | Team metadata (`pai-orbit-config.md`, `team.md`, `settings.json`). Read by the prompts via the Context-discovery directives. |
 | `.github/copilot-instructions.md` | pai-orbit | Always-loaded rule book + Context-discovery + prompt-library pointer. Refreshed on every re-run. |
-| `.github/prompts/*.prompt.md` | pai-orbit | 29 invokable slash commands (14 modes + 6 skills + 7 service-builder agents + 2 named agents: `/docs-writer`, `/cross-repo-impact`). Refreshed on every re-run. |
+| `.github/prompts/*.prompt.md` | pai-orbit | 30 invokable slash commands (15 modes + 6 skills + 7 service-builder agents + 2 named agents: `/docs-writer`, `/cross-repo-impact`). Refreshed on every re-run. |
 | `.github/instructions/*.instructions.md` | pai-orbit | 5 auto-attaching guidance files (`git`, `data-model`, `arch-drift`, `context-discovery`, `decisions`). Refreshed on every re-run. |
 | `.husky/` and `.pre-commit-config.yaml(.template)` | pai-orbit (templates) / user (active files) | Inert templates are owned by pai-orbit and refreshed on re-run. The active `.husky/pre-commit` or `.pre-commit-config.yaml` is **preserved** once installed. |
 | `AGENTS.md` | user (after first scaffold) | Project documentation for Copilot: stack, services, key files, data model, auth. **Same content shape** as Claude Code's `CLAUDE.md` — only the filename differs to match each tool's convention. |
@@ -346,7 +346,7 @@ pai-orbit's Copilot adapter delivers **~85% of the methodology benefit on Free, 
 
 1. Did you reload VS Code? (`Ctrl+Shift+P` → "Developer: Reload Window")
 2. Open `.github/copilot-instructions.md` in VS Code. It should exist and start with `# pai-orbit — GitHub Copilot rule book`.
-3. List `.github/prompts/` — there should be 29 `*.prompt.md` files (14 mode + 6 skill + 7 service-builder agent + 2 named agent: `docs-writer`, `cross-repo-impact`).
+3. List `.github/prompts/` — there should be 30 `*.prompt.md` files (15 mode + 6 skill + 7 service-builder agent + 2 named agent: `docs-writer`, `cross-repo-impact`).
 4. Check the VS Code Copilot Chat settings — `chat.promptFiles` and `chat.instructionsFilesLocations` should be enabled. If they're disabled (org policy), prompt files won't be invokable; use the `## Modes` reference in `copilot-instructions.md` as a fall-back.
 
 ### `npx` fails

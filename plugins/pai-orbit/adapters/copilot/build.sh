@@ -11,7 +11,7 @@
 #
 # Emits dist/copilot/ with:
 #   .github/copilot-instructions.md          slim rule book + context discovery
-#   .github/prompts/<mode>.prompt.md         14 mode prompts (all of core/modes/;
+#   .github/prompts/<mode>.prompt.md         15 mode prompts (all of core/modes/;
 #                                             /setup and /suggest-skills use agent runtime)
 #   .github/prompts/<skill>.prompt.md         6 skill prompts
 #   .github/prompts/<stack>-builder.prompt.md 7 service-builder agent prompts (mode: agent per D30)
@@ -217,7 +217,7 @@ Create the `.copilot/*`, `AGENTS.md`, and `docs/` files. Tell the user what was 
 The `npx github:the-psi/pai-orbit init copilot` step writes these files before `/setup` runs:
 
 - `.github/copilot-instructions.md` — always-loaded rule book
-- `.github/prompts/*.prompt.md` — 29 slash-command prompt files
+- `.github/prompts/*.prompt.md` — 30 slash-command prompt files
 - `.github/instructions/*.instructions.md` — 5 auto-attaching guidance files
 - `.husky/pre-commit.template` and `.pre-commit-config.yaml.template` — inert hook templates
 
@@ -367,7 +367,7 @@ Architecture files:
 
 Methodology surfaces (always written):
 - ✅ Generated — `.github/copilot-instructions.md` — slim rule book + Context discovery + prompt-library pointer
-- ✅ Generated — `.github/prompts/` — 29 invokable slash commands (14 modes, 6 skills, 7 service-builder agent prompts, 2 named agents: `docs-writer`, `cross-repo-impact`)
+- ✅ Generated — `.github/prompts/` — 30 invokable slash commands (15 modes, 6 skills, 7 service-builder agent prompts, 2 named agents: `docs-writer`, `cross-repo-impact`)
 - ✅ Generated — `.github/instructions/` — 5 auto-attaching guidance files (`git`, `data-model`, `arch-drift`, `context-discovery`, `decisions`)
 - ✅ Generated — `.copilot/pai-orbit-config.md` — board, branch model, deploy targets, docs home, team conventions
 - ✅ Generated — `.copilot/team.md` — team members, owners, default assignees
@@ -469,6 +469,7 @@ mode_description() {
   case "$1" in
     arch)     echo "Declare and maintain system architecture — services, boundaries, data flow, constraints. Writes docs/architecture/ + ADRs." ;;
     build)    echo "Implement features and fixes. Code + updated docs. No architecture debate, no requirements writing." ;;
+    catchup)  echo "Read-only session-start briefing — what shipped, what is open, what is yours, what to pick next. Writes nothing; hands off to /build once an item is picked." ;;
     data)     echo "Data exploration and analysis session. Writes docs/reports/<topic>-<date>.md." ;;
     design)   echo "Technical design and trade-offs. Writes docs/features/*/design.md + ADRs. No implementation." ;;
     domain)   echo "Capture expert domain knowledge. Writes docs/domain/*.md." ;;
@@ -491,6 +492,7 @@ mode_donot_line() {
   case "$1" in
     arch)     echo "Do NOT implement features or design specific solutions — that's \`/design\` or \`/build\`." ;;
     build)    echo "Do NOT debate architecture or re-design — that's \`/design\`. Do NOT write requirements — that's \`/groom\`." ;;
+    catchup)  echo "Do NOT edit files, create branches, move board items, or start implementing — that's \`/build\` once the developer picks an item." ;;
     data)     echo "Do NOT design feature implementations — that's \`/design\`. Do NOT execute deploys — that's \`/release\`." ;;
     design)   echo "Do NOT implement code — that's \`/build\`. Do NOT re-litigate requirements — that's \`/groom\`." ;;
     domain)   echo "Do NOT propose technical solutions or designs — those belong to \`/design\`." ;;
@@ -603,7 +605,7 @@ The path-scoped detail lives in `.github/instructions/arch-drift.instructions.md
 
 All mode and skill prompts live in `.github/prompts/`. Invoke them by typing `/<name>` in Copilot Chat. The slash-command picker prefixes them so kind is visible:
 
-- `[mode]` — pai-orbit working modes (14): `/arch`, `/build`, `/data`, `/design`, `/domain`, `/groom`, `/incident`, `/plan`, `/release`, `/review`, `/setup`, `/suggest-skills`, `/test`, `/ux` (`/setup` and `/suggest-skills` run in agent mode on Business tier)
+- `[mode]` — pai-orbit working modes (15): `/arch`, `/build`, `/catchup`, `/data`, `/design`, `/domain`, `/groom`, `/incident`, `/plan`, `/release`, `/review`, `/setup`, `/suggest-skills`, `/test`, `/ux` (`/setup` and `/suggest-skills` run in agent mode on Business tier)
 - `[skill]` — invokable procedures (6): `/analysis`, `/board`, `/data-model`, `/epic`, `/git`, `/simplify`
 - `[agent]` — agent-mode prompts (9, Pro/Business agentic; Free regular):
   - Service builders (7): `/django-builder`, `/express-builder`, `/fastapi-builder`, `/generic-service-builder`, `/infra-builder`, `/nextjs-builder`, `/react-vite-builder`
@@ -1153,14 +1155,14 @@ bash plugins/pai-orbit/build.sh
 ## What ships
 
 - `.github/copilot-instructions.md` — slim rule book + Context discovery + prompt-library pointer
-- `.github/prompts/*.prompt.md` — invokable slash commands (mode, skill, agent — 29 total)
+- `.github/prompts/*.prompt.md` — invokable slash commands (mode, skill, agent — 30 total)
 - `.github/instructions/*.instructions.md` — auto-attaching guidance (5 total)
 - `.husky/pre-commit.template` — opt-in commit-time lint + weak secret tripwire (husky variant)
 - `.pre-commit-config.yaml.template` — same enforcement scope, pre-commit-framework variant
 
 ## What's covered vs the Claude Code plugin
 
-- Full mode set (14) — arch, build, data, design, domain, groom, incident, plan, release, review, setup, suggest-skills, test, ux. `/setup` and `/suggest-skills` emit as agent-mode prompts (Business tier agentic; Free tier advisory).
+- Full mode set (15) — arch, build, catchup, data, design, domain, groom, incident, plan, release, review, setup, suggest-skills, test, ux. `/setup` and `/suggest-skills` emit as agent-mode prompts (Business tier agentic; Free tier advisory).
 - Full skill set (6) — analysis, board, data-model, epic, git, simplify. `git` and `data-model` also render as always-attached instructions files.
 - Named sub-agents (2) — `docs-writer` (edit tools), `cross-repo-impact` (read-only tools).
 - Service-builder templates (7) — django, express, fastapi, generic-service, infra, nextjs, react-vite.
@@ -1187,7 +1189,7 @@ This is the only install path for the Copilot adapter — Claude Code's and Curs
 
 Before 1.6.0 this adapter emitted a single reference file
 (`dist/copilot/.github/copilot-instructions.md`) that you copied into your project by
-hand. From 1.6.0 it emits an invokable slash-command set — 29 prompts
+hand. From 1.6.0 it emits an invokable slash-command set — 30 prompts
 (`.github/prompts/`), 5 auto-attaching instructions files (`.github/instructions/`), a
 slimmed rule book, and two opt-in commit-hook templates — installed by an `npx` CLI.
 

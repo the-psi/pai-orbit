@@ -49,7 +49,7 @@ registered hooks; hook trust is invalidated by every hook edit.
 ```
 project-root/
 ├── AGENTS.md                             # Codex reads at project root
-├── .agents/skills/                       # 6 operational + 14 mode skills
+├── .agents/skills/                       # 6 operational + 15 mode skills
 ├── .codex/agents/                        # docs-writer.toml, cross-repo-impact.toml
 ├── .codex/hooks/                         # bash-guard, arch-drift-wrapper, lint-*-wrapper (+ .ps1 variants)
 ├── .codex/hooks.json                     # official nested schema with commandWindows overrides
@@ -62,7 +62,7 @@ project-root/
 1. Launch `codex` in the project. Trust the project when prompted.
 2. Run `/hooks` to trust the four registered hooks. Every hook edit invalidates trust — re-run after upgrades.
 3. Run `\$setup` to scaffold `.codex/pai-orbit-config.md`, `.codex/team.md`, and to fill in the lint hooks' `repo=` block.
-4. Run `/skills` to see the 20 skills.
+4. Run `/skills` to see the 21 skills.
 
 ## Skills
 
@@ -70,9 +70,9 @@ project-root/
 
 - `analysis`, `board`, `data-model`, `epic`, `git`, `simplify`
 
-**14 mode skills** — explicit-only (invoked as `\$mode-name`; `agents/openai.yaml` disables implicit invocation):
+**15 mode skills** — explicit-only (invoked as `\$mode-name`; `agents/openai.yaml` disables implicit invocation):
 
-- `arch`, `build`, `data`, `design`, `domain`, `groom`, `incident`, `orbit-plan`, `orbit-review`, `release`, `setup`, `suggest-skills`, `test`, `ux`
+- `arch`, `build`, `catchup`, `data`, `design`, `domain`, `groom`, `incident`, `orbit-plan`, `orbit-review`, `release`, `setup`, `suggest-skills`, `test`, `ux`
 
 Two modes are renamed in the Codex build to avoid ergonomic collision with Codex's built-in slash commands:
 
