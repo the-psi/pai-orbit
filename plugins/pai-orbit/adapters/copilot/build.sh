@@ -1220,6 +1220,32 @@ emit_mode_prompts
 emit_skill_prompts
 emit_service_builder_prompts
 emit_named_agent_prompts
+
+# Copilot prompt files are flat, self-contained files with no sibling-file
+# convention — a prompt can't resolve a relative "reference/docs-path-resolution.md"
+# pointer at runtime. Inline the referenced content as an appendix wherever a
+# mode/skill/agent prompt mentions it, so the file stays self-contained.
+if [ -f "$CORE_DIR/reference/docs-path-resolution.md" ]; then
+  # The reference doc carries its own `.claude/pai-orbit-config.md` mention —
+  # run it through the standard rewrite so it becomes `.copilot/` like the rest.
+  docs_path_resolution_content="$(rewrite_paths < "$CORE_DIR/reference/docs-path-resolution.md")"
+  for f in "$DIST_DIR"/.github/prompts/*.prompt.md; do
+    [ -f "$f" ] || continue
+    if grep -q "reference/docs-path-resolution.md" "$f"; then
+      {
+        echo ""
+        echo "---"
+        echo ""
+        echo "## Appendix: docs path resolution"
+        echo ""
+        echo "Referenced above as \`reference/docs-path-resolution.md\` — inlined here since Copilot prompts are flat files with no sibling-file lookup:"
+        echo ""
+        echo "$docs_path_resolution_content"
+      } >> "$f"
+    fi
+  done
+fi
+
 emit_skill_instructions
 emit_decisions_instructions
 emit_arch_drift_instructions

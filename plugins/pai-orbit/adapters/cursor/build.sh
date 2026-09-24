@@ -67,6 +67,12 @@ skills_out="$DIST_DIR/.cursor/rules/skills.mdc"
 # Templates copied verbatim for user reference (e.g., during /setup-equivalent flows)
 cp -R "$CORE_DIR/templates" "$DIST_DIR/templates"
 
+# Reference — shared instruction fragments the rule files point to at runtime
+# (e.g. reference/docs-path-resolution.md). Unlike templates, these are needed
+# by every session, not just /setup-equivalent flows, so install.sh fetches
+# this one automatically below rather than leaving it to a manual step.
+cp -R "$CORE_DIR/reference" "$DIST_DIR/reference"
+
 # ── install.sh — no-clone installer ────────────────────────────────────────
 # Build a self-contained script that downloads exactly the files we just built.
 # File list is injected at build time so the script works without JSON parsing
@@ -94,6 +100,19 @@ for rf in "${rule_files[@]}"; do
   rules_literal+="  \"${rf}\""$'\n'
 done
 
+# Collect reference paths relative to DIST_DIR — rule files point at these by
+# relative path at runtime, so unlike templates they must be fetched automatically.
+reference_files=()
+for f in "$DIST_DIR"/reference/*.md; do
+  [ -f "$f" ] || continue
+  reference_files+=("reference/$(basename "$f")")
+done
+
+reference_literal=""
+for rf in "${reference_files[@]}"; do
+  reference_literal+="  \"${rf}\""$'\n'
+done
+
 cat > "$DIST_DIR/install.sh" <<INSTALL_EOF
 #!/usr/bin/env bash
 # pai-orbit Cursor installer — no clone required.
@@ -111,6 +130,9 @@ BASE="https://raw.githubusercontent.com/\${REPO}/\${REF}/${DIST_REL}"
 RULES=(
 ${rules_literal})
 
+REFERENCE=(
+${reference_literal})
+
 echo "pai-orbit: installing Cursor rules from \${REPO}@\${REF} ..."
 echo ""
 
@@ -121,8 +143,15 @@ for file in "\${RULES[@]}"; do
   echo "  ✓ \${file}"
 done
 
+for file in "\${REFERENCE[@]}"; do
+  dir="\$(dirname "\$file")"
+  mkdir -p "\$dir"
+  curl -fsSL "\${BASE}/\${file}" -o "\${file}"
+  echo "  ✓ \${file}"
+done
+
 echo ""
-echo "pai-orbit: \${#RULES[@]} rule file(s) installed to .cursor/rules/"
+echo "pai-orbit: \${#RULES[@]} rule file(s) installed to .cursor/rules/, \${#REFERENCE[@]} reference file(s) installed to reference/"
 echo ""
 echo "Next steps:"
 echo "  1. Download the project config template and fill it out:"
@@ -165,6 +194,7 @@ That's it. The rule files land in \`.cursor/rules/\` and Cursor picks them up au
 
 - \`.cursor/rules/*.mdc\` — one rule file per pai-orbit mode (build, design, arch, etc.). \`alwaysApply: false\` so the agent picks them up by relevance, not unconditionally.
 - \`.cursor/rules/skills.mdc\` — concatenated skills reference (Cursor has no skill system).
+- \`reference/*.md\` — shared instruction fragments the rule files point to at runtime (e.g. docs write-path resolution). Installed automatically — the rules won't resolve correctly without them.
 
 Templates (\`pai-orbit-config.md\`, \`team.md\`, \`CLAUDE.md\`) can be fetched on demand — the installer prints the exact commands after it runs.
 

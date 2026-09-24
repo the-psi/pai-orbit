@@ -74,7 +74,7 @@ After deploying:
 
 ### 7. Post-mortem
 
-For P1 and P2 incidents, write `docs/wip/postmortem-<slug>-<date>.md`:
+For P1 and P2 incidents, resolve the docs root per `reference/docs-path-resolution.md` (config: `.cursor/pai-orbit-config.md → ## System Docs`) and write `<docs root>/wip/postmortem-<slug>-<date>.md`:
 
 ```
 ## Incident: <title>

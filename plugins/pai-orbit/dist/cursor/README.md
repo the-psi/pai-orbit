@@ -22,6 +22,7 @@ That's it. The rule files land in `.cursor/rules/` and Cursor picks them up auto
 
 - `.cursor/rules/*.mdc` — one rule file per pai-orbit mode (build, design, arch, etc.). `alwaysApply: false` so the agent picks them up by relevance, not unconditionally.
 - `.cursor/rules/skills.mdc` — concatenated skills reference (Cursor has no skill system).
+- `reference/*.md` — shared instruction fragments the rule files point to at runtime (e.g. docs write-path resolution). Installed automatically — the rules won't resolve correctly without them.
 
 Templates (`pai-orbit-config.md`, `team.md`, `CLAUDE.md`) can be fetched on demand — the installer prints the exact commands after it runs.
 

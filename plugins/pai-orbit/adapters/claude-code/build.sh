@@ -31,6 +31,7 @@ cp -R "$CORE_DIR/skills"    "$DIST_DIR/"
 cp -R "$CORE_DIR/agents"    "$DIST_DIR/"
 cp -R "$CORE_DIR/hooks"     "$DIST_DIR/"
 cp -R "$CORE_DIR/templates" "$DIST_DIR/"
+cp -R "$CORE_DIR/reference" "$DIST_DIR/"
 cp    "$CORE_DIR/plugin.json" "$DIST_DIR/.claude-plugin/plugin.json"
 
 # arch-drift-guard.sh is not +x in source; restore exec bit on all dist hooks.

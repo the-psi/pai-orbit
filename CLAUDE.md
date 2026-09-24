@@ -2,7 +2,7 @@
 
 A structured developer methodology harness for Claude Code that enforces disciplined working modes, prevents context loss, and produces local-first documentation at every stage of development.
 
-**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.7.0
+**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.8.0
 
 ---
 
@@ -33,6 +33,7 @@ pai-orbit/                          # repo = marketplace
 │       │   │                       # review, security-review, setup, simplify, suggest-skills, test
 │       │   ├── agents/             # docs-writer, cross-repo-impact
 │       │   ├── hooks/              # bash-guard, lint-python, lint-ts, arch-drift-guard
+│       │   ├── reference/          # shared instruction fragments read by modes/skills/agents at runtime
 │       │   └── templates/          # /setup scaffolds (agents, docs, ADR, CLAUDE.md template, …)
 │       ├── adapters/
 │       │   ├── claude-code/        # full fidelity
