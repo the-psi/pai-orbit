@@ -44,6 +44,22 @@ List every service deployed with:
 - ✅ Deployed and healthy — URL
 - ❌ Failed — error summary and recommended next step
 
+### 5. Sweep `docs/wip/`
+
+A release is when issues close, which makes it the only point in the workflow where "is this
+working note still live?" has an answer. Without this step nothing ever sweeps `wip/` and it grows
+without bound.
+
+For each file in `docs/wip/`, resolve the issue it references:
+
+- Still open → leave it.
+- Closed, content is dead → move it to `docs/wip/archive/`.
+- Closed, content is still true and has a subject → promote it to the subject folder (see
+  `.claude/rules/docs-taxonomy.md`) rather than archiving it.
+
+Never delete — `docs/wip/archive/` is the floor. Report what moved. If the project has a
+`docs-taxonomy.md` rule, its routing table governs where promoted files land.
+
 ---
 
 ## Safety rules

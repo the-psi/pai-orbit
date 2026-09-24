@@ -164,11 +164,14 @@ docs/
 ├── features/     One subfolder per feature, each with ux.md, requirements.md, design.md, test-plan.md
 ├── decisions/    Architecture Decision Records (ADRs)
 ├── epics/        Epic tracking files
+├── incidents/    Post-mortems (produced by /incident) — postmortem-<slug>-<date>.md
 ├── plans/        Planning and prioritization notes
 ├── ops/          Human-owned operational files — Claude does not modify these
 ├── backlog/      feature-ideas.md parking lot
 ├── reports/      Data analysis outputs
-└── wip/          Ephemeral: session captures, reviews, post-mortems
+└── wip/          Only what dies at merge or session end — session captures, reviews, drift
+                  reports. Swept at /release. See .claude/rules/docs-taxonomy.md for the full
+                  routing table and the wip/ test.
 ```
 
 ---

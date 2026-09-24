@@ -176,6 +176,10 @@ Copy `templates/rules/decisions.md` to `.claude/rules/decisions.md`.
 
 This file defines when an ADR is required and how to create one. It is read by every session via the rules directory so the obligation applies regardless of which skill or agent is active.
 
+Copy `templates/rules/docs-taxonomy.md` to `.claude/rules/docs-taxonomy.md`.
+
+This file is the routing table: which directory each artifact goes in, what `wip/` is actually for, and when it gets swept. It is loaded the same way, so the routing applies regardless of which mode is active. Tell the user the table is a starting point and they should adapt it to the taxonomy this project wants — the point is that every artifact has a row, not that the default rows are right.
+
 ### Hooks
 
 **Step A — Create the hooks directory:**
@@ -297,6 +301,7 @@ Architecture files:
 
 Rules:
 - ✅ Generated — `.claude/rules/decisions.md` — ADR obligation rules (when to write one, how)
+- ✅ Generated — `.claude/rules/docs-taxonomy.md` — which directory each artifact goes in, what `wip/` is for, when it is swept (adapt the table to this project)
 
 Hooks:
 - ✅ Generated — `.claude/hooks/bash-guard.sh` — blocks force-push, bulk staging, hook bypass, destructive rm
