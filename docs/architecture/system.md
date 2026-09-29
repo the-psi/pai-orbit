@@ -10,7 +10,7 @@ Status: declared
 | claude-code adapter | `plugins/pai-orbit/adapters/claude-code/` → `dist/claude-code/` | bash build script | Full-fidelity compile of core to the Claude Code plugin format |
 | cursor-plugin adapter | `plugins/pai-orbit/adapters/cursor-plugin/` → `dist/cursor-plugin/` | bash build script | Cursor plugin (rules, skills, commands, agents, hooks) |
 | cursor adapter (legacy) | `plugins/pai-orbit/adapters/cursor/` → `dist/cursor/` | bash build script | Lossy `.cursor/rules/*.mdc` compile |
-| copilot adapter | `plugins/pai-orbit/adapters/copilot/` → `dist/copilot/` | bash build script + Node install CLI | Compiles 29 invokable prompts, 5 auto-attaching instructions files, and the `.github/copilot-instructions.md` rule book, with an `npx` installer; hooks degrade to advisory text + opt-in pre-commit |
+| copilot adapter | `plugins/pai-orbit/adapters/copilot/` → `dist/copilot/` | bash build script + Node install CLI | Compiles 30 invokable prompts, 5 auto-attaching instructions files, and the `.github/copilot-instructions.md` rule book, with an `npx` installer; hooks degrade to advisory text + opt-in pre-commit |
 | codex adapter | `plugins/pai-orbit/adapters/codex/` → `dist/codex/` | bash build script + Node install CLI | Full-parity native compile (skills, hooks, subagents, `AGENTS.md`) with `npx` installer |
 
 ## Communication

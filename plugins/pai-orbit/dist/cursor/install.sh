@@ -20,6 +20,7 @@ RULES=(
   ".cursor/rules/groom.mdc"
   ".cursor/rules/incident.mdc"
   ".cursor/rules/plan.mdc"
+  ".cursor/rules/playwright.mdc"
   ".cursor/rules/release.mdc"
   ".cursor/rules/review.mdc"
   ".cursor/rules/setup.mdc"

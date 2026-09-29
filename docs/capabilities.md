@@ -142,6 +142,17 @@ Reviews a feature's requirements for testability, produces a structured test pla
 
 ---
 
+### `/playwright` — Playwright Mode
+
+**Headspace:** Test automation  
+**Reads:** docs/features/\*/test-plan.md, docs/features/\*/requirements.md, CLAUDE.md, docs/decisions/  
+**Writes:** The project's e2e directory only (specs, Page Objects, fixtures, e2e config) — never app code or docs  
+**Switch to:** `/build` for product bugs (developer fixes), `/test` for plan gaps, `/groom` for requirements gaps
+
+Implements Playwright automation from a generated test plan — the automation counterpart of `/build` for test work. Generates specs (via Playwright MCP when available), one `test()` per automated case in Arrange–Act–Assert form, titled `[ticket·AC-k][TC-ID]`, using Page Objects, saved `storageState` sessions, per-test unique data, and hard assertions only. Classifies failures as test bug (fix in spec), product bug (report, never fix), or harness gap (report as blocked). Enforces a write boundary: the e2e directory only.
+
+---
+
 ### `/review` — Review Mode
 
 **Headspace:** Code review  

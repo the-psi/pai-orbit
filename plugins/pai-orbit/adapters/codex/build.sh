@@ -2,7 +2,7 @@
 # OpenAI Codex CLI adapter — full-parity build.
 #
 # Emits dist/codex/ containing:
-#   AGENTS.md, .agents/skills/ (20 skills), .codex/agents/ (2 TOML subagents),
+#   AGENTS.md, .agents/skills/ (21 skills), .codex/agents/ (2 TOML subagents),
 #   .codex/hooks/ + .codex/hooks.json, .codex/config.toml, .codex/templates/,
 #   README.md.
 #
@@ -143,6 +143,7 @@ MODE_DESCRIPTIONS[groom]="Formalize acceptance criteria. Use to convert vague fe
 MODE_DESCRIPTIONS[incident]="Investigate and record a production incident. Use for post-mortems, root-cause analysis, and remediation planning. Writes docs/reports/incident-<date>.md. Explicit invocation only."
 MODE_DESCRIPTIONS[orbit-plan]="Prioritize and sequence work. Use to build a work plan, sequence features, or arrange sprints. Writes docs/plans/. Renamed from plan to avoid Codex's built-in /plan slash command. Explicit invocation only."
 MODE_DESCRIPTIONS[orbit-review]="Review code, PRs, or design against pai-orbit conventions and architectural constraints. Writes review notes; suggests follow-ups. Renamed from review to avoid Codex's built-in /review slash command. Explicit invocation only."
+MODE_DESCRIPTIONS[playwright]="Implement Playwright automation from a test plan. Use after /test, once the code under test has landed. Writes only inside the project's e2e directory; reports product bugs, never fixes them. Explicit invocation only."
 MODE_DESCRIPTIONS[release]="Coordinate a release. Use for release planning, cut list, changelog assembly, and deploy sequencing. Writes docs/plans/release-<version>.md. Explicit invocation only."
 MODE_DESCRIPTIONS[setup]="Interactive first-run scaffolding. Generates .codex/pai-orbit-config.md, .codex/team.md, .codex/config.toml, docs/ scaffold; fills lint hook repo paths and stack-builder agents. Explicit invocation only."
 MODE_DESCRIPTIONS[suggest-skills]="Recommend which pai-orbit skill or mode fits the user's current problem. Use when unsure what to invoke or wanting a guided walkthrough of the framework. Explicit invocation only."
@@ -259,7 +260,7 @@ YAML
   append_reference_appendix "$skill_md"
 }
 
-# Emit all 14 mode skills. plan → orbit-plan; review → orbit-review.
+# Emit all 15 mode skills. plan → orbit-plan; review → orbit-review.
 for mode_file in "$CORE_DIR"/modes/*.md; do
   mode_name="$(basename "$mode_file" .md)"
   case "$mode_name" in
@@ -422,7 +423,7 @@ project-root/
 1. Launch \`codex\` in the project. Trust the project when prompted.
 2. Run \`/hooks\` to trust the four registered hooks. Every hook edit invalidates trust — re-run after upgrades.
 3. Run \`\\\$setup\` to scaffold \`.codex/pai-orbit-config.md\`, \`.codex/team.md\`, and to fill in the lint hooks' \`repo=\` block.
-4. Run \`/skills\` to see the 20 skills.
+4. Run \`/skills\` to see the 21 skills.
 
 ## Skills
 
@@ -432,7 +433,7 @@ project-root/
 
 **14 mode skills** — explicit-only (invoked as \`\\\$mode-name\`; \`agents/openai.yaml\` disables implicit invocation):
 
-- \`arch\`, \`build\`, \`data\`, \`design\`, \`domain\`, \`groom\`, \`incident\`, \`orbit-plan\`, \`orbit-review\`, \`release\`, \`setup\`, \`suggest-skills\`, \`test\`, \`ux\`
+- \`arch\`, \`build\`, \`data\`, \`design\`, \`domain\`, \`groom\`, \`incident\`, \`orbit-plan\`, \`orbit-review\`, \`playwright\`, \`release\`, \`setup\`, \`suggest-skills\`, \`test\`, \`ux\`
 
 Two modes are renamed in the Codex build to avoid ergonomic collision with Codex's built-in slash commands:
 
@@ -520,7 +521,7 @@ fi
 # (Nothing to assert on absence — just don't emit warnings.)
 
 # Guard D: every mode skill has agents/openai.yaml; operational skills do NOT
-mode_skills=(arch build data design domain groom incident orbit-plan orbit-review release setup suggest-skills test ux)
+mode_skills=(arch build data design domain groom incident orbit-plan orbit-review playwright release setup suggest-skills test ux)
 operational_skills=(analysis board data-model epic git simplify)
 
 for m in "${mode_skills[@]}"; do
@@ -574,7 +575,7 @@ fi
 
 echo ""
 echo "codex adapter: built $DIST_DIR"
-echo "  20 skills / description sum: $total_desc chars (budget 8000)"
+echo "  21 skills / description sum: $total_desc chars (budget 8000)"
 echo "  2 subagents / 4 hooks + 3 wrappers + PS1 variants"
 echo "  README.md, config.toml, hooks.json"
 echo "  install: npx github:${GITHUB_REPO} init codex"

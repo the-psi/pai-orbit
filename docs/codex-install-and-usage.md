@@ -180,7 +180,7 @@ The setup skill will:
 /skills
 ```
 
-You should see all 20 skills. Six operational (`analysis`, `board`, `data-model`, `epic`, `git`, `simplify`) plus 14 mode skills. The two renamed modes (`orbit-plan`, `orbit-review`) are in the list; `plan` and `review` are NOT (those would invoke Codex's built-ins).
+You should see all 21 skills. Six operational (`analysis`, `board`, `data-model`, `epic`, `git`, `simplify`) plus 15 mode skills. The two renamed modes (`orbit-plan`, `orbit-review`) are in the list; `plan` and `review` are NOT (those would invoke Codex's built-ins).
 
 ---
 
@@ -296,7 +296,7 @@ This safety guard was added after a review flagged that early versions only chec
 That's Codex's **built-in `/plan`** command. pai-orbit's plan mode is `$orbit-plan` on Codex (renamed to avoid this exact collision). Same for `/review` (Codex built-in) vs `$orbit-review` (pai-orbit).
 
 **Skills-list description looks cut off in `/skills`.**
-Codex's initial skills-list budget is ~2% of the context window (~8k chars). If the total exceeds that, Codex auto-shortens descriptions. pai-orbit's adapter build enforces a total budget of 8000 chars across all 20 skills (currently ~4988), so you should not see truncation. If you do, check whether you added custom skills without re-running the total-budget check.
+Codex's initial skills-list budget is ~2% of the context window (~8k chars). If the total exceeds that, Codex auto-shortens descriptions. pai-orbit's adapter build enforces a total budget of 8000 chars across all 21 skills (currently ~4988), so you should not see truncation. If you do, check whether you added custom skills without re-running the total-budget check.
 
 ---
 
