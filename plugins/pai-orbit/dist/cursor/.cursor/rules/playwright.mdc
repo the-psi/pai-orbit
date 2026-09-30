@@ -38,7 +38,7 @@ Write automation **against real code**. Run this mode only once the source under
 ## Behaviour
 
 Reads from:
-- `docs/features/<feature>/test-plan.md` — the cases to automate, the AC × case matrix, the data mode
+- `docs/features/<feature>/test-plan.md` — the cases to automate and the AC × case matrix
 - `docs/features/<feature>/requirements.md` — acceptance criteria and **out of scope**
 - `CLAUDE.md` — stack, conventions, e2e directory, run command
 - `docs/decisions/` — constraints that affect the harness (auth, test data)
@@ -52,12 +52,12 @@ Writes to:
 2. **One spec file per coverage group**, one `test.describe` per group, one `test()` per automated case. Name the file after the ticket/feature (`<ticket>-<feature-slug>.spec.ts`) so a spec traces back to its source from the filename alone.
 3. **Automate only cases the plan marks as automated.** Leave manual cases in the plan. Never automate anything the requirements list as out of scope.
 4. **Tag every test to its source.** Every title starts with `[<ticket>·AC-k][TC-ID]`, both tags leading, in that order, so a red test is scannable in a CI list. Also apply suite tags (`@smoke`, `@regression`, `@ui` / `@api`) as Playwright test tags.
-5. **Data mode follows the plan's own header.**
+5. **Ask for the data mode — the plan does not carry it.** `/test` does not record whether cases run against real or mocked data, so ask the user at the start of the session (real / mock / both) and state the answer back, the same way you confirm the e2e directory. If the test plan's scenarios or `docs/decisions/` already make it unambiguous, propose that answer and ask for confirmation rather than guessing.
    - *Real-data plan:* drive the real backend, no `page.route()` interception of the endpoint under test. Use a non-prod hook only for states real usage can't practically produce (session expiry, TTL, infra down).
    - *Mock / synthetic plan:* use the project's harness fixtures and `page.route()` for error and edge responses.
    - Secrets from env vars only — never a literal credential, token, or session id.
-   - Record the data mode in the spec header comment and the Page Object JSDoc, once.
-6. **A re-run whose data mode changed is a rebuild, not a patch.** Delete Arrange helpers that belong to the old mode, retire (never reuse) TC-IDs the plan marks superseded, and add the new mode's cases and helpers.
+   - Record the agreed data mode in the spec header comment and the Page Object JSDoc, once.
+6. **A re-run whose data mode changed is a rebuild, not a patch.** Compare the mode recorded in the existing spec header with the one the user just gave. If they differ, delete Arrange helpers that belong to the old mode, retire (never reuse) TC-IDs the plan marks superseded, and add the new mode's cases and helpers.
 
 ### Structure — AAA
 

@@ -128,6 +128,7 @@ Every mode declares what it reads and what it writes. This is the discipline tha
 /design → consumes requirements + domain + architecture → produces design.md + ADRs
 /build  → consumes all docs + constraints.md + board → produces code + updated docs
 /test   → consumes requirements → produces test-plan.md
+/playwright → consumes test-plan.md + requirements → produces e2e specs, Page Objects, fixtures (e2e dir only; no docs)
 ```
 
 ---
