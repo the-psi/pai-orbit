@@ -216,7 +216,7 @@ Git operations following the project's configured branching model. Covers commit
 
 ### `/board`
 
-Task management — scan open stories for requirement changes, overlaps, and duplicates before creating stories or starting/resuming ticketed workflows; create issues, move cards, assign work, and close on ship. Reports candidate status, assignee, evidence, requirement delta, and confidence, and gets developer confirmation before linking or commenting. Reads board config from `.claude/pai-orbit-config.md → ## Agile Board` and team roster from `.claude/team.md`.
+Task management — scan open stories for requirement changes, overlaps, and duplicates before creating stories or starting/resuming ticketed workflows; create issues, move cards, assign work, and close on ship. Reports candidate status, assignee, evidence, requirement delta, impacted acceptance criteria, and confidence. For confirmed requirement changes, proposes exact acceptance-criteria edits classified as retain, revise, remove, or add, then waits for developer approval before updating tickets or linking/commenting. Reads board config from `.claude/pai-orbit-config.md → ## Agile Board` and team roster from `.claude/team.md`.
 
 ---
 
