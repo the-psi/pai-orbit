@@ -216,7 +216,7 @@ Git operations following the project's configured branching model. Covers commit
 
 ### `/board`
 
-Task management — create issues, move cards, assign work, close on ship. Reads board config from `.claude/pai-orbit-config.md → ## Agile Board` and team roster from `.claude/team.md`. Supports GitHub Issues, Linear, and Jira.
+Task management — scan open stories for requirement changes, overlaps, and duplicates before creating stories or starting/resuming ticketed workflows; create issues, move cards, assign work, and close on ship. Reports candidate status, assignee, evidence, requirement delta, and confidence, and gets developer confirmation before linking or commenting. Reads board config from `.claude/pai-orbit-config.md → ## Agile Board` and team roster from `.claude/team.md`.
 
 ---
 
