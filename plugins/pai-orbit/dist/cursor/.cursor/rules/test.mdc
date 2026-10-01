@@ -14,6 +14,8 @@ Switch out when:
 
 ## Behaviour
 
+**At session start — related open-story gate:** When the test plan or test work is tied to a board ticket, use the board skill's Related open-story check before reading requirements as current or preparing/running tests. Search all open board stories, including older and newer items. Surface any candidate that could change the behavior under test and wait for the developer to classify it. If the board cannot be read, report why and ask whether to continue without the scan. For standalone testing with no ticket, skip this gate.
+
 Reads from:
 - `docs/features/<feature>/requirements.md` — requirements and acceptance criteria
 - `CLAUDE.md` — stack, test frameworks, and conventions

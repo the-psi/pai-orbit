@@ -19,6 +19,8 @@ Switch out when:
 
 ## Behaviour
 
+**At session start — related open-story gate (before design discussion):** When this design is tied to a board ticket, use the board skill's Related open-story check before the impact analysis gate or any design work. Inspect older and newer open stories, surface the candidate and requirement delta, and wait for the developer to classify it. If the board cannot be read, report why and ask whether to continue without the scan. For standalone design work with no ticket, skip this gate.
+
 **At session start — impact analysis gate (before any design discussion):**
 
 1. Scan `docs/wip/` for an existing `analysis-*.md` report relevant to the current change. If found, read and cite it — do not re-run `/analysis`.
