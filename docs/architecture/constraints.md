@@ -15,7 +15,8 @@ Last updated: 2026-09-14
         • codex is now full-parity via native skills, hooks, subagents, and npx installer — see docs/decisions/2026-07-19-codex-adapter-decisions.md.
         • cursor (legacy) remains a deliberate lossy fallback for teams that cannot install the cursor-plugin build; the Cursor plugin adapter is the full-parity path for Cursor users.
         • kiro-power was removed on 2026-09-14 rather than carried as a permanent agent/hook gap — see docs/decisions/2026-09-14-remove-kiro-power-adapter.md.
-        Rule 6 is met by every recommended adapter (claude-code, cursor-plugin, codex, copilot). The legacy cursor fallback is the only remaining documented, deliberate exception — see Open Questions in system.md. -->
+        • /build sub-agent worktree isolation is claude-code-only (no per-sub-agent flag in codex, cursor-plugin, copilot) — see docs/decisions/2026-10-08-claude-code-only-build-subagent-rules.md.
+        Rule 6 is met by every recommended adapter (claude-code, cursor-plugin, codex, copilot). The legacy cursor fallback and the /build worktree-isolation rule are the only documented, deliberate exceptions — see Open Questions in system.md. -->
 7. **`dist/` output must remain backward compatible.** A project that installed an earlier version and has not re-run `/setup` must not silently break. Any structural change to an adapter's `dist/<tool>/` output requires a version bump in `plugin.json` and a migration note (README and/or CLAUDE.md).
 
 ## Trust Boundaries

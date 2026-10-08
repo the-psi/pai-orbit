@@ -27,6 +27,23 @@ mkdir -p "$DIST_DIR/.claude-plugin"
 mkdir -p "$DIST_DIR/commands"
 cp -R "$CORE_DIR/modes/." "$DIST_DIR/commands/"
 
+# Claude-Code-only: `isolation` and per-agent `model` are Claude Code Task features, so the
+# sub-agent rules are injected into build.md at the core marker; other adapters keep the generic text.
+BUILD_MD="$DIST_DIR/commands/build.md"
+MARKER='<!-- CLAUDE_CODE_ONLY: build-subagent-rules -->'
+if ! grep -qxF "$MARKER" "$BUILD_MD"; then
+  echo "claude-code adapter: marker '$MARKER' missing from core/modes/build.md" >&2
+  exit 1
+fi
+RULES_FILE="$(mktemp)"
+cat > "$RULES_FILE" <<'EOF'
+- **Isolate parallel builders:** pass `isolation: "worktree"` on every builder sub-agent. Each agent works on its own branch in its own worktree, so concurrent uncommitted changes can't stomp each other. If the agent makes no changes the worktree is auto-cleaned; otherwise its branch name is returned — merge it or open a PR.
+- **Tier the model to the task:** `haiku` for simple, well-scoped work (docs updates, seed-data scripts, minor UI copy, single-file fixes with no architectural decisions); `sonnet` (default) for multi-file changes, logic-heavy work, or anything needing design trade-off reasoning.
+EOF
+awk -v m="$MARKER" -v f="$RULES_FILE" '$0==m { while ((getline l < f) > 0) print l; next } { print }' "$BUILD_MD" > "$BUILD_MD.tmp"
+mv "$BUILD_MD.tmp" "$BUILD_MD"
+rm -f "$RULES_FILE"
+
 cp -R "$CORE_DIR/skills"    "$DIST_DIR/"
 cp -R "$CORE_DIR/agents"    "$DIST_DIR/"
 cp -R "$CORE_DIR/hooks"     "$DIST_DIR/"
