@@ -94,7 +94,7 @@ Before design discussion for ticketed work, checks open stories for requirement 
 **Writes:** Code (in sub-repos), docs/domain/product-capabilities.md  
 **Switch to:** `/design` for non-trivial design questions, `/groom` for unclear requirements, `/plan` for priority questions
 
-Before branch setup and code edits for ticketed work, checks open stories for requirement changes, overlaps, or duplicates and pauses for the developer to classify plausible matches. Reads CLAUDE.md and relevant docs before starting. Checks the task board. Spawns sub-agents per service for parallel work. Before switching modes mid-session, saves a handoff note to `docs/wip/session-capture-<date>.md`. After shipping: closes the board item, creates issues for newly discovered tasks, updates product-capabilities.md, records design choices as ADRs.
+Before branch setup and code edits for ticketed work, checks open stories for requirement changes, overlaps, or duplicates and pauses for the developer to classify plausible matches. Reads CLAUDE.md and relevant docs before starting. Checks the task board. Spawns sub-agents per service for parallel work. Before switching modes mid-session, saves a handoff note to `docs/wip/session-capture-<date>.md`. After shipping: moves the board item via `/board` `transition(build)` (does not close it — the issue closes on merge), creates issues for newly discovered tasks, updates product-capabilities.md, records design choices as ADRs.
 
 ---
 
@@ -127,7 +127,7 @@ Shows query before running. Prefers read-only. Flags data quality issues explici
 **Writes:** `.claude/pai-orbit-config.md`, `.claude/team.md`, `CLAUDE.md` stub, `.claude/agents/<service>-builder.md`, `.claude/hooks/*.sh`, `.claude/settings.json`, docs scaffold  
 **Switch to:** `/arch init` when setup is complete
 
-Discovers repo structure and tech stack, asks targeted questions in one block, queries the live board API for actual column/label taxonomy, generates all config and scaffold files. Creates and validates `.claude/hooks/` with all safety hooks wired into `.claude/settings.json`. Re-run when the stack or team changes significantly.
+Discovers repo structure and tech stack, asks targeted questions in one block, queries the live board API for actual column/label taxonomy and IDs, proposes and confirms a mode→column map (`## Mode transitions`), generates all config and scaffold files. Creates and validates `.claude/hooks/` with all safety hooks wired into `.claude/settings.json`. Re-run when the stack or team changes significantly.
 
 ---
 
@@ -227,7 +227,7 @@ Git operations following the project's configured branching model. Covers commit
 
 ### `/board`
 
-Task management — scan open stories for requirement changes, overlaps, and duplicates before creating stories or starting/resuming ticketed workflows; create issues, move cards, assign work, and close on ship. Records scan checkpoints in stable per-board, per-ticket files and resumes incrementally when the board supports a reliable complete query, otherwise running a full scan. Reports candidate status, assignee, evidence, requirement delta, impacted acceptance criteria, and confidence. For confirmed requirement changes, routes to `/groom` to propose exact acceptance-criteria edits classified as retain, revise, remove, or add; waits for developer approval before updating tickets or linking/commenting. Reads board config from `.claude/pai-orbit-config.md → ## Agile Board` and team roster from `.claude/team.md`. Supports GitHub Issues, GitHub Projects v2, Linear, Jira, GitLab, and Azure DevOps.
+Task management — scan open stories for requirement changes, overlaps, and duplicates before creating stories or starting/resuming ticketed workflows; create issues, move cards, assign work, and close on ship. Records scan checkpoints in stable per-board, per-ticket files and resumes incrementally when the board supports a reliable complete query, otherwise running a full scan. Reports candidate status, assignee, evidence, requirement delta, impacted acceptance criteria, and confidence. For confirmed requirement changes, routes to `/groom` to propose exact acceptance-criteria edits classified as retain, revise, remove, or add; waits for developer approval before updating tickets or linking/commenting. Also exposes `transition(mode)` (with `resolve_ticket()`): at close-out `/groom`, `/design`, `/build` and `/review` call it to move their ticket to the column mapped in `.claude/pai-orbit-config.md → ## Mode transitions` (written by `/setup`) — never backwards, never to Done from review, `no move` and missing-map cases reported in one line. Reads board config from `.claude/pai-orbit-config.md → ## Agile Board` and team roster from `.claude/team.md`. Supports GitHub Issues, GitHub Projects v2, Linear, Jira, GitLab, and Azure DevOps.
 
 ---
 

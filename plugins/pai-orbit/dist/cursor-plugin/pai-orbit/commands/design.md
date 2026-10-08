@@ -56,7 +56,7 @@ Every design session should end by:
 
 3. **Create a build-phase board item.** If the design is approved, create a task board item for the implementation work via `/board`.
 
-4. **Offer to move the board issue.** If a board issue tracks this design work, read the next column name from `.cursor/pai-orbit-config.md → ## Agile Board`. Offer: "Move issue #N to `<column name>`?" Wait for confirmation before acting via `/board`. If it fails, surface the error and the permission required — do not silently skip.
+4. **Move the board issue.** Run `/board` `transition(design)` — no "Offer to move?" prompt. It moves the ticket to the column mapped in `.cursor/pai-orbit-config.md → ## Mode transitions`, or says in one line why it did not (no map, `no move`, already at or past the target, failure + fix). It never blocks the commit above. With no linked ticket it skips quietly.
 
 5. **Offer to push.** After the commit, ask: "Push this branch to remote?" Wait for explicit confirmation.
 

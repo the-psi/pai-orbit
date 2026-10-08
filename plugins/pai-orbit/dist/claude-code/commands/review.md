@@ -121,6 +121,7 @@ What was done particularly well — worth naming so it repeats.
 
 - If blocking findings exist: do not close the issue; note what needs fixing
 - If approved: the review doc serves as the approval record; link it in the PR description
+- **Board move:** only the final verdict moves the ticket. On approve / approve with comments — and, for `/review full`, only when the security pass has no Critical/High findings — run `/board` `transition(review)`. It moves to the mapped post-review column (e.g. Approved, Ready to merge) or does nothing if mapped `no move`; it **never moves to Done by default** — Done comes from the merge. On request changes, or any Critical/High finding, do not move; note "changes requested — not moved". `/review security` alone never transitions
 - If changes are needed and you're in a build session: before implementing fixes, confirm you are on a dedicated `fix/<slug>` branch (not directly on `main` or a release branch) — use `/git` to create one if needed. Then use `/build` to implement fixes and re-run `/review`.
 
 ---

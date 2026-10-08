@@ -106,10 +106,13 @@ When writing the `## Agile Board → columns` table in the generated config, inc
 ```bash
 # Replace <owner> and <number> with values from the board URL
 gh project field-list <number> --owner <owner> --format json \
-  | jq -r '.fields[] | select(.name == "Status") | .options[] | .name'
+  | jq -r '.fields[] | select(.name == "Status") | "field \(.id)", (.options[] | "\(.id): \(.name)")'
+
+# Project node ID (needed for moves)
+gh project view <number> --owner <owner> --format json | jq -r '.id'
 ```
 
-Present the Status field options and ask the user to confirm their column order (they are already ordered but may want to exclude terminal states like "Done" from active workflow).
+Present the Status field options and ask the user to confirm their column order (they are already ordered but may want to exclude terminal states like "Done" from active workflow). Keep the project ID, Status field ID and each option ID for the mode transition map below.
 
 If `gh project field-list` fails (classic Projects), fall back to asking the user to list column names manually.
 
@@ -120,7 +123,7 @@ linear team list
 # or via the Linear MCP if available
 ```
 
-Present the team's workflow states and ask the user to confirm the ordered column list. If the CLI is unavailable, ask the user to copy the state names from their Linear workspace settings.
+Present the team's workflow states and ask the user to confirm the ordered column list. If the CLI is unavailable, ask the user to copy the state names from their Linear workspace settings. Keep the team ID and each workflow state ID for the mode transition map below — via the Linear MCP, or ask the user to copy them from Linear's settings if neither MCP nor CLI exposes them.
 
 ### Azure DevOps
 
@@ -154,9 +157,57 @@ Present the discovered states and ask the user to confirm the board's column ord
 
 Save `Work-item type`, the confirmed `columns` mapping, and a separate `Closing state` in the Azure config block. Confirm the closing state even if the user excludes it from the active columns; never hardcode `Closed` or infer that the last active column is terminal. If multiple columns map to one state, explain that state-only updates cannot distinguish those columns and board placement may need to be done manually.
 
-### Jira / GitHub Issues / Notion / none
+Keep the work-item type and each column's confirmed work-item state for the mode transition map below.
+
+### Jira
+
+Ask the user to provide their workflow stages (column names) in order as a comma-separated list. Then resolve each status ID — via the Jira MCP if configured, otherwise:
+
+```bash
+jira issue list --project <key> --plain --columns status --no-headers | sort -u   # sanity check names
+# status IDs: the Jira MCP, or ask the user to copy them from Project settings → Workflows
+```
+
+Keep the project key and each status ID for the mode transition map below.
+
+### GitHub Issues / Notion / none
+
 
 No API query needed. Ask the user to provide their workflow stages (column names) in order as a comma-separated list.
+
+### Mode transition map (every board type)
+
+After the columns are confirmed, build the map that tells `groom`, `design`, `build` and `review` where to move their ticket at close-out. The board skill's `transition(mode)` reads it.
+
+**Boards with no column to move** (GitHub Issues, Notion, none): write every row as `no move` and tell the user why ("this board type has no columns to move between"). Skip the rest of this step.
+
+**1. Suggest a target per mode**, in order groom → design → build → review. Match each mode's synonyms **case-insensitively as substrings** against the confirmed column names, in priority order; first match wins. Only suggest columns that exist on the board.
+
+| Mode | Synonyms (priority order) | Previous target |
+|------|---------------------------|-----------------|
+| groom | Ready for Design, Design, Groomed, Refined, Ready | the board's first column |
+| design | Ready for Build, Build, Ready for Dev, To do, Ready | groom's target |
+| build | In review, Review, Code review, QA, Testing | design's target, else groom's |
+| review | Approved, Ready to merge, Ready for release | build's target |
+
+- **No synonym matches** → name the gap ("no review-like column found"), then suggest the next column after the previous target in board order. Offer another real column or `no move` as alternatives.
+- **Review never falls back.** No synonym match → suggest `no move`. Never suggest Done for review — Done comes from the merge. The user may still pick Done by hand.
+- **Collapse rule:** a suggestion at or before the previous mode's target becomes `no move` (e.g. design matching the same "Ready" column groom already moves to).
+
+Example — columns Backlog, Ready, In progress, In review, Done: groom → Ready; design → Ready → collapses to `no move`; build → In review; review → `no move`.
+
+**2. Confirm.** Show the full map (mode, target column, column ID) and get confirmation of **every row** before saving. The user may change any row to another real column or `no move`.
+
+**3. Re-run on a project that already has `## Mode transitions`.** Compare each saved row with the live board **by ID**:
+
+| Saved row vs live board | Action |
+|-------------------------|--------|
+| ID present, same name | keep — no question |
+| ID present, name changed | flag as renamed; suggest updating the name, keep the ID |
+| ID gone | flag as broken; re-run the suggestion for that mode |
+| A new column matches a mode's synonyms better | flag as an optional change; default keeps the saved row |
+
+Show only the flagged rows; keep every row the user does not change. A table with non-standard headers (hand-written) is read by position — mode, target, ID — and rewritten with the canonical headers, rows kept. If the section is absent (a project set up before 1.10.0), run the full flow above.
 
 ---
 
@@ -204,6 +255,7 @@ The file has these top-level sections:
 
 - `# pai-orbit configuration` (title)
 - `## Agile Board` — `type:`, `url:`, and a `## Agile Board → columns` markdown table populated **only** from the column names/labels confirmed in Step 2b. Never write placeholder or example values.
+- `## Mode transitions` — the mode→column map the board skill's `transition(mode)` reads at groom/design/build/review close-out. Board-IDs header (GitHub Projects: project node ID + Status field ID; Linear: team ID; Jira: project key; GitLab: none) then a `| Mode | Target column | Column ID |` table with one row each for groom, design, build, review. Column ID is the real option / state / status ID (GitLab: the label name) captured in Step 2b — never a placeholder. Suggest targets by case-insensitive substring synonyms (groom: Ready for Design, Design, Groomed, Refined, Ready; design: Ready for Build, Build, Ready for Dev, To do, Ready; build: In review, Review, Code review, QA, Testing; review: Approved, Ready to merge, Ready for release), falling back to the next real column after the previous mode's target (review never falls back and never suggests Done: no match → `no move`). A suggestion at or before the previous mode's target becomes `no move`. Show the whole map and confirm every row before saving. Boards with no columns (GitHub Issues, Notion, none): write every row as `no move`. On re-run, compare saved rows with the live board by ID, flag only renamed/broken rows, keep the rest.
 - `## Branching` — `model:` (github-flow / gitflow / trunk), `main:` (branch name), `pr_merge_strategy:`, `protected:` (list)
 - `## Deployment` — `provider:` and per-service target/image/deploy_cmd rows
 - `## Docs` — `home:` (`local` / `dedicated-repo` / `confluence` / `notion`) plus the appropriate path/URL field
