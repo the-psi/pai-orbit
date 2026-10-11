@@ -101,30 +101,42 @@ rewrite_slash_cross_refs() {
 }
 
 # Codex skills are flat, self-contained SKILL.md files with no sibling-file
-# convention — a skill can't resolve a relative "reference/docs-path-resolution.md"
-# pointer at runtime. Inline the referenced content as an appendix wherever a
-# skill body mentions it, so the file stays self-contained the same way every
-# other cross-reference here already is.
+# convention — a skill can't resolve a relative "reference/<name>.md" pointer at
+# runtime. Inline each referenced file from core/reference/ as an appendix
+# wherever a skill body mentions it, so the file stays self-contained the same
+# way every other cross-reference here already is.
 DOCS_PATH_RESOLUTION_CONTENT=""
 if [ -f "$CORE_DIR/reference/docs-path-resolution.md" ]; then
   DOCS_PATH_RESOLUTION_CONTENT="$(cat "$CORE_DIR/reference/docs-path-resolution.md")"
 fi
 
+# Appendix title = the reference file's H1, lower-cased ("# Docs path resolution" → "docs path resolution").
+reference_title() {
+  head -n 1 "$1" | sed 's/^# *//' | tr '[:upper:]' '[:lower:]'
+}
+
 append_reference_appendix() {
   local target_file="$1"
-  if [ -n "$DOCS_PATH_RESOLUTION_CONTENT" ] && grep -q "reference/docs-path-resolution.md" "$target_file"; then
+  local ref name appended=0
+  for ref in "$CORE_DIR"/reference/*.md; do
+    [ -f "$ref" ] || continue
+    name="$(basename "$ref")"
+    grep -q "reference/$name" "$target_file" || continue
     {
       echo ""
       echo "---"
       echo ""
-      echo "## Appendix: docs path resolution"
+      echo "## Appendix: $(reference_title "$ref")"
       echo ""
-      echo "Referenced above as \`reference/docs-path-resolution.md\` — inlined here since Codex skills are flat files with no sibling-file lookup:"
+      echo "Referenced above as \`reference/$name\` — inlined here since Codex skills are flat files with no sibling-file lookup:"
       echo ""
-      echo "$DOCS_PATH_RESOLUTION_CONTENT"
+      cat "$ref"
     } >> "$target_file"
-    # The appendix carries its own `.claude/pai-orbit-config.md` reference —
-    # re-run the standard rewrite so it becomes `.codex/` like everything else.
+    appended=1
+  done
+  # Appendices may carry their own `.claude/pai-orbit-config.md` reference —
+  # re-run the standard rewrite so it becomes `.codex/` like everything else.
+  if [ "$appended" -eq 1 ]; then
     rewrite_paths_in_place "$target_file"
   fi
 }
@@ -134,7 +146,7 @@ append_reference_appendix() {
 # each; total mode-skill sum well under the 8000-char budget policy (checked
 # in the post-build guard).
 declare -A MODE_DESCRIPTIONS
-MODE_DESCRIPTIONS[arch]="Declare and maintain system architecture. Use when discussing architecture decisions, constraints, tech-stack choices, or system-level design. Writes docs/architecture/ and ADRs to docs/decisions/. Explicit invocation only."
+MODE_DESCRIPTIONS[arch]="Define, declare, and maintain system architecture. Use to derive a greenfield architecture (drivers, system context, decomposition, style selection), declare an existing one, or update it when process maps, UX, or domain change. Writes docs/architecture/ and ADRs to docs/decisions/. Explicit invocation only."
 MODE_DESCRIPTIONS[build]="Implement features and fixes. Use for coding sessions where requirements and design are already clear and it's time to write code. Writes code and updates docs/features/<feature>/. Explicit invocation only."
 MODE_DESCRIPTIONS[data]="Explore data before coding. Use when a question about the data model, query results, or dataset shape must be answered before implementing. Writes docs/reports/. Explicit invocation only."
 MODE_DESCRIPTIONS[design]="Architect a technical solution for a specific feature. Use to weigh trade-offs and record ADRs. Writes docs/features/<feature>/design.md and docs/decisions/. Explicit invocation only."

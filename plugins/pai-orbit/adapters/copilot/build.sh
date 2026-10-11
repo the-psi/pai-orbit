@@ -1226,29 +1226,33 @@ emit_service_builder_prompts
 emit_named_agent_prompts
 
 # Copilot prompt files are flat, self-contained files with no sibling-file
-# convention — a prompt can't resolve a relative "reference/docs-path-resolution.md"
-# pointer at runtime. Inline the referenced content as an appendix wherever a
-# mode/skill/agent prompt mentions it, so the file stays self-contained.
-if [ -f "$CORE_DIR/reference/docs-path-resolution.md" ]; then
-  # The reference doc carries its own `.claude/pai-orbit-config.md` mention —
-  # run it through the standard rewrite so it becomes `.copilot/` like the rest.
-  docs_path_resolution_content="$(rewrite_paths < "$CORE_DIR/reference/docs-path-resolution.md")"
+# convention — a prompt can't resolve a relative "reference/<name>.md" pointer at
+# runtime. Inline each referenced file from core/reference/ as an appendix
+# wherever a mode/skill/agent prompt mentions it, so the file stays self-contained.
+for ref in "$CORE_DIR"/reference/*.md; do
+  [ -f "$ref" ] || continue
+  ref_name="$(basename "$ref")"
+  # Appendix title = the reference file's H1, lower-cased.
+  ref_title="$(head -n 1 "$ref" | sed 's/^# *//' | tr '[:upper:]' '[:lower:]')"
+  # Reference docs may mention `.claude/pai-orbit-config.md` — run them through
+  # the standard rewrite so it becomes `.copilot/` like the rest.
+  ref_content="$(rewrite_paths < "$ref")"
   for f in "$DIST_DIR"/.github/prompts/*.prompt.md; do
     [ -f "$f" ] || continue
-    if grep -q "reference/docs-path-resolution.md" "$f"; then
+    if grep -q "reference/$ref_name" "$f"; then
       {
         echo ""
         echo "---"
         echo ""
-        echo "## Appendix: docs path resolution"
+        echo "## Appendix: $ref_title"
         echo ""
-        echo "Referenced above as \`reference/docs-path-resolution.md\` — inlined here since Copilot prompts are flat files with no sibling-file lookup:"
+        echo "Referenced above as \`reference/$ref_name\` — inlined here since Copilot prompts are flat files with no sibling-file lookup:"
         echo ""
-        echo "$docs_path_resolution_content"
+        echo "$ref_content"
       } >> "$f"
     fi
   done
-fi
+done
 
 emit_skill_instructions
 emit_decisions_instructions

@@ -22,6 +22,7 @@ Switch out when:
 - The UX is defined and functional requirements need formalising → `/groom`
 - The UX is groomed and technical design is next → `/design`
 - The solution is driven by a multi-party business process rather than a single user's journey → `/process-map`
+- Architecture is already declared and this UX adds a role, channel, or journey it does not serve → `/arch update`
 
 ## Behaviour
 

@@ -53,7 +53,7 @@ Every mode either produces or consumes:
 | `/ux` | `docs/features/*/ux.md` | `docs/domain/`, user research |
 | `/process-map` (skill) | `docs/processes/*.md` | `docs/domain/`, `docs/architecture/system.md`, `docs/epics/` |
 | `/groom` | `docs/features/*/requirements.md` | `docs/domain/`, `docs/features/*/ux.md`, `docs/processes/`, `docs/architecture/system.md` |
-| `/arch` | `docs/architecture/system.md`, `docs/architecture/constraints.md`, `docs/architecture/stack.md`, `docs/decisions/YYYY-MM-DD-*.md`, `docs/wip/arch-validate-*.md` | CLAUDE.md, existing `docs/architecture/`, `docs/decisions/`, git log |
+| `/arch` | `docs/architecture/system.md`, `docs/architecture/constraints.md`, `docs/architecture/stack.md`, `docs/architecture/drivers.md`, `docs/decisions/YYYY-MM-DD-*.md`, `docs/wip/arch-validate-*.md` | CLAUDE.md, existing `docs/architecture/`, `docs/decisions/`, `docs/domain/`, `docs/processes/`, `docs/features/*/ux.md`, git log |
 | `/design` | `docs/features/*/design.md`, `docs/decisions/YYYY-MM-DD-*.md` | `docs/features/*/requirements.md`, `docs/domain/`, `docs/processes/`, `docs/architecture/` |
 | `/build` | Code, `docs/domain/product-capabilities.md` | All docs, task board, `docs/architecture/constraints.md` |
 | `/test` | `docs/features/*/test-plan.md` | `docs/features/*/requirements.md` |

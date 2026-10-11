@@ -12,6 +12,7 @@ Switch out when:
 - Domain knowledge is ready to inform a technical design → `/design`
 - Domain knowledge reveals a data question → `/data`
 - A business process spanning several roles or systems needs its to-be shape drawn → `/process-map` (reads the domain docs already written)
+- Architecture is already declared and the new knowledge changes vocabulary, rules, or decision ownership it was derived from → `/arch update`
 
 ## Behaviour
 

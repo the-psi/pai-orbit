@@ -711,7 +711,7 @@ python3 <docs root>/processes/_render/swimlane.py index <docs root>/processes
 ## Session close
 
 1. **Commit** the spec, SVG, narrative, and index with `/git`: `docs: process-map <slug>`. Local commit only.
-2. **Hand off.** Suggest the next mode for each implication: `/groom` for feature slices (cite step IDs in each `requirements.md`), `/design` for integration points, `/arch update` for architecture gaps, `/domain` for rules the map exposed as missing.
+2. **Hand off.** Suggest the next mode for each implication: `/groom` for feature slices (cite step IDs in each `requirements.md`), `/design` for integration points, `/domain` for rules the map exposed as missing. For architecture: if `<docs root>/architecture/system.md` is not yet populated and the system is greenfield, `/arch define` (it derives system context and decomposition from these maps); otherwise `/arch update` (it detects the changed map and assesses its impact).
 3. **Offer to push.** Ask: "Push this branch to remote?" Wait for explicit confirmation.
 
 ## Rules
