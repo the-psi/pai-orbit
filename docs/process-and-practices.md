@@ -174,7 +174,7 @@ These skills cross-cut the sprint phases — they can be invoked from any point 
 docs/
 ├── architecture/  Declared system architecture — system.md (structure), constraints.md (rules), stack.md (tech)
 ├── domain/        Expert knowledge — the science or logic behind the product
-├── processes/     To-be L3 process maps — lanes, step IDs, solution implications (/process-map)
+├── processes/     To-be swimlane maps — JSON specs, generated SVGs, narratives, INDEX.md (/process-map)
 ├── features/      One folder per feature: ux.md, requirements.md, design.md, test-plan.md
 ├── decisions/     Architecture Decision Records (ADRs) — named YYYY-MM-DD-<slug>.md
 ├── plans/         Planning and prioritisation notes

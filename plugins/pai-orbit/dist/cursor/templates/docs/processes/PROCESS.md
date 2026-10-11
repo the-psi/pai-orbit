@@ -1,13 +1,11 @@
 # Process: {{PROCESS_NAME}}
 
-Step prefix: {{PREFIX}}
-Hierarchy: {{L1}} › {{L2}} › {{PROCESS_NAME}}
-Epic: {{EPIC_NAME}}
-Status: Draft
+Spec: [specs/{{SLUG}}.json](specs/{{SLUG}}.json)
 Last updated: {{DATE}}
 
-<!-- To-be process map, produced by /process-map. Step IDs are permanent: never renumber,
-     mark removed steps as Retired. Features cite step IDs in their requirements.md. -->
+<!-- To-be process map, produced by /process-map. The JSON spec is the source of truth:
+     edit it, then run `python3 _render/swimlane.py build specs/{{SLUG}}.json`.
+     Everything between the generated markers below is rewritten on every build. -->
 
 ## Summary
 
@@ -16,36 +14,15 @@ Last updated: {{DATE}}
 - **In scope:** <...>
 - **Out of scope:** <...>
 
-## Lanes
-
-| Lane | Type | Status | Notes |
-|------|------|--------|-------|
-| <role or system> | role / system | existing / new / external | <...> |
-
 ## Diagram
 
-```mermaid
-flowchart LR
-  subgraph lane1["<Role>"]
-    {{PREFIX}}_1([Start])
-  end
-```
-
-## Steps
-
-| ID | Step | Actor | System | Input | Output | Rule / source | Confidence |
-|----|------|-------|--------|-------|--------|---------------|------------|
-| {{PREFIX}}-1 | <...> | <...> | <...> | <...> | <...> | <domain doc link> | Agreed / Proposed / Open |
-
-## Exceptions
-
-| ID | From step | Condition | Handling | Confidence |
-|----|-----------|-----------|----------|------------|
+<!-- process-map:generated:start — do not edit by hand; run _render/swimlane.py build -->
+<!-- process-map:generated:end -->
 
 ## Solution implications
 
 ### Integration points
-<!-- Every hand-off between two system lanes → candidate interface for /design -->
+<!-- Every hand-off between two system lanes → candidate interface for /design. Cite step IDs. -->
 
 ### Architecture gaps
 <!-- New system lanes, or existing systems asked to do something system.md does not declare → /arch update -->
@@ -59,9 +36,9 @@ flowchart LR
 
 ## Baseline (as-is)
 
-<!-- Optional. Summary of how the process works today, for contrast. Never mixed into the to-be steps above. -->
+<!-- Optional. How the process works today, for contrast. Never mixed into the to-be spec. -->
 
 ## Open questions
 
-| Question | Owner | Step ID |
-|----------|-------|---------|
+| ID | Question | Owner | Step IDs |
+|----|----------|-------|----------|

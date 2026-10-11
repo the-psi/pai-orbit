@@ -245,7 +245,7 @@ Schema reference and change management — read the current schema for any table
 
 ### `/process-map`
 
-To-be business process modelling — draws L3 cross-lane process maps where roles and systems are the swimlanes, as a high-level solution blueprint for process-driven systems (back-office, multi-party workflows, integrations). Reads existing `docs/domain/` and `docs/architecture/system.md` rather than re-interviewing; writes `docs/processes/<process>.md` with a Mermaid swimlane flowchart, a step table with permanent step IDs (e.g. `OTC-3`), exceptions, and Agreed / Proposed / Open confidence per step.
+To-be business process modelling — true swimlane diagrams (roles, teams, and systems as lanes; phases as columns) as a high-level solution blueprint for process-driven systems (back-office, multi-party workflows, integrations). Reads existing `docs/domain/` and `docs/architecture/system.md` rather than re-interviewing. A JSON spec per process (`docs/processes/specs/<slug>.json`) is the source of truth; the vendored renderer `docs/processes/_render/swimlane.py` (Python 3, standard library) validates it and generates the SVG, a Mermaid preview, the step table with permanent step IDs (e.g. `OTC-3`), and `docs/processes/INDEX.md`. Steps carry Agreed / Proposed / Open confidence, shown in the border style.
 
 - `/process-map create <name> [source]` — extracts hierarchy, trigger, outcome, and lanes from domain docs, confirms them, walks the happy path and exceptions, then derives solution implications: integration points (→ `/design`), architecture gaps (→ `/arch update`), automation points, and feature slices (→ `/groom`)
 - `/process-map update <name>` — proposes a numbered diff; retires steps instead of renumbering

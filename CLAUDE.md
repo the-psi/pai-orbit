@@ -123,7 +123,7 @@ Every mode declares what it reads and what it writes. This is the discipline tha
 /arch   → produces docs/architecture/ (system.md, constraints.md, stack.md) + ADRs
 /domain → produces docs/domain/*.md
 /ux     → consumes domain docs → produces docs/features/*/ux.md
-/process-map (skill) → consumes domain + architecture → produces docs/processes/*.md (to-be L3 maps)
+/process-map (skill) → consumes domain + architecture → produces docs/processes/ (JSON spec → swimlane SVG + narrative)
 /groom  → consumes ux + domain + architecture (+ product-capabilities + roadmap for new features) → produces requirements.md
 /design → consumes requirements + domain + architecture → produces design.md + ADRs
 /build  → consumes all docs + constraints.md + board → produces code + updated docs
@@ -164,7 +164,7 @@ Hooks are shell scripts wired to Claude Code tool use events. They run outside C
 ```
 docs/
 ├── domain/       Expert knowledge, business rules (produced by /domain)
-├── processes/    To-be L3 process maps (produced by /process-map)
+├── processes/    To-be swimlane maps: specs/*.json → svg/, narratives, INDEX.md (produced by /process-map)
 ├── features/     One subfolder per feature, each with ux.md, requirements.md, design.md, test-plan.md
 ├── decisions/    Architecture Decision Records (ADRs)
 ├── epics/        Epic tracking files
