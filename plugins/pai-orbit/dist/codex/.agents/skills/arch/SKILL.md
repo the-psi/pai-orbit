@@ -31,6 +31,7 @@ Before starting any sub-mode:
 - Read `AGENTS.md → ## Architecture` for the current summary.
 - Read `<docs root>/architecture/system.md`, `constraints.md`, and `stack.md` if they exist.
 - Read all ADRs in `<docs root>/decisions/`.
+- Read `<docs root>/processes/*.md` if present — a system lane tagged `new`, or a to-be step an existing system does not declare, is an architecture gap to address in `init` or `update`.
 
 **Graceful guard:** If `<docs root>/architecture/system.md` does not exist and the sub-mode is not `init`, tell the user: "Architecture is not yet declared for this project. Run `/arch init` first."
 
@@ -190,7 +191,7 @@ Read `.codex/pai-orbit-config.md`. If a `## System Docs` section is present, it 
 ## Resolve the docs root
 
 - No `## System Docs` section → docs root is local `docs/`.
-- `system_docs_repo` is a relative path → check whether `<system_docs_repo>/<system_docs_path>` exists **and** contains at least one of the expected subdirectories (`architecture/`, `decisions/`, `domain/`, `features/`, `plans/`, `wip/`, `backlog/`, `reports/`, `epics/`, `ops/`). A directory that exists but holds none of these is a stale pointer, not a docs root.
+- `system_docs_repo` is a relative path → check whether `<system_docs_repo>/<system_docs_path>` exists **and** contains at least one of the expected subdirectories (`architecture/`, `decisions/`, `domain/`, `processes/`, `features/`, `plans/`, `wip/`, `backlog/`, `reports/`, `epics/`, `ops/`). A directory that exists but holds none of these is a stale pointer, not a docs root.
   - Passes → docs root is `<system_docs_repo>/<system_docs_path>`.
   - Fails → warn once ("System docs path unreachable — continuing with local docs only") and docs root is local `docs/`.
 - `system_docs_repo` is a git URL → same check against a local clone at a resolvable path. Passes → docs root is `<clone-path>/<system_docs_path>`. Fails → warn once and docs root is local `docs/`.

@@ -21,6 +21,7 @@ Switch out when:
 - Domain knowledge is needed to define the right user experience → `/domain`
 - The UX is defined and functional requirements need formalising → `/groom`
 - The UX is groomed and technical design is next → `/design`
+- The solution is driven by a multi-party business process rather than a single user's journey → `/process-map`
 
 ## Behaviour
 
@@ -117,7 +118,7 @@ Read `.copilot/pai-orbit-config.md`. If a `## System Docs` section is present, i
 ## Resolve the docs root
 
 - No `## System Docs` section → docs root is local `docs/`.
-- `system_docs_repo` is a relative path → check whether `<system_docs_repo>/<system_docs_path>` exists **and** contains at least one of the expected subdirectories (`architecture/`, `decisions/`, `domain/`, `features/`, `plans/`, `wip/`, `backlog/`, `reports/`, `epics/`, `ops/`). A directory that exists but holds none of these is a stale pointer, not a docs root.
+- `system_docs_repo` is a relative path → check whether `<system_docs_repo>/<system_docs_path>` exists **and** contains at least one of the expected subdirectories (`architecture/`, `decisions/`, `domain/`, `processes/`, `features/`, `plans/`, `wip/`, `backlog/`, `reports/`, `epics/`, `ops/`). A directory that exists but holds none of these is a stale pointer, not a docs root.
   - Passes → docs root is `<system_docs_repo>/<system_docs_path>`.
   - Fails → warn once ("System docs path unreachable — continuing with local docs only") and docs root is local `docs/`.
 - `system_docs_repo` is a git URL → same check against a local clone at a resolvable path. Passes → docs root is `<clone-path>/<system_docs_path>`. Fails → warn once and docs root is local `docs/`.

@@ -78,11 +78,12 @@ project-root/
 ├── AGENTS.md                             # Codex reads at project root — slim rule book with absorbed hook intents
 ├── .agents/                              # Codex-native skills location (repo-scoped)
 │   └── skills/
-│       ├── analysis/       SKILL.md      # 6 operational skills — implicit invocation allowed
+│       ├── analysis/       SKILL.md      # 7 operational skills — implicit invocation allowed
 │       ├── board/          SKILL.md      # (no agents/openai.yaml — Codex default is implicit on)
 │       ├── data-model/     SKILL.md
 │       ├── epic/           SKILL.md
 │       ├── git/            SKILL.md
+│       ├── process-map/    SKILL.md
 │       ├── simplify/       SKILL.md
 │       │
 │       ├── arch/           SKILL.md + agents/openai.yaml   # 14 mode skills — explicit only
@@ -180,7 +181,7 @@ The setup skill will:
 /skills
 ```
 
-You should see all 21 skills. Six operational (`analysis`, `board`, `data-model`, `epic`, `git`, `simplify`) plus 15 mode skills. The two renamed modes (`orbit-plan`, `orbit-review`) are in the list; `plan` and `review` are NOT (those would invoke Codex's built-ins).
+You should see all 22 skills. Seven operational (`analysis`, `board`, `data-model`, `epic`, `git`, `process-map`, `simplify`) plus 15 mode skills. The two renamed modes (`orbit-plan`, `orbit-review`) are in the list; `plan` and `review` are NOT (those would invoke Codex's built-ins).
 
 ---
 

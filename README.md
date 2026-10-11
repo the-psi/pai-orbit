@@ -1,4 +1,4 @@
-# pai-orbit · v1.9.0
+# pai-orbit · v1.10.0
 
 A structured developer methodology harness for Claude Code, Cursor, GitHub Copilot, and OpenAI Codex (beta) — installed as a plugin in Claude Code and Cursor, and with one command for Copilot and Codex.
 
@@ -49,6 +49,7 @@ Workflow skills (callable from any mode)
 /board           → task creation, card movement, team assignment (GitHub Issues, GitHub Projects v2, Linear, Jira, GitLab, Azure DevOps)
 /analysis        → change impact and dependency analysis
 /data-model      → schema reference and migration management
+/process-map     → to-be L3 process maps across roles and systems — produces docs/processes/
 /simplify        → code simplification — remove over-engineering, dead code, abstractions
 
 Planning and maintenance
@@ -113,11 +114,13 @@ flowchart TD
     incident --> release
 ```
 
-Workflow skills (`/git`, `/board`, `/analysis`, `/data-model`, `/simplify`) can be invoked from any phase.
+Workflow skills (`/git`, `/board`, `/analysis`, `/data-model`, `/process-map`, `/simplify`) can be invoked from any phase.
 
 > **`/groom` readiness gate** — before handing off to `/design`, `/groom` audits every open question and classifies it as a *functional gap* (what the system does — must be resolved) or a *design question* (how it does it — deferred to `/design`). The feature is not marked groomed until all functional gaps are closed. This prevents half-specified features from entering design.
 
 > **`/review security`** — the security-focused pass is a sub-mode of `/review`. Use `/review` for full code review, `/review security` for the OWASP checklist, or `/review full` for both in sequence. Critical and High findings block merge.
+
+> **v1.10.0 — `/process-map` skill for to-be process modelling.** Draws L3 cross-lane process maps (roles and systems as swimlanes, permanent step IDs) in a new `docs/processes/` folder, as a high-level solution blueprint for process-driven systems. It reads existing `docs/domain/` docs, so run it any time after `/domain`. `/groom`, `/design`, and `/arch` now read `docs/processes/` when present. Existing projects need no migration: create `docs/processes/` (or let the skill create it) — re-running `/setup` is optional. Update pai-orbit to pick it up (see [Updating](#updating)).
 
 > **v1.9.0 — `/groom` checks other consumers of an existing signal.** When a change alters how an existing field, flag, or derived value is read, `/groom` Phase 2 now searches the code (and every declared, locally available repo) for other places that read it, plus an optional `docs/domain/concept-consumers.md` map, and proposes each one as a candidate scenario. The outcome is shown every session and recorded under a new `## Consumer check` section that the session-close audit enforces — so re-grooming a feature whose older `requirements.md` has no such section will return to Phase 2 until it is added. `/groom` also now reads `docs/architecture/constraints.md`. Update pai-orbit to pick it up (see [Updating](#updating)).
 
@@ -172,7 +175,7 @@ This installs the pai-orbit files only. Then run `/setup` in Copilot Chat (Busin
 
 ### OpenAI Codex CLI (beta)
 
-Codex users get a native install — 20 skills (6 operational, 14 modes), 2 subagents (`docs-writer`, `cross-repo-impact`), 4 hooks with PowerShell versions for Windows, MCP, and always-on rules. Requires Codex CLI v0.144.6+ and Node.js 18+. Install with one command from the project root:
+Codex users get a native install — 22 skills (7 operational, 15 modes), 2 subagents (`docs-writer`, `cross-repo-impact`), 4 hooks with PowerShell versions for Windows, MCP, and always-on rules. Requires Codex CLI v0.144.6+ and Node.js 18+. Install with one command from the project root:
 
 ```bash
 npx github:the-psi/pai-orbit init codex

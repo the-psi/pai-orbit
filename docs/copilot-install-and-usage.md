@@ -132,7 +132,7 @@ Re-running the npx install is unnecessary and would only matter if the team lead
 |------|----------|---------|
 | `.copilot/` | pai-orbit | Team metadata (`pai-orbit-config.md`, `team.md`, `settings.json`). Read by the prompts via the Context-discovery directives. |
 | `.github/copilot-instructions.md` | pai-orbit | Always-loaded rule book + Context-discovery + prompt-library pointer. Refreshed on every re-run. |
-| `.github/prompts/*.prompt.md` | pai-orbit | 30 invokable slash commands (15 modes + 6 skills + 7 service-builder agents + 2 named agents: `/docs-writer`, `/cross-repo-impact`). Refreshed on every re-run. |
+| `.github/prompts/*.prompt.md` | pai-orbit | 31 invokable slash commands (15 modes + 7 skills + 7 service-builder agents + 2 named agents: `/docs-writer`, `/cross-repo-impact`). Refreshed on every re-run. |
 | `.github/instructions/*.instructions.md` | pai-orbit | 5 auto-attaching guidance files (`git`, `data-model`, `arch-drift`, `context-discovery`, `decisions`). Refreshed on every re-run. |
 | `.husky/` and `.pre-commit-config.yaml(.template)` | pai-orbit (templates) / user (active files) | Inert templates are owned by pai-orbit and refreshed on re-run. The active `.husky/pre-commit` or `.pre-commit-config.yaml` is **preserved** once installed. |
 | `AGENTS.md` | user (after first scaffold) | Project documentation for Copilot: stack, services, key files, data model, auth. **Same content shape** as Claude Code's `CLAUDE.md` — only the filename differs to match each tool's convention. |
@@ -190,7 +190,7 @@ Type `/<command>` in Copilot Chat. Same vocabulary as Claude Code or Cursor:
   - `/build` — implementation work (code + docs)
   - `/arch`, `/data`, `/domain`, `/incident`, `/plan`, `/release`, `/review`, `/test`, `/ux` — see [`capabilities.md`](capabilities.md)
 - **Skills** are reusable operational procedures, invokable from any mode:
-  - `/git`, `/board`, `/analysis`, `/data-model`, `/epic`, `/simplify`
+  - `/git`, `/board`, `/analysis`, `/data-model`, `/epic`, `/process-map`, `/simplify`
 - **Service-builder agents** scaffold a service on Pro/Business; act as regular prompts on Free:
   - `/django-builder`, `/express-builder`, `/fastapi-builder`, `/generic-service-builder`, `/infra-builder`, `/nextjs-builder`, `/react-vite-builder`
 
@@ -224,6 +224,7 @@ The two are **not mutually exclusive** — the same skill body may appear in bot
 | `/data-model` | ✅ | ✅ | `**/*.sql, **/migrations/**` |
 | `/epic` | ✅ | ❌ | — |
 | `/git` | ✅ | ✅ | `**/*` (always-on baseline) |
+| `/process-map` | ✅ | ❌ | — |
 | `/simplify` | ✅ | ❌ | — |
 
 Plus two instructions files that are not skill-derived:
