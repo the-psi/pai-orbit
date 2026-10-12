@@ -2,7 +2,7 @@
 # OpenAI Codex CLI adapter — full-parity build.
 #
 # Emits dist/codex/ containing:
-#   AGENTS.md, .agents/skills/ (21 skills), .codex/agents/ (2 TOML subagents),
+#   AGENTS.md, .agents/skills/ (22 skills), .codex/agents/ (2 TOML subagents),
 #   .codex/hooks/ + .codex/hooks.json, .codex/config.toml, .codex/templates/,
 #   README.md.
 #
@@ -410,7 +410,7 @@ registered hooks; hook trust is invalidated by every hook edit.
 \`\`\`
 project-root/
 ├── AGENTS.md                             # Codex reads at project root
-├── .agents/skills/                       # 6 operational + 14 mode skills
+├── .agents/skills/                       # 7 operational + 15 mode skills
 ├── .codex/agents/                        # docs-writer.toml, cross-repo-impact.toml
 ├── .codex/hooks/                         # bash-guard, arch-drift-wrapper, lint-*-wrapper (+ .ps1 variants)
 ├── .codex/hooks.json                     # official nested schema with commandWindows overrides
@@ -423,15 +423,15 @@ project-root/
 1. Launch \`codex\` in the project. Trust the project when prompted.
 2. Run \`/hooks\` to trust the four registered hooks. Every hook edit invalidates trust — re-run after upgrades.
 3. Run \`\\\$setup\` to scaffold \`.codex/pai-orbit-config.md\`, \`.codex/team.md\`, and to fill in the lint hooks' \`repo=\` block.
-4. Run \`/skills\` to see the 21 skills.
+4. Run \`/skills\` to see the 22 skills.
 
 ## Skills
 
-**6 operational skills** — fire implicitly on description match OR explicit as \`\\\$skill-name\`:
+**7 operational skills** — fire implicitly on description match OR explicit as \`\\\$skill-name\`:
 
-- \`analysis\`, \`board\`, \`data-model\`, \`epic\`, \`git\`, \`simplify\`
+- \`analysis\`, \`board\`, \`data-model\`, \`epic\`, \`git\`, \`process-map\`, \`simplify\`
 
-**14 mode skills** — explicit-only (invoked as \`\\\$mode-name\`; \`agents/openai.yaml\` disables implicit invocation):
+**15 mode skills** — explicit-only (invoked as \`\\\$mode-name\`; \`agents/openai.yaml\` disables implicit invocation):
 
 - \`arch\`, \`build\`, \`data\`, \`design\`, \`domain\`, \`groom\`, \`incident\`, \`orbit-plan\`, \`orbit-review\`, \`playwright\`, \`release\`, \`setup\`, \`suggest-skills\`, \`test\`, \`ux\`
 
@@ -522,7 +522,7 @@ fi
 
 # Guard D: every mode skill has agents/openai.yaml; operational skills do NOT
 mode_skills=(arch build data design domain groom incident orbit-plan orbit-review playwright release setup suggest-skills test ux)
-operational_skills=(analysis board data-model epic git simplify)
+operational_skills=(analysis board data-model epic git process-map simplify)
 
 for m in "${mode_skills[@]}"; do
   if [ ! -f "$DIST_DIR/.agents/skills/$m/agents/openai.yaml" ]; then
@@ -575,7 +575,7 @@ fi
 
 echo ""
 echo "codex adapter: built $DIST_DIR"
-echo "  21 skills / description sum: $total_desc chars (budget 8000)"
+echo "  22 skills / description sum: $total_desc chars (budget 8000)"
 echo "  2 subagents / 4 hooks + 3 wrappers + PS1 variants"
 echo "  README.md, config.toml, hooks.json"
 echo "  install: npx github:${GITHUB_REPO} init codex"

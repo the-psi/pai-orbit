@@ -6,6 +6,7 @@ Switch out when:
 - Domain knowledge is needed to define the right user experience → `/domain`
 - The UX is defined and functional requirements need formalising → `/groom`
 - The UX is groomed and technical design is next → `/design`
+- The solution is driven by a multi-party business process rather than a single user's journey → `/process-map`
 
 ## Behaviour
 

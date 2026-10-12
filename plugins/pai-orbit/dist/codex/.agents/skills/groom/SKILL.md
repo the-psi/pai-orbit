@@ -32,7 +32,7 @@ Before any scoping or requirements work:
 
 1. **Classify the issue first — it decides how much context to read.** If the session is tied to a board issue, read its labels (via `/board`). Labels such as `bug` or `fix` mean *bug fix / small enhancement*; a label such as `feature`, or `enhancement` on genuinely new capability, means *new feature*. If labels are absent, or ambiguous about which of the two this is, **ask the user directly** — "Is this a new feature/capability, or a bug fix / small enhancement?" — and wait for an answer. Do not infer it from the issue title.
 
-2. **Read product context before forming any opinion.** Always read: `AGENTS.md` (who the product serves and what it is), `<docs root>/domain/*.md` (business rules bearing on this issue), the feature's existing `ux.md`, and the parent epic in `<docs root>/epics/`.
+2. **Read product context before forming any opinion.** Always read: `AGENTS.md` (who the product serves and what it is), `<docs root>/domain/*.md` (business rules bearing on this issue), the feature's existing `ux.md`, the parent epic in `<docs root>/epics/`, and any to-be process map in `<docs root>/processes/` the feature implements. When a process map applies, cite the step IDs the feature implements under `## Context`.
 
    **Additionally, only when classified as a new feature/capability:**
    - `<docs root>/domain/product-capabilities.md` — the canonical record of what the product already does. Read it first when checking for overlap. If it does not exist, fall back to scanning `<docs root>/features/*` for features that already cover this ground.
@@ -290,7 +290,7 @@ Read `.codex/pai-orbit-config.md`. If a `## System Docs` section is present, it 
 ## Resolve the docs root
 
 - No `## System Docs` section → docs root is local `docs/`.
-- `system_docs_repo` is a relative path → check whether `<system_docs_repo>/<system_docs_path>` exists **and** contains at least one of the expected subdirectories (`architecture/`, `decisions/`, `domain/`, `features/`, `plans/`, `wip/`, `backlog/`, `reports/`, `epics/`, `ops/`). A directory that exists but holds none of these is a stale pointer, not a docs root.
+- `system_docs_repo` is a relative path → check whether `<system_docs_repo>/<system_docs_path>` exists **and** contains at least one of the expected subdirectories (`architecture/`, `decisions/`, `domain/`, `processes/`, `features/`, `plans/`, `wip/`, `backlog/`, `reports/`, `epics/`, `ops/`). A directory that exists but holds none of these is a stale pointer, not a docs root.
   - Passes → docs root is `<system_docs_repo>/<system_docs_path>`.
   - Fails → warn once ("System docs path unreachable — continuing with local docs only") and docs root is local `docs/`.
 - `system_docs_repo` is a git URL → same check against a local clone at a resolvable path. Passes → docs root is `<clone-path>/<system_docs_path>`. Fails → warn once and docs root is local `docs/`.

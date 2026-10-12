@@ -26,6 +26,7 @@ Before starting any sub-mode:
 - Read `CLAUDE.md → ## Architecture` for the current summary.
 - Read `<docs root>/architecture/system.md`, `constraints.md`, and `stack.md` if they exist.
 - Read all ADRs in `<docs root>/decisions/`.
+- Read `<docs root>/processes/*.md` if present — a system lane tagged `new`, or a to-be step an existing system does not declare, is an architecture gap to address in `init` or `update`.
 
 **Graceful guard:** If `<docs root>/architecture/system.md` does not exist and the sub-mode is not `init`, tell the user: "Architecture is not yet declared for this project. Run `/arch init` first."
 

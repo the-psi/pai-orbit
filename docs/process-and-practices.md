@@ -35,7 +35,7 @@ NEW FEATURE                                                         HAND OFF / R
 ```
 
 **Workflow skills** (used across all phases):
-`/git` · `/board` · `/analysis` · `/data-model` · `/security-review` · `/simplify`
+`/git` · `/board` · `/analysis` · `/data-model` · `/process-map` · `/security-review` · `/simplify`
 
 `/arch validate` is used after build sessions that touch service structure.
 
@@ -51,9 +51,10 @@ Every mode either produces or consumes:
 |------|----------|----------|
 | `/domain` | `docs/domain/` | — |
 | `/ux` | `docs/features/*/ux.md` | `docs/domain/`, user research |
-| `/groom` | `docs/features/*/requirements.md` | `docs/domain/`, `docs/features/*/ux.md`, `docs/architecture/system.md` |
+| `/process-map` (skill) | `docs/processes/*.md` | `docs/domain/`, `docs/architecture/system.md`, `docs/epics/` |
+| `/groom` | `docs/features/*/requirements.md` | `docs/domain/`, `docs/features/*/ux.md`, `docs/processes/`, `docs/architecture/system.md` |
 | `/arch` | `docs/architecture/system.md`, `docs/architecture/constraints.md`, `docs/architecture/stack.md`, `docs/decisions/YYYY-MM-DD-*.md`, `docs/wip/arch-validate-*.md` | CLAUDE.md, existing `docs/architecture/`, `docs/decisions/`, git log |
-| `/design` | `docs/features/*/design.md`, `docs/decisions/YYYY-MM-DD-*.md` | `docs/features/*/requirements.md`, `docs/domain/`, `docs/architecture/` |
+| `/design` | `docs/features/*/design.md`, `docs/decisions/YYYY-MM-DD-*.md` | `docs/features/*/requirements.md`, `docs/domain/`, `docs/processes/`, `docs/architecture/` |
 | `/build` | Code, `docs/domain/product-capabilities.md` | All docs, task board, `docs/architecture/constraints.md` |
 | `/test` | `docs/features/*/test-plan.md` | `docs/features/*/requirements.md` |
 | `/review` | `docs/wip/review-*.md` | Diff, CLAUDE.md, `docs/architecture/`, `docs/decisions/` |
@@ -161,6 +162,7 @@ These skills cross-cut the sprint phases — they can be invoked from any point 
 | `/analysis` | Before changing a shared interface: "what breaks if we change X?" |
 | `/data-model` | Before writing a query against an unfamiliar table; proposing a schema change |
 | `/security-review` | Before merging anything that touches auth, input, secrets, or IAM |
+| `/process-map` | When the solution is shaped by a business process across several roles or systems, not a single user journey — draws the to-be map in `docs/processes/` |
 | `/simplify` | After a build session when the implementation feels overbuilt; on periodic cleanup passes |
 | `/arch validate` | After a build session that added a service, changed inter-service communication, or crossed a boundary |
 
@@ -172,6 +174,7 @@ These skills cross-cut the sprint phases — they can be invoked from any point 
 docs/
 ├── architecture/  Declared system architecture — system.md (structure), constraints.md (rules), stack.md (tech)
 ├── domain/        Expert knowledge — the science or logic behind the product
+├── processes/     To-be swimlane maps — JSON specs, generated SVGs, narratives, INDEX.md (/process-map)
 ├── features/      One folder per feature: ux.md, requirements.md, design.md, test-plan.md
 ├── decisions/     Architecture Decision Records (ADRs) — named YYYY-MM-DD-<slug>.md
 ├── plans/         Planning and prioritisation notes

@@ -29,7 +29,7 @@ Modes are entered with a slash command. They change Claude's headspace and outpu
 **Headspace:** Domain knowledge production  
 **Reads:** Domain expert input, existing docs/domain/  
 **Writes:** docs/domain/*.md  
-**Switch to:** `/groom` when knowledge informs a feature, `/design` when it informs architecture
+**Switch to:** `/groom` when knowledge informs a feature, `/design` when it informs architecture, `/process-map` when a multi-party process needs its to-be shape drawn
 
 Distinguishes established knowledge, working hypotheses, and unknowns. Does not implement.
 
@@ -240,6 +240,18 @@ Change impact and dependency analysis — assess the blast radius of a proposed 
 ### `/data-model`
 
 Schema reference and change management — read the current schema for any table, propose new columns or tables, draft migrations with rollback, and assess query/API impact. Documents schema decisions as ADRs. Enforces safety rules: no dropping columns without deprecation, no NOT NULL without default or backfill, no editing applied migrations.
+
+---
+
+### `/process-map`
+
+To-be business process modelling — true swimlane diagrams (roles, teams, and systems as lanes; phases as columns) as a high-level solution blueprint for process-driven systems (back-office, multi-party workflows, integrations). Reads existing `docs/domain/` and `docs/architecture/system.md` rather than re-interviewing. A JSON spec per process (`docs/processes/specs/<slug>.json`) is the source of truth; the vendored renderer `docs/processes/_render/swimlane.py` (Python 3, standard library) validates it and generates the SVG, a Mermaid preview, the step table with permanent step IDs (e.g. `OTC-3`), and `docs/processes/INDEX.md`. Steps carry Agreed / Proposed / Open confidence, shown in the border style.
+
+- `/process-map create <name> [source]` — extracts hierarchy, trigger, outcome, and lanes from domain docs, confirms them, walks the happy path and exceptions, then derives solution implications: integration points (→ `/design`), architecture gaps (→ `/arch update`), automation points, and feature slices (→ `/groom`)
+- `/process-map update <name>` — proposes a numbered diff; retires steps instead of renumbering
+- `/process-map trace <name>` — read-only: which features cite which step IDs, and which steps nothing implements
+
+`/groom` cites the step IDs a feature implements; `/design` treats system-lane hand-offs as integration points; `/arch` treats `new` system lanes as architecture gaps.
 
 ---
 
