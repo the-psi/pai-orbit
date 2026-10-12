@@ -2,7 +2,7 @@
 
 A structured developer methodology harness for Claude Code that enforces disciplined working modes, prevents context loss, and produces local-first documentation at every stage of development.
 
-**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.10.0
+**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.11.0
 
 ---
 
@@ -92,7 +92,7 @@ Each `/command` locks Claude into a distinct headspace. Modes do not bleed into 
 
 | Mode | Purpose | Primary Output |
 |------|---------|----------------|
-| `/arch` | Declare and maintain system architecture | `docs/architecture/`, `docs/decisions/YYYY-MM-DD-*.md` |
+| `/arch` | Define (greenfield), declare (existing), and maintain system architecture | `docs/architecture/`, `docs/decisions/YYYY-MM-DD-*.md` |
 | `/domain` | Capture expert domain knowledge | `docs/domain/*.md` |
 | `/ux` | Define user flows and interface behavior | `docs/features/*/ux.md` |
 | `/groom` | Formalize acceptance criteria | `docs/features/*/requirements.md` |
@@ -120,7 +120,7 @@ Named sub-agents spawned for parallel or specialized work:
 Every mode declares what it reads and what it writes. This is the discipline that prevents context loss:
 
 ```
-/arch   → produces docs/architecture/ (system.md, constraints.md, stack.md) + ADRs
+/arch   → define consumes domain + processes + ux → produces docs/architecture/ (drivers.md, system.md, constraints.md, stack.md) + ADRs
 /domain → produces docs/domain/*.md
 /ux     → consumes domain docs → produces docs/features/*/ux.md
 /process-map (skill) → consumes domain + architecture → produces docs/processes/ (JSON spec → swimlane SVG + narrative)

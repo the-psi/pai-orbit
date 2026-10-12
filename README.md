@@ -1,4 +1,4 @@
-# pai-orbit · v1.10.0
+# pai-orbit · v1.11.0
 
 A structured developer methodology harness for Claude Code, Cursor, GitHub Copilot, and OpenAI Codex (beta) — installed as a plugin in Claude Code and Cursor, and with one command for Copilot and Codex.
 
@@ -120,6 +120,8 @@ Workflow skills (`/git`, `/board`, `/analysis`, `/data-model`, `/process-map`, `
 
 > **`/review security`** — the security-focused pass is a sub-mode of `/review`. Use `/review` for full code review, `/review security` for the OWASP checklist, or `/review full` for both in sequence. Critical and High findings block merge.
 
+> **v1.11.0 — `/arch define` for greenfield architecture.** A new `/arch` sub-mode that *decides* an architecture instead of describing one: measurable drivers (`docs/architecture/drivers.md`, new), a system context diagram, a decomposition derived from domain language and `/process-map` lanes, style selection from a catalogue scored against the ranked drivers (with an ADR), structure, constraints with fitness functions, and stack last. `/arch update` now detects upstream changes — a process map, UX journey, domain knowledge, or drivers changed since the architecture was derived — and assesses their impact. `/arch init` remains the path for existing codebases. Existing `system.md` / `constraints.md` files keep working; the new sections are optional. Update pai-orbit to pick it up (see [Updating](#updating)).
+
 > **v1.10.0 — `/process-map` skill for to-be process modelling.** Draws true swimlane diagrams (roles and systems as lanes, phases as columns, permanent step IDs) from a JSON spec in a new `docs/processes/` folder, as a high-level solution blueprint for process-driven systems. Rendering uses a small Python 3 script that `/setup` vendors into `docs/processes/_render/`. It reads existing `docs/domain/` docs, so run it any time after `/domain`. `/groom`, `/design`, and `/arch` now read `docs/processes/` when present. Existing projects need no migration: the skill copies the renderer in on first use — re-running `/setup` is optional. Update pai-orbit to pick it up (see [Updating](#updating)).
 
 > **v1.9.0 — `/groom` checks other consumers of an existing signal.** When a change alters how an existing field, flag, or derived value is read, `/groom` Phase 2 now searches the code (and every declared, locally available repo) for other places that read it, plus an optional `docs/domain/concept-consumers.md` map, and proposes each one as a candidate scenario. The outcome is shown every session and recorded under a new `## Consumer check` section that the session-close audit enforces — so re-grooming a feature whose older `requirements.md` has no such section will return to Phase 2 until it is added. `/groom` also now reads `docs/architecture/constraints.md`. Update pai-orbit to pick it up (see [Updating](#updating)).
@@ -223,7 +225,7 @@ After installing, run `/setup` in your project directory. It will:
 5. Create `.claude/hooks/`, write all safety hook scripts, wire them into `.claude/settings.json`, and validate each hook path — with a clear recovery message if anything is missing
 6. Tell you exactly what to fill in by hand
 
-Then run `/arch init` to complete your architecture declaration — a guided interview that writes `docs/architecture/system.md` (service map), `constraints.md` (enforcement rules), and `stack.md`. Once declared, `/build` reads the constraints before generating code and `/review` checks every diff against them.
+Then run `/arch init` (existing code) or `/arch define` (greenfield) to complete your architecture declaration — a guided interview that writes `docs/architecture/system.md` (service map), `constraints.md` (enforcement rules), and `stack.md`. Once declared, `/build` reads the constraints before generating code and `/review` checks every diff against them.
 
 For a step-by-step Azure test using a disposable work item, see [Azure Boards verification](docs/azure-boards-verification.md).
 
