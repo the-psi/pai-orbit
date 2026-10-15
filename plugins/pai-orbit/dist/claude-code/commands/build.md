@@ -40,7 +40,7 @@ Before starting:
 During build:
 - Spawn sub-agents per repo where tasks are independent; run in parallel where possible
 - Each sub-agent must read the repo's own `CLAUDE.md` before starting
-- **Isolate parallel builders:** pass `isolation: "worktree"` on every builder sub-agent. Each agent works on its own branch in its own worktree, so concurrent uncommitted changes can't stomp each other. If the agent makes no changes the worktree is auto-cleaned; otherwise its branch name is returned — merge it or open a PR.
+- **Isolate concurrent builders in the same repo:** when two or more builder sub-agents edit the same repo in parallel, pass `isolation: "worktree"` on each. Each works on its own branch in its own worktree, so concurrent uncommitted changes can't stomp each other. If the agent makes no changes the worktree is auto-cleaned; otherwise its branch name is returned — merge it back into the session branch before shipping. A lone builder, or agents working in different repos, need no worktree (a worktree only copies the session's repo).
 - **Tier the model to the task:** `haiku` for simple, well-scoped work (docs updates, seed-data scripts, minor UI copy, single-file fixes with no architectural decisions); `sonnet` (default) for multi-file changes, logic-heavy work, or anything needing design trade-off reasoning.
 - Surface design blockers immediately — do not make silent architectural decisions; switch to `/design` if a non-trivial design choice surfaces
 - Do not add error handling, fallbacks, or validation for scenarios that can't happen

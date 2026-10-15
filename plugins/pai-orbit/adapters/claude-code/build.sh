@@ -37,7 +37,7 @@ if ! grep -qxF "$MARKER" "$BUILD_MD"; then
 fi
 RULES_FILE="$(mktemp)"
 cat > "$RULES_FILE" <<'EOF'
-- **Isolate parallel builders:** pass `isolation: "worktree"` on every builder sub-agent. Each agent works on its own branch in its own worktree, so concurrent uncommitted changes can't stomp each other. If the agent makes no changes the worktree is auto-cleaned; otherwise its branch name is returned — merge it or open a PR.
+- **Isolate concurrent builders in the same repo:** when two or more builder sub-agents edit the same repo in parallel, pass `isolation: "worktree"` on each. Each works on its own branch in its own worktree, so concurrent uncommitted changes can't stomp each other. If the agent makes no changes the worktree is auto-cleaned; otherwise its branch name is returned — merge it back into the session branch before shipping. A lone builder, or agents working in different repos, need no worktree (a worktree only copies the session's repo).
 - **Tier the model to the task:** `haiku` for simple, well-scoped work (docs updates, seed-data scripts, minor UI copy, single-file fixes with no architectural decisions); `sonnet` (default) for multi-file changes, logic-heavy work, or anything needing design trade-off reasoning.
 EOF
 awk -v m="$MARKER" -v f="$RULES_FILE" '$0==m { while ((getline l < f) > 0) print l; next } { print }' "$BUILD_MD" > "$BUILD_MD.tmp"
