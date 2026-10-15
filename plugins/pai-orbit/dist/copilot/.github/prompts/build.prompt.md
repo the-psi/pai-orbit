@@ -100,7 +100,8 @@ Switch out when:
 ## Behaviour
 
 Before starting:
-- **Branch (first action — before any file edit):** Read `.copilot/pai-orbit-config.md → ## Git` to determine the branching model. Then:
+- **Related open-story gate (first gate, before branch changes or edits):** For ticketed work, run the board skill's Related open-story check. Skip when no ticket is in scope.
+- **Branch setup (first repository action after the related-story gate, before file edits):** Read `.copilot/pai-orbit-config.md → ## Git` to determine the branching model. Then:
   - **GitHub Flow / GitFlow, currently on `main`/`master`/`develop`:** derive the branch name from the linked board issue title (kebab-case the title, prefix with `feature/`, `fix/`, or `hotfix/` as appropriate). If no board issue is linked, ask the user for the slug. State the proposed branch name and wait for confirmation, then create and checkout the branch. Do not write any code until the branch is confirmed.
   - **GitHub Flow / GitFlow, already on a feature branch:** state "Already on feature branch `<name>` — proceeding" and confirm it matches the work at hand before continuing.
   - **Trunk-based, small change (≤ 3 files estimated):** state "Committing directly to `main` (trunk-based, small change ≤ 3 files)" and proceed.
@@ -152,7 +153,7 @@ Read `.copilot/pai-orbit-config.md`. If a `## System Docs` section is present, i
 ## Resolve the docs root
 
 - No `## System Docs` section → docs root is local `docs/`.
-- `system_docs_repo` is a relative path → check whether `<system_docs_repo>/<system_docs_path>` exists **and** contains at least one of the expected subdirectories (`architecture/`, `decisions/`, `domain/`, `features/`, `plans/`, `wip/`, `backlog/`, `reports/`, `epics/`, `ops/`). A directory that exists but holds none of these is a stale pointer, not a docs root.
+- `system_docs_repo` is a relative path → check whether `<system_docs_repo>/<system_docs_path>` exists **and** contains at least one of the expected subdirectories (`architecture/`, `decisions/`, `domain/`, `processes/`, `features/`, `plans/`, `wip/`, `backlog/`, `reports/`, `epics/`, `ops/`). A directory that exists but holds none of these is a stale pointer, not a docs root.
   - Passes → docs root is `<system_docs_repo>/<system_docs_path>`.
   - Fails → warn once ("System docs path unreachable — continuing with local docs only") and docs root is local `docs/`.
 - `system_docs_repo` is a git URL → same check against a local clone at a resolvable path. Passes → docs root is `<clone-path>/<system_docs_path>`. Fails → warn once and docs root is local `docs/`.

@@ -14,6 +14,8 @@ Switch out when:
 
 ## Behaviour
 
+**At session start — related open-story gate:** For ticketed design work, run the board skill's Related open-story check before impact analysis or design discussion. Skip for standalone design work.
+
 **At session start — impact analysis gate (before any design discussion):**
 
 1. Scan `docs/wip/` for an existing `analysis-*.md` report relevant to the current change. If found, read and cite it — do not re-run `/analysis`.
@@ -27,6 +29,8 @@ Switch out when:
 - Resolve the docs root per `reference/docs-path-resolution.md` (config: `.claude/pai-orbit-config.md → ## System Docs`).
 - Read `CLAUDE.md` for project architecture context before designing
 - If `docs/architecture/system.md` exists, read it — design proposals must fit within declared service boundaries or explicitly propose boundary changes with an ADR
+- If the feature implements steps of a to-be process map in `<docs root>/processes/`, read it — every hand-off between system lanes is an integration point this design must cover
+- If `<docs root>/architecture/drivers.md` exists, read its quality-attribute scenarios — design options are evaluated against them, and an option that weakens a ranked scenario says so explicitly
 - If `docs/architecture/constraints.md` exists, read it — design options that violate a constraint must flag this explicitly; violating a constraint requires `/arch update` to ratify the change before implementation
 - Read relevant existing docs before making recommendations
 - Read the feature's `requirements.md`, including its `## Open questions`. Treat any design questions deferred from grooming as a **starting point, not a boundary** — design the feature comprehensively. Surface and decide design aspects grooming never raised (data model, failure modes, migration, observability, etc.); do not limit the session to only the questions groom happened to flag.

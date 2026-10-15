@@ -14,10 +14,13 @@ Switch out when:
 
 ## Behaviour
 
+**At session start — related open-story gate:** For ticketed test planning or execution, run the board skill's Related open-story check before reading requirements as current or preparing/running tests. Skip for standalone testing.
+
 Reads from:
 - `docs/features/<feature>/requirements.md` — requirements and acceptance criteria
 - `CLAUDE.md` — stack, test frameworks, and conventions
 - `docs/decisions/` — architectural constraints that affect testability
+- Task board — related open-story check for ticketed test planning and execution
 
 Writes to:
 - `docs/features/<feature>/test-plan.md`

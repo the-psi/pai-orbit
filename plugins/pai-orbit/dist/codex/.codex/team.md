@@ -3,9 +3,9 @@
 Used by `/board` for default assignees and handoffs.
 Update when team members join, leave, or change roles.
 
-| Name | Role | GitHub | Linear | Jira | Notes |
-|------|------|--------|--------|------|-------|
-| {{NAME_1}} | {{ROLE_1}} | {{GITHUB_1}} | {{LINEAR_1}} | {{JIRA_1}} | {{NOTES_1}} |
+| Name | Role | GitHub | Linear | Jira | Azure DevOps | Notes |
+|------|------|--------|--------|------|--------------|-------|
+| {{NAME_1}} | {{ROLE_1}} | {{GITHUB_1}} | {{LINEAR_1}} | {{JIRA_1}} | {{AZURE_1}} | {{NOTES_1}} |
 <!-- Add one row per team member. Leave unused platform columns blank. -->
 
 ## Role reference

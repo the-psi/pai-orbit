@@ -112,7 +112,7 @@ Proceed / Proceed with migration plan / Do not proceed — explain why.
 
 ---
 name: board
-description: Task management — create issues, move cards, assign work, close on ship — using the project's configured board. Reads board config from .claude/pai-orbit-config.md and team roster from .claude/team.md. TRIGGER when creating a task or issue, moving a card, assigning work, closing a completed item, or asking about what's on the board. SKIP read-only board browsing (just use the browser or CLI directly).
+description: Task management — check related open stories, create issues, move cards, assign work, and close on ship using the configured board. TRIGGER before creating a story or starting/resuming work tied to a ticket, and when moving or assigning work. SKIP read-only board browsing (use the browser or CLI directly). Reads board config from `.claude/pai-orbit-config.md` and team roster from `.claude/team.md`.
 ---
 
 # Agile Board
@@ -134,19 +134,46 @@ Before executing any board operation, check `.claude/pai-orbit-config.md → ## 
 
 If an MCP call fails or the server is unreachable, fall back to the equivalent shell command and note the fallback: "MCP unavailable — using shell fallback."
 
+## Shell execution (all board types)
+
+Adapt CLI examples to the user's active shell. Bash line continuations, `/dev/null`, loops, and `||` must not be copied verbatim into Windows PowerShell 5.1; use single-line commands or native shell syntax. Check each command's exit status before using its output or reporting success. On failure, report the error and remedy, then stop the dependent operation. These rules also apply to CLI fallbacks from MCP.
+
+## Related open-story check
+
+Run this check before creating a new story and at the start or resumption of ticketed work in `/groom`, `/design`, `/build`, or `/test`. The goal is to catch a changed or overlapping requirement before the developer continues against stale assumptions.
+
+### Scan steps
+
+1. Resolve the in-hand ticket from the user's request or active feature context. Read its title, full description, current status, assignee, and relevant comments/history. For a proposed new story, use the proposed title and requirement as the in-hand request.
+2. Query the configured board/project for its open stories, including older and newer items. Do not limit the scan to items created recently, exact title matches, or items already linked to the in-hand ticket. Exclude completed/closed items. If the configured board is an issue tracker, search its open issues for the same project/repository.
+3. Resolve the docs root per `reference/docs-path-resolution.md`. Compare the actual behavior, constraints, and values in the requirements, not just shared keywords. Read candidate descriptions and relevant comments; inspect related `<docs root>/features/*` artifacts when they exist.
+4. Classify plausible candidates as a requirement change/conflict, a related but separate item, a possible duplicate, or unrelated. Report each candidate's issue number, title, status, assignee, evidence for the match, the concrete difference from the in-hand requirement, the acceptance criteria that match or conflict (quote or summarize them), and confidence (high/medium/low). If no candidates match, say the scan found none.
+5. If a candidate could change the in-hand requirement or scope, pause before drafting, designing, implementing, testing, or creating the proposed story. Ask the developer whether it is a change to the current story, separate related work, a duplicate, or unrelated. Do not infer the relationship from wording or chronology alone.
+6. After the developer confirms the relationship, agree on the disposition: update the existing story, keep separate stories linked, or treat the new story as a duplicate. For a confirmed requirement change, identify the canonical ticket and report which acceptance criteria, `requirements.md`, `design.md`, implementation, and `test-plan.md` may now be stale. If the current mode is not `/groom`, stop and hand off to `/groom`; do not draft replacement acceptance-criteria wording in another mode. In `/groom`, compare the old and new acceptance criteria and prepare an impact list classifying each as retain, revise, remove, or add, with exact proposed wording and a reason tied to the confirmed requirement. Show this proposal and wait for the developer's approval before changing acceptance criteria or other ticket content. After approval, update the relevant requirements first, then update design, implementation, and test artifacts through their normal modes before resuming work against the old requirement. Do not silently treat stale artifacts as current.
+7. Show proposed ticket edits and comment text before posting. With confirmation, update the canonical story's approved acceptance criteria, use the board's native relationship feature where available, or otherwise add reciprocal comments referencing both issue numbers. Keep a non-canonical story's disposition clear (related, superseded, or duplicate) without changing its acceptance criteria as if it were canonical. Do not close, merge, or mark a story duplicate without explicit confirmation. Do not @mention or notify an assignee unless the developer approves the notification.
+8. If the board cannot be queried, report the specific limitation and ask whether to continue without the check. Never imply the board was checked when it was not.
+
+### Resumption checkpoint
+
+- After each successful scan, save or refresh one checkpoint per board/project and in-hand ticket at `<docs root>/wip/related-open-story-checkpoints/<board-key>-<ticket-id>.md` (resolve `<docs root>` per `reference/docs-path-resolution.md`). Use a stable board key from the configured board/project identity and the ticket's stable ID, so the same checkpoint is found across dates and work sessions. Do not use a generic `session-capture-<date>.md` file for this scan state.
+- Record the board/project, in-hand ticket, scan start and completion times in UTC, whether the scan was full or incremental, and each candidate's ID, URL, status, and classification or unresolved decision. Keep the file focused on scan state; it is not a workflow handoff.
+- On resumption, read the matching checkpoint if present, but always reread the in-hand ticket and its current comments. Native changed-since query paths are available for GitHub Issues, GitLab, Linear, Jira, and Azure DevOps; GitHub Projects v2 uses its underlying issue tracker rather than a separate project-item changed-since query. Use an incremental scan only when the configured CLI or MCP supports the needed filter and can retrieve all matching pages for the configured board/project. Compare new or changed results, and don't repeat unchanged resolved candidates. Refresh the checkpoint after the scan.
+- If the checkpoint is missing or mismatched, or the board cannot reliably return all open stories created or updated since the checkpoint, run the full scan and replace the checkpoint. The checkpoint is only a scan optimization; it never substitutes for current ticket content.
+
 ## Procedure
 
 ### Creating an issue
 
 1. Read `.claude/pai-orbit-config.md` to determine board type and column structure
 2. Ask which board/project if there are multiple (e.g., Tech vs Ops, Engineering vs Product)
-3. Ask issue type to determine labels and starting column (per the config)
-4. Read `.claude/team.md` to propose a default assignee based on issue type and role
-5. Compose:
+3. Run the Related open-story check against the proposed requirement before creating anything. If the developer confirms the proposed story is a change or duplicate, follow the confirmed disposition instead of opening a disconnected issue.
+4. Ask issue type to determine labels and starting column (per the config)
+5. Read `.claude/team.md` to propose a default assignee based on issue type and role
+6. Compose:
    - **Title:** short, imperative, ≤ 72 chars — mirrors commit format
-   - **Body:** what + why; link to relevant docs (`docs/features/<feature>/requirements.md`, prior issues, ADRs); for features, include sub-tasks broken down by service
-6. Create the issue using the configured CLI (see board type below)
-7. Place on board: report the target column; attempt CLI placement if available, otherwise instruct the user to move the card manually
+   - **Body:** what + why; link to relevant docs (`<docs root>/features/<feature>/requirements.md`, prior issues, ADRs); for features, include sub-tasks broken down by service
+7. Create the issue using the configured CLI (see board type below)
+8. Place on board: report the target column; attempt CLI placement if available, otherwise instruct the user to move the card manually
 
 ### Moving a card
 
@@ -155,6 +182,7 @@ Read the column flow from config. Common flows:
 - **Linear:** `linear issue update --state <state>`
 - **Jira:** `jira issue transition`
 - **GitLab:** boards are label-driven — each column maps to a label (scoped like `workflow::In Progress` or standalone like `To Do`). Moving a card means removing the current column label and adding the next one. Read the column→label map from `## Agile Board → columns` in config, then run the GitLab label resolution step below before applying any label.
+- **Azure DevOps:** `az boards work-item update --id <N> --state "<state>"` — read the column→state map from `## Agile Board → columns` in config first; run Azure preflight below before the first call of the session. Include the configured organisation in the command.
 
 **GitLab label resolution (always run before applying a label):**
 1. Build the match list: column→label entries from config + any label name the user stated verbatim.
@@ -218,6 +246,50 @@ glab issue close <issue-id> --repo <namespace>/<project>
 ```
 
 Column→label map is read from `## Agile Board → columns` in `.claude/pai-orbit-config.md`. If the map is absent, ask the user to supply it before moving.
+
+**Azure DevOps:**
+
+Use this section and Azure preflight only when `## Agile Board → type` is **Azure DevOps**. Azure commands and fields must not be required for other board types. This integration uses the Azure CLI; there is no Azure MCP path configured here.
+
+Read organisation, project, work-item type, area path, and column→state mapping from the Azure config block. Use the roster's Azure DevOps identity for assignment; ask for missing values instead of guessing. `Team` identifies the team used to look up area settings in `/setup`; it is not a work-item field or a `--team` flag on create. Use the confirmed area path for creation, including the project root only if explicitly confirmed. For an older config without an area path, ask for it before creating and save the confirmed value.
+
+Run Azure preflight before the first Azure operation of the session (and again if organisation/project changes).
+
+```text
+# Create in the configured area
+az boards work-item create --title "<title>" --type "<work-item-type>" --org "https://dev.azure.com/<org>" --project "<project>" --area "<area-path-from-config>" --description "<body>" --assigned-to "<azure-identity-from-roster>"
+
+# Read current state and fields
+az boards work-item show --id <N> --org "https://dev.azure.com/<org>"
+
+# Move card (state transition)
+az boards work-item update --id <N> --state "<next-column-state>" --org "https://dev.azure.com/<org>"
+
+# Assign or hand off an existing item
+az boards work-item update --id <N> --assigned-to "<azure-identity-from-roster>" --org "https://dev.azure.com/<org>"
+
+# Comment
+az boards work-item update --id <N> --discussion "<text>" --org "https://dev.azure.com/<org>"
+
+# Close using the confirmed Closing state
+az boards work-item update --id <N> --state "<closing-state-from-config>" --org "https://dev.azure.com/<org>"
+```
+
+Before updating an existing item, read it and confirm its project and work-item type. If the type differs from the configured type, confirm its valid state mapping before a transition. Preserve its area and iteration during moves, comments, assignments, and closing unless the user explicitly requests a change. Do not derive an iteration from Team or Area path.
+
+Read `columns` and `Closing state` from `## Agile Board` in `.claude/pai-orbit-config.md`. Ask for a missing mapping before moving; for an older config without `Closing state`, confirm it from the existing mapping or ask the user before closing. Do not infer a terminal state from the last active column. If several columns share a state, report the state change and explain that exact column placement may require a manual move.
+
+After a successful write, read the item back and verify the requested fields or discussion before reporting completion. If verification fails, report that the write succeeded but verification is incomplete; do not blindly retry creates or comments and produce duplicates.
+
+## Azure preflight
+
+Shared by `/setup` and `/board`, only for Azure DevOps. Run these checks in order and inspect each exit status before proceeding:
+
+1. Run `az --version`. If the executable is missing or fails, report the error and ask the user to install or repair Azure CLI, then retry.
+2. Run `az extension show --name azure-devops`. If the extension is missing, report `az extension add --name azure-devops` as the remedy and stop. For other errors, report the actual error rather than assuming the extension is absent.
+3. Probe access to the configured project with `az devops project show --org "https://dev.azure.com/<org>" --project "<project>" -o none`. A successful `az account show` alone does not prove Azure DevOps access. If the probe fails, stop and report the actual error. For a missing or expired credential, suggest `az devops login --organization "https://dev.azure.com/<org>"` or `AZURE_DEVOPS_EXT_PAT`; for permission, project, or network errors, ask the user to correct the corresponding access or configuration. Never request a token in chat or write one into project config.
+
+Use native exit-status handling, without Bash-only redirection or `|| echo`. Never report a board operation as applied after a failed preflight or command.
 
 ## Conventions (always apply)
 
@@ -475,6 +547,182 @@ Read PR conventions from `.claude/pai-orbit-config.md`. Defaults:
 - If a hook fails, fix the underlying issue — do not bypass
 - Confirm with the user before pushing to any remote
 - If destructive git state is needed (reset --hard, branch -D), state what will be lost and ask first
+
+
+## /process-map
+
+---
+name: process-map
+description: To-be business process modelling — true swimlane diagrams (roles and systems as lanes, phases as columns, permanent step IDs) from a JSON spec in docs/processes/, as a high-level solution blueprint. TRIGGER when a solution is shaped by a business process spanning several actors or systems rather than a single user journey, or when asked to map, draw or redraw a process. SKIP single-actor rules or definitions (use /domain), screen-level user flows (use /ux), and API or data design (use /design).
+---
+
+# Process Map
+
+Model how a business process **will** work once the solution exists — who does what, in which system, in what order, and what happens when it goes wrong. A to-be process map is a solution-shaping exercise: drawing lanes and hand-offs forces the high-level solution into view before any feature is groomed.
+
+Use this where processes, not user journeys, drive the solution — back-office operations, multi-party workflows, integrations, approvals, settlements, fulfilment. Where one user's journey through screens drives the solution, use `/ux` instead.
+
+Reads from:
+- `<docs root>/domain/` — `domain-knowledge.md`, `rule-engine.md`, and any other domain files: actors, business rules, constraints
+- `<docs root>/architecture/system.md` — systems that already exist (if declared)
+- `<docs root>/processes/` — existing specs and `INDEX.md`, for step-ID continuity, L1/L2 placement, and overlap
+- `<docs root>/epics/` — the parent epic, if the process belongs to one
+- An as-is description the user provides (notes, a document, an existing diagram) — optional baseline
+
+Writes to `<docs root>/processes/`:
+
+```
+processes/
+├── specs/<slug>.json   source of truth — one per process; the only diagram file edited by hand
+├── svg/<slug>.svg      true swimlane diagram (generated)
+├── <slug>.md           narrative + solution implications (hand-written) + generated diagram, Mermaid preview, step table
+├── INDEX.md            register of every process map (generated)
+└── _render/swimlane.py renderer — vendored by /setup, project-owned
+```
+
+Resolve the docs root per `reference/docs-path-resolution.md` (config: `.claude/pai-orbit-config.md → ## System Docs`) before reading or writing. A to-be process usually crosses services, so in a multi-repo setup it belongs in the system docs root.
+
+---
+
+## Discuss, then specify, then render
+
+A rendered diagram looks authoritative the moment it exists, and people anchor on its shape even when it was a guess. Getting the structure right is the work; the SVG is typesetting. So:
+
+1. **Agree the shape in words first** — trigger, outcome, lanes, phases.
+2. **Surface every modelling choice instead of silently picking one** — which lane owns a step, whether something is a precondition or a step, how a requirement spanning two actors splits. State the options, get a decision, move on.
+3. **Write the spec and walk it back narratively** before rendering. Fix what is wrong in the spec, not in the picture.
+4. **Render, then look at it** — see Rendering.
+5. **Update the narrative and index** as part of finishing, not afterwards.
+
+## Operations
+
+### `create`
+Usage: `/process-map create <process-name> [source]`
+
+`source` is optional: a domain doc path or section (e.g. `docs/domain/domain-knowledge.md#settlement`) or an epic name. With no source, read all of `<docs root>/domain/`.
+
+1. **Check for overlap.** Read `<docs root>/processes/INDEX.md` and existing specs. If another map covers adjacent ground, say so and agree with the user whether the new one extends, sits alongside, or supersedes it.
+2. **Extract before asking.** Propose, in one block, citing the domain source behind each item and marking anything inferred as `proposed`:
+   - **Hierarchy** — L1 (value chain area) › L2 (process group) › L3 (this process); reuse L1/L2 names already in the index
+   - **Prefix** — 2–8 uppercase characters for step IDs (e.g. `OTC`)
+   - **Trigger** and **outcome**
+   - **Scope** — in and out
+   - **Lanes** — every role, team, and system. Systems are tagged `existing` (declared in `system.md`) or `new`; third parties are `external`.
+   - **Phases** — 3–6 columns, the first usually `0 · PRE-REQUISITES`
+
+   Wait for confirmation before going further.
+3. **Walk the happy path** one lane-hand-off cluster at a time: actor lane, phase, action, and the rule behind it (`cite`). Confirm each cluster before moving on.
+4. **Walk the exceptions.** At each decision and each system-to-system hand-off, ask what happens on failure, timeout, or rejection. An exception nobody can answer becomes an `open` step with an open question — never a guessed path.
+5. **Write the spec** to `<docs root>/processes/specs/<slug>.json` (schema below). Read it back to the user as a numbered narrative; correct it until it is agreed.
+6. **Render** (see Rendering) and look at the result.
+7. **Write the narrative** in `<docs root>/processes/<slug>.md` from `templates/docs/processes/PROCESS.md` — summary, solution implications, baseline, open questions. The diagram, Mermaid preview, and step table live between the generated markers and are written by the renderer; never edit them by hand.
+8. **Derive solution implications** — the reason to model to-be; do not skip it:
+   - **Integration points** — every hand-off between two system lanes → candidate interface for `/design`
+   - **Architecture gaps** — every `new` system lane, and any `existing` system asked to do something `system.md` does not declare → `/arch update`
+   - **Automation and control points** — manual steps, approvals, re-keying between systems, SLAs
+   - **Feature slices** — groups of step IDs that make a sensible feature → `/groom`
+9. Show the narrative file, write it after confirmation, and regenerate the index.
+
+### `update`
+Usage: `/process-map update <process-name>`
+
+1. Read the spec and the narrative.
+2. Ask what changed, or review the conversation for new decisions.
+3. Present a numbered diff against the spec — steps added, changed, or retired; lanes; edges; implications affected. Wait for confirmation, then edit the spec and re-render.
+4. When a whole map is replaced, set `status: "superseded"` and `superseded_by` on the old spec and keep it — never delete a superseded map.
+
+### `trace`
+Usage: `/process-map trace <process-name>`
+
+No writes. Read the spec, then scan `<docs root>/features/*/requirements.md` and `design.md` for its step IDs. Print: Step ID | Step | Features citing it. List steps no feature covers, and cited IDs that are retired or do not exist.
+
+If no operation is given, ask which: create, update, or trace. If `create` targets a process that already has a spec, switch to `update`.
+
+---
+
+## Spec schema
+
+```json
+{
+  "process": "Order to cash",
+  "prefix": "OTC",
+  "hierarchy": ["Revenue", "Order management", "Order to cash"],
+  "status": "draft",
+  "phases": ["0 · PRE-REQUISITES", "1 · ORDER CAPTURE", "2 · CREDIT & FULFILMENT", "3 · BILLING"],
+  "lanes": [
+    {"id": "cust",   "name": "Customer",         "type": "role"},
+    {"id": "sales",  "name": "Sales ops",        "type": "team"},
+    {"id": "crm",    "name": "CRM",              "type": "system", "status": "existing"},
+    {"id": "credit", "name": "Credit service",   "type": "system", "status": "new"},
+    {"id": "psp",    "name": "Payment provider", "type": "external"}
+  ],
+  "steps": [
+    {"id": "OTC-P1", "lane": "crm", "phase": 0, "kind": "precondition", "text": "PRE-REQ: account onboarded with credit limit", "confidence": "agreed", "cite": "domain-knowledge.md#onboarding"},
+    {"id": "OTC-1", "lane": "cust", "phase": 1, "kind": "start", "text": "Customer places order", "confidence": "agreed"},
+    {"id": "OTC-2", "lane": "crm", "phase": 1, "text": "Capture order, validate pricing", "confidence": "agreed", "cite": "rule-engine.md#pricing"},
+    {"id": "OTC-3", "lane": "credit", "phase": 2, "kind": "decision", "text": "Within credit limit?", "confidence": "proposed", "cite": "domain-knowledge.md#credit"},
+    {"id": "OTC-3.1", "lane": "sales", "phase": 2, "text": "Manual credit review", "confidence": "open", "cite": "OQ-2: who owns overrides?"}
+  ],
+  "edges": [
+    {"from": "OTC-P1", "to": "OTC-2", "type": "dep", "label": "pre-req"},
+    {"from": "OTC-1", "to": "OTC-2", "type": "flow"},
+    {"from": "OTC-2", "to": "OTC-3", "type": "flow"},
+    {"from": "OTC-3", "to": "OTC-3.1", "type": "exception", "label": "over limit"}
+  ],
+  "footer": "Draft · to-be"
+}
+```
+
+| Field | Rules |
+|-------|-------|
+| `lanes[].type` | `role` (person or customer), `team` (internal, human-in-the-loop), `system` (needs `status`: `existing` / `new`), `external` (third party). Colour is derived from type and status — specs do not pick colours. A project may add `"palette": {"<cls>": ["<fill>", "<stroke>"]}` and set `cls` on a lane or step to keep a house style. |
+| `steps[].id` | `<PREFIX>-<n>`, `<PREFIX>-<n>.<m>` for a sub-step or exception branch, `<PREFIX>-P<n>` for preconditions (and only preconditions). Permanent — see Rules. |
+| `steps[].lane` / `phase` | Lane `id`; zero-based phase index. Several steps in one cell stack vertically. |
+| `steps[].kind` | `task` (default), `start`, `end`, `decision`, `precondition`. A precondition is something that must already be true; it is not a flow step and its ID is not shown on the box. |
+| `steps[].text` | At most 3 lines of 42 characters. Put detail in `note`, not on the box. |
+| `steps[].confidence` | `agreed` (solid border), `proposed` (dashed, the default), `open` (dotted, red `OPEN` tag). |
+| `steps[].cite` | The source behind the step — a domain doc anchor, ADR, requirement number, or open-question ID. Expected on every task and decision. |
+| `steps[].status` | `retired` removes the step from the diagram but keeps it in the step table. |
+| `edges[].type` | `flow` (main sequence), `dep` (dependency, pre-req, parallel trigger), `exception` (failure / rejection path). Labels are a few words; they do not wrap. |
+| `status` / `superseded_by` | `draft`, `agreed`, or `superseded` (with the slug of the replacement). |
+
+**Modelling conventions:**
+- **One requirement spanning two actors becomes two linked steps**, not one step credited to both. Give both the same `cite`.
+- **Preconditions** sit in phase 0, connected to the first step they gate by a `dep` edge labelled `pre-req`.
+- **Lane order follows the work** — the lane that starts the process at the top, external parties usually at the bottom.
+- **Keep one map to about 25 steps.** Past that, split a sub-process into its own spec and reference it from one step's `note`.
+
+## Rendering
+
+The renderer is `<docs root>/processes/_render/swimlane.py` — Python 3.8+, standard library only:
+
+```bash
+python3 <docs root>/processes/_render/swimlane.py check specs/<slug>.json   # validate
+python3 <docs root>/processes/_render/swimlane.py build specs/<slug>.json   # check + svg + refresh <slug>.md generated block
+python3 <docs root>/processes/_render/swimlane.py index <docs root>/processes
+```
+
+- **Run `check` after every spec edit** and fix every `PROBLEM`; read the warnings and use judgement. `build` refuses to render a spec with problems.
+- **Then look at the SVG.** A clean check does not catch two edge labels landing on each other or a connector crossing an unrelated box. If you can view images, convert the SVG to PNG and view it; otherwise ask the user to open it. Fix layout by reordering lanes, moving steps between phases, or splitting a crowded phase.
+- **Renderer missing** (project set up before pai-orbit 1.10.0): copy it from pai-orbit's `templates/docs/processes/_render/swimlane.py` into `<docs root>/processes/_render/`. If the plugin files are not reachable from this tool, ask the user before downloading it from `https://raw.githubusercontent.com/the-psi/pai-orbit/main/plugins/pai-orbit/core/templates/docs/processes/_render/swimlane.py`.
+- **No Python available:** run `check`'s rules by hand, write the Mermaid preview block yourself in the same shape the renderer emits (one `subgraph` per lane), and tell the user the SVG was not generated.
+- The renderer is project-owned once vendored. Projects may change layout or palette, but must keep the spec schema stable so `trace` and other projects' tooling still read it.
+
+## Session close
+
+1. **Commit** the spec, SVG, narrative, and index with `/git`: `docs: process-map <slug>`. Local commit only.
+2. **Hand off.** Suggest the next mode for each implication: `/groom` for feature slices (cite step IDs in each `requirements.md`), `/design` for integration points, `/domain` for rules the map exposed as missing. For architecture: if `<docs root>/architecture/system.md` is not yet populated and the system is greenfield, `/arch define` (it derives system context and decomposition from these maps); otherwise `/arch update` (it detects the changed map and assesses its impact).
+3. **Offer to push.** Ask: "Push this branch to remote?" Wait for explicit confirmation.
+
+## Rules
+
+- **The spec is the source of truth.** Never hand-edit the SVG or the generated block in `<slug>.md`; change the spec and rebuild.
+- **Step IDs are permanent.** Never renumber. New steps take the next free number; a removed step gets `"status": "retired"`, so features that cite it can still be traced.
+- **To-be is the default.** An as-is baseline is optional context in the narrative's Baseline section — never mixed into the to-be spec.
+- **Stay at process altitude.** No screen design (`/ux`), no API shapes or data models (`/design`), no technology choices (`/arch`). Record such decisions as implications and move on.
+- **Flag contradictions.** A to-be step that conflicts with a domain rule or a constraint in `<docs root>/architecture/constraints.md` is a risk, not a detail — surface it.
+- **Recommend, then wait.** When asked to merge, split, retire, or supersede maps, analyse and recommend, but change nothing until the user confirms — map changes ripple into requirements and designs.
+- Never write a spec or narrative without showing it and getting confirmation first.
 
 
 ## /simplify

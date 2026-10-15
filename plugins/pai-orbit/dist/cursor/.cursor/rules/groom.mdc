@@ -20,6 +20,7 @@ Before Phase 1 begins, resolve which board ticket this session is for:
 2. If none is found, ask the user directly: "What ticket/issue number is this grooming session for?" Wait for an answer before proceeding to Phase 1.
 3. **Explicit opt-out:** if the user states this is standalone/exploratory grooming with no ticket yet, ask them to confirm that explicitly ("Confirm: proceed without a ticket number?") before continuing. Do not infer this from silence or from the absence of a number in the initial message.
 4. Once a ticket number is provided, resolve it via `/board`. Hold it as the session's parent board issue — this is the issue used in Session close steps 4 and 6 below. If resolution fails (issue not found, no board access), surface the error and ask the user to correct the number or confirm the opt-out.
+5. **Related open-story gate:** For a resolved ticket, run the board skill's Related open-story check before Phase 1. Skip only when the user explicitly opts out of ticketed grooming.
 
 ## Session flow
 
@@ -31,7 +32,7 @@ Before any scoping or requirements work:
 
 1. **Classify the issue first — it decides how much context to read.** If the session is tied to a board issue, read its labels (via `/board`). Labels such as `bug` or `fix` mean *bug fix / small enhancement*; a label such as `feature`, or `enhancement` on genuinely new capability, means *new feature*. If labels are absent, or ambiguous about which of the two this is, **ask the user directly** — "Is this a new feature/capability, or a bug fix / small enhancement?" — and wait for an answer. Do not infer it from the issue title.
 
-2. **Read product context before forming any opinion.** Always read: `CLAUDE.md` (who the product serves and what it is), `<docs root>/domain/*.md` (business rules bearing on this issue), the feature's existing `ux.md`, and the parent epic in `<docs root>/epics/`.
+2. **Read product context before forming any opinion.** Always read: `CLAUDE.md` (who the product serves and what it is), `<docs root>/domain/*.md` (business rules bearing on this issue), the feature's existing `ux.md`, the parent epic in `<docs root>/epics/`, and any to-be process map in `<docs root>/processes/` the feature implements. When a process map applies, cite the step IDs the feature implements under `## Context`.
 
    **Additionally, only when classified as a new feature/capability:**
    - `<docs root>/domain/product-capabilities.md` — the canonical record of what the product already does. Read it first when checking for overlap. If it does not exist, fall back to scanning `<docs root>/features/*` for features that already cover this ground.
@@ -70,27 +71,62 @@ Hold the confirmed list in conversation context; it will be written to `## Scope
 
 Once purpose and scope are confirmed:
 
-1. Propose a numbered list of **scenarios to cover** in this grooming session. Derive from the Phase 1b scope list, `ux.md`, the parent epic, domain docs, and discussion — include scenarios the user may not have named explicitly. Every confirmed scope item should be reachable by at least one scenario; if one is not, say so rather than quietly dropping it.
-2. Present each scenario as a distinct, user-facing situation (who is doing what, under what conditions). **Granularity test:** two situations are distinct scenarios if their acceptance criteria would differ — not just their inputs.
+1. **Consumer check — run before proposing any scenario.** Do not present Scenario 1 until the consumer-check outcome line (below) has been shown. This is a *completeness* check ("does the fix belong here too?"), not a breakage or compatibility assessment — breakage stays with `/design`'s impact gate and `/analysis`.
+
+   **a. Name the signal first.** Name each field, flag, or derived value the change touches, before classifying anything. A change may touch more than one signal; classify, search, and record each separately.
+
+   **b. Classify each signal:**
+   - **New** — only when the change adds a name that nothing reads today **and** changes no existing reading. State the positive grounds in the outcome line.
+   - **Existing** — anything that changes how an existing name is read, derived, gated, suppressed, corrected, or replaced. The check runs, and a request to skip the search is declined — the developer may exclude individual consumers found, not waive the search.
+   - **Unclear** — any doubt at all. The check runs by default, and you say so. Only here may the developer override by declaring the change purely new; record the override and their reason.
+
+   **Examples:**
+   - ✅ **Triggered**: "Hide inactive users on the dashboard" (changes how `is_active` is read)
+   - ❌ **Not triggered**: "Add a `nickname` field to the profile" (new; nothing reads it)
+   - ⚠️ **Triggered**: "Add `status` to replace `is_active` on the dashboard" (changes an existing reading — Existing for `is_active`)
+
+   **c. Resolve the repos to search.** Merge and de-duplicate the **Sub-projects** table in `CLAUDE.md` and the service list in `<docs root>/architecture/system.md`. Each declared repo is either **searched** (its path resolves locally) or **not reachable** (declared, not on disk — handle per step f). Never guess at undeclared repos or scan sibling folders. A single-repo project searches only itself.
+
+   **d. Search every reachable repo, inline, with your own file-search tools:**
+   - Search terms: the named signal plus casing variants (`is_active`, `isActive`, `IS_ACTIVE`, `is-active`), serialized/API key names, config/env keys, derived names (`active_count`, `hasActive`), and aliases from the concept map (step e).
+   - A candidate is a **consuming surface** (screen, job, endpoint, component), not a grep line — group hits into surfaces, but each surface is its own candidate: never merge two surfaces into one scenario, since each needs its own In / Out decision and reason.
+   - Report test and fixture hits as a count; do not propose them as scenarios.
+   - Record the exact search terms used, so "none found" can be checked.
+   - Do not re-propose the surface the issue already names.
+   - After searching, ask once: "Does this signal go by any other name?" Search any names given.
+
+   **e. Read the concept map, if present:** `<docs root>/domain/concept-consumers.md`, a table with one row per consumer — `| Concept | Aliases | Consumer | Repo |` (`Repo` may be blank in single-repo projects). Every consumer it lists for the signal is a candidate, in addition to code-search results. Take the **union** of map and code, and flag each discrepancy by direction: *listed in map but not found in code* / *found in code but not in map* — suggest a map update, never edit the map. If the file exists but the table cannot be read, say "concept map found but not in the expected format" and continue with the code search — an unreadable map is never "no consumers". If there is no map, say "no concept map found".
+
+   **f. When code cannot be searched** (no file-search tool, docs-only repo, declared repo not reachable): never report "none found". State the limitation and why, use the map alone if present (and say so), and ask the developer directly where else the signal is read — answers become candidates. Record the limitation under `## Context`.
+
+   **g. Show the outcome line**, every session, for every signal:
+   `🔎 Consumer check — Signal: <name> · <Existing|New|Unclear> (<reason>) · Searched: <code repos | map path | none + limitation> · Result: <N other consumers | none found | not triggered>`
+
+   A signal identified later in Phase 2 gets its own outcome line before any of its scenarios are proposed.
+
+   Each consumer found then enters step 4 as a candidate scenario, confirmed or excluded one at a time like any other. Every excluded consumer goes to `## Out of scope` with its own reason. A request to skip the search, or a general scope statement ("only the dashboard"), is **not** an exclusion — still present each consumer individually and ask for that consumer's reason.
+
+2. Propose a numbered list of **scenarios to cover** in this grooming session. Derive from the Phase 1b scope list, the consumers found in step 1, `ux.md`, the parent epic, domain docs, and discussion — include scenarios the user may not have named explicitly. Every confirmed scope item should be reachable by at least one scenario; if one is not, say so rather than quietly dropping it.
+3. Present each scenario as a distinct, user-facing situation (who is doing what, under what conditions). **Granularity test:** two situations are distinct scenarios if their acceptance criteria would differ — not just their inputs.
    
    **Examples:**
    - ✅ **Distinct scenarios**: "User logs in successfully" vs "User login fails" (different acceptance criteria: success flow vs error handling)
    - ❌ **Same scenario**: "User logs in from Chrome" vs "User logs in from Firefox" (same acceptance criteria, just different inputs)
 
-3. **Get explicit confirmation on each scenario one at a time** (to prevent silent bulk-approval):
+4. **Get explicit confirmation on each scenario one at a time** (to prevent silent bulk-approval):
    - Present scenario: "Scenario N: [description]"
    - Ask: "Confirm this scenario: [In Scope] / [Out of Scope] / [Needs Revision]?"
    - Wait for explicit response before presenting the next scenario
    - **Do not assume silence means agreement**
 
-4. Do **not** begin requirements analysis, open questions, or acceptance criteria until **every** proposed scenario has been confirmed or explicitly excluded.
-5. Scenarios marked out of scope:
+5. Do **not** begin requirements analysis, open questions, or acceptance criteria until **every** proposed scenario has been confirmed or explicitly excluded.
+6. Scenarios marked out of scope:
    - Same product surface, intentionally excluded from *this* feature → `## Out of scope`
    - Different feature idea that surfaced during discussion → `<docs root>/backlog/feature-ideas.md`
-6. If all proposed scenarios are excluded, return to Phase 1b to revisit the confirmed scope — and to Phase 1 if the purpose itself is what's wrong. Do not proceed to Phase 3 with nothing confirmed.
-7. **Phase 2 Complete**: Announce "✅ All scenarios confirmed. Moving to Phase 3: Requirements Analysis" before proceeding.
+7. If all proposed scenarios are excluded, return to Phase 1b to revisit the confirmed scope — and to Phase 1 if the purpose itself is what's wrong. Do not proceed to Phase 3 with nothing confirmed.
+8. **Phase 2 Complete**: Announce "✅ All scenarios confirmed. Moving to Phase 3: Requirements Analysis" before proceeding.
 
-Hold confirmed scenarios in conversation context; they will be written to `## Scenarios in scope` at session close.
+Hold confirmed scenarios in conversation context; they will be written to `## Scenarios in scope` at session close, and the step 1 outcome to `## Consumer check`.
 
 ### Phase 3 — Requirements and decisions
 
@@ -115,6 +151,7 @@ Only after purpose is agreed, scope is confirmed, and all scenarios are confirme
   - A genuine contradiction between the two — the board says shipped, a plan says upcoming — is not settled by precedence. Treat it as a Phase 1 step 4 conflict: name the board item and the plan file, and block.
   - **When the board cannot be read** — missing token scopes, no network, no CLI, or no board configured — do not fail the phase. Proceed on `<docs root>/plans/*.md` alone, state in-session that the board was not consulted and why, and record that limitation under `## Context` in the output file. A requirements doc groomed without board visibility must say so on its face; never drop the caveat silently.
 - If `<docs root>/architecture/system.md` exists, read it — reference service ownership to assign features to the right service and flag requirements that would cross declared boundaries
+- If `<docs root>/architecture/constraints.md` exists, read it at session start and apply its rules when forming scope and scenarios — flag any scope item or scenario that would cross a declared constraint. If it does not exist, continue without error
 - Flag ambiguity rather than assuming — requirements with hidden assumptions create build debt
 - Capture open questions explicitly with an owner (person or role)
 - Do not design solutions — only describe what the system should do and for whom. When grooming surfaces an implementation question (how to store X, which table, query strategy, edge case handling): capture the *constraint* as an open question for `/design` — do not answer the how, even briefly or inline
@@ -128,6 +165,7 @@ Before marking a feature as groomed and ready for `/design`, run a readiness gat
    - `## Purpose` must match the wording agreed in Phase 1 — non-empty, no placeholders or TBD, and consistent with the last confirmed statement in conversation. If inconsistent or incomplete: "❌ Returning to Phase 1. File says: '[file text]'. Agreed wording was: '[conversation wording]'. Please re-confirm."
    - `## Scope` must list the concrete changes confirmed in Phase 1b — non-empty, discrete items rather than a prose statement, no placeholders or TBD, and consistent with the last confirmed list in conversation. Where Phase 1 identified an overlapping existing capability, the exclusions must still name it. If inconsistent or incomplete: "❌ Returning to Phase 1b. File lists: '[file items]'. Confirmed list was: '[conversation items]'. Please re-confirm the scope."
    - Every entry in `## Scenarios in scope` must match what was explicitly confirmed in Phase 2. No scenario may sit unclassified or pending. If inconsistent: "❌ Returning to Phase 2. These scenarios need explicit confirmation: [list]. Please confirm each as In/Out/Revise."
+   - `## Consumer check` must exist, with one block per signal named in Phase 2 step 1. A not-triggered block (**New**, or **Unclear** with a developer override) needs `Signal`, `Classification` (with its grounds), and `Override`; every triggered block also needs `Search terms`, `Repos searched`, `Concept map`, `Consumers found` (each with its In scope / Excluded decision), `Test-only hits`, and `Map discrepancies` — "none" is a valid value, a missing label is not. Every excluded consumer must appear under `## Out of scope` with a reason. If missing or incomplete: "❌ Returning to Phase 2. Consumer-check outcome not recorded."
    - If any of these fails, return to the relevant phase — do NOT mark the feature as groomed or suggest switching to `/design`.
 
 1. **Audit open questions.** For each item in the `## Open questions` list, classify it:
@@ -190,6 +228,22 @@ What this does NOT include:
 [Phase 2 Results] Confirmed scenarios this feature must handle:
 1. [Scenario 1: User X wants to do Y under condition Z]
 2. [Scenario 2: System encounters situation A and must B]
+
+## Consumer check
+[Phase 2 step 1 Result] One block per signal:
+- Signal: `<name>`
+- Classification: <Existing|Unclear> — <reason>
+- Override: none
+- Search terms: <exact terms searched>
+- Repos searched: <repos> · Not reachable: <repos, or none> (see Context)
+- Concept map: <docs root>/domain/concept-consumers.md | no concept map found | found but not in the expected format
+- Consumers found:
+  - <Surface> (<repo>) → In scope, Scenario N
+  - <Surface> (<repo>) → Excluded, see Out of scope
+- Test-only hits: <N files>
+- Map discrepancies: <direction + item, or none> — suggest map update
+<!-- Not triggered = three lines only. New: Signal · Classification: New — <positive grounds> · Override: none.
+     Unclear, overridden: Signal · Classification: Unclear — <reason> · Override: <developer's reason>. -->
 
 ## User stories / use cases
 [Phase 3 Results] At least one per confirmed scenario:

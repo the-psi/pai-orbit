@@ -35,13 +35,13 @@ Ask all unresolved questions in a single block — do not ask one at a time. Cov
 
 1. **Repo structure** (if ambiguous): monorepo with these services, or separate repos?
 2. **Tech stack** (per service, if not clear from files): language + framework?
-3. **Task management**: GitHub Issues / GitHub Projects v2 / Linear / Jira / GitLab / Notion / none? Provide board URL(s). Do **not** ask for label taxonomy here — the board interview in Step 2b will query it from the API.
+3. **Task management**: GitHub Issues / GitHub Projects v2 / Linear / Jira / GitLab / Azure DevOps / Notion / none? Provide board URL(s). Do **not** ask for label taxonomy here — the board interview in Step 2b will query it from the API.
 4. **Branching model**: GitHub Flow (feature branches → main) / GitFlow (develop + release branches) / trunk-based (direct to main with flags)?
 5. **Deployment**: cloud provider + target (Cloud Run, Vercel, Railway, AWS ECS, bare VPS, etc.)? One command or per-service?
 6. **Docs home**: in-repo `docs/` / dedicated docs repo (provide path) / Confluence (provide space URL) / Notion (provide workspace)?
 7. **Multi-repo project?**: Does this service repo belong to a larger multi-repo project with a separate repo for system-level docs (cross-cutting ADRs, epics spanning services, system-wide domain knowledge)? If yes, what is the path or git URL to that system docs repo?
 8. **Architecture (optional — can be done later with `/arch init`):** What services exist and how do they communicate? Any hard constraints — things that must never happen across the codebase? (e.g., "services must not share DBs", "frontend talks only to api-gateway")
-9. **Team**: names, roles, and handles (GitHub username / Linear ID / Jira user ID as relevant). Who is the default assignee for code issues? Who owns domain/expert decisions?
+9. **Team**: names, roles, and handles (GitHub username / Linear ID / Jira user ID / Azure DevOps identity (email) as relevant). Who is the default assignee for code issues? Who owns domain/expert decisions?
 10. **MCP servers (optional)**: do you have any MCP servers configured for this project? Answer for each category — enter the server name or "none":
     - **Git**: GitHub MCP / GitLab MCP / none
     - **Board**: GitHub Projects MCP / Linear MCP / Jira MCP / none
@@ -51,7 +51,9 @@ Ask all unresolved questions in a single block — do not ask one at a time. Cov
 
 ## Step 2b — Board Column Discovery (after Step 2 answers arrive)
 
-Once the user confirms the task-management platform, query the live board for its actual label/state taxonomy. Do **not** assume any column names or label patterns.
+Once the user confirms the task-management platform, run only that platform's discovery below. Query the live board for its actual label/state taxonomy. Do **not** assume any column names or label patterns.
+
+For every platform, adapt shell examples to the user's active shell. Bash continuations, loops, `/dev/null`, and `||` are not portable to Windows PowerShell 5.1. Use a single-line command or native shell syntax, inspect each command's exit status, and report failures before using its output. If a JSON helper such as `jq` is unavailable, read the CLI's JSON output directly.
 
 ### GitLab
 
@@ -89,15 +91,7 @@ Then ask:
 
 > "No boards found. Which of these labels represent board columns? List them in the order they appear on the board (left → right), separated by commas. Include both scoped (e.g. `workflow::In Progress`) and standalone (e.g. `To Do`) labels."
 
-After the user confirms the ordered list, verify each label exists:
-
-```bash
-for label in "<label-1>" "<label-2>" ...; do
-  glab api /projects/<encoded-namespace%2Fproject>/labels \
-    | jq -e --arg n "$label" '.[] | select(.name == $n)' > /dev/null \
-    || echo "MISSING: $label"
-done
-```
+After the user confirms the ordered list, fetch all labels with `glab api /projects/<encoded-namespace%2Fproject>/labels --paginate`. Check the command's exit status before reading its JSON output; if it fails, report the error and stop. Compare each confirmed label with the returned names using exact matches.
 
 If any label is missing, warn: "Label '<name>' does not exist on this project. Create it in GitLab first, or correct the name, then confirm again." Do not write the config until all labels are confirmed present.
 
@@ -128,6 +122,38 @@ linear team list
 
 Present the team's workflow states and ask the user to confirm the ordered column list. If the CLI is unavailable, ask the user to copy the state names from their Linear workspace settings.
 
+### Azure DevOps
+
+Run this section only when the selected board type is **Azure DevOps**. Infer organisation, project, and team from the board URL and existing config where possible; ask the user to confirm unresolved values together. Also confirm the work-item type used on that board (for example, User Story or Product Backlog Item); never assume a type or use its states for another type.
+
+Before querying Azure, run the **Azure preflight** in `/board` (CLI, extension, and project access checks). If it fails, report the remedy and stop; a manual list must not bypass a failed access check.
+
+Use the confirmed team to discover its areas:
+
+```text
+az boards area team list --org "https://dev.azure.com/<org>" --project "<project>" --team "<team>" -o json
+```
+
+Present the team's default and available area paths and ask the user to confirm the path for new work items. If the query fails or returns no usable areas, ask for the exact area path from that team's Azure Board settings; do not silently substitute the project root. Save the confirmed `Team` and `Area path` only in the Azure config block. Team selects the area settings during setup; Area path is passed when creating work items. An area is not a sprint/iteration, so do not derive `--iteration` from either value.
+
+Next, discover the service resource for work-item states. `az devops invoke`'s `--area`/`--resource` values are internal location-service names, not literal REST path segments. Fetch the listing without a case-sensitive name filter:
+
+```text
+az devops invoke --org "https://dev.azure.com/<org>" -o json
+```
+
+Inspect the returned resources for area `wit` and resource name `workitemtypestates`, comparing names case-insensitively. Use the exact returned area/resource spelling for the call below. If the command fails, the listing is empty, no matching resource exists, or the pair is ambiguous, stop discovery and use the manual state-mapping fallback below. Never invoke a resource with empty or guessed values.
+
+```text
+az devops invoke --org "https://dev.azure.com/<org>" --area "<area-from-discovery>" --resource "<resourceName-from-discovery>" --route-parameters "project=<project>" "type=<work-item-type>" --api-version 7.1 --query "value[].name" -o tsv
+```
+
+Check both exit status and output. A non-zero exit, empty state list (`[]`, null, or blank output), or malformed result means discovery failed, even if the command exited successfully.
+
+Present the discovered states and ask the user to confirm the board's column order and each column's corresponding state. Process states are not necessarily the board's displayed columns; do not assume the API's order is the board order. If discovery failed, ask the user to copy the exact column-to-state mapping for the selected work-item type from Azure Board settings. Never guess or save empty/example values.
+
+Save `Work-item type`, the confirmed `columns` mapping, and a separate `Closing state` in the Azure config block. Confirm the closing state even if the user excludes it from the active columns; never hardcode `Closed` or infer that the last active column is terminal. If multiple columns map to one state, explain that state-only updates cannot distinguish those columns and board placement may need to be done manually.
+
 ### Jira / GitHub Issues / Notion / none
 
 No API query needed. Ask the user to provide their workflow stages (column names) in order as a comma-separated list.
@@ -157,7 +183,7 @@ Create the `.copilot/*`, `AGENTS.md`, and `docs/` files. Tell the user what was 
 The `npx github:the-psi/pai-orbit init copilot` step writes these files before `/setup` runs:
 
 - `.github/copilot-instructions.md` — always-loaded rule book
-- `.github/prompts/*.prompt.md` — 29 slash-command prompt files
+- `.github/prompts/*.prompt.md` — 31 slash-command prompt files
 - `.github/instructions/*.instructions.md` — 5 auto-attaching guidance files
 - `.husky/pre-commit.template` and `.pre-commit-config.yaml.template` — inert hook templates
 
@@ -185,6 +211,8 @@ The file has these top-level sections:
 - `## System Docs` — see rules below
 - `## MCP` — see the MCP subsection later in this step
 
+When `type` is **Azure DevOps**, also record `Organisation:`, `Project:`, `Team:`, `Area path:`, `Work-item type:`, and `Closing state:` under `## Agile Board`, using only the values confirmed in Step 2b. The `columns` table maps `Column` to `Work-item state`. Organisation is the organisation name used in `https://dev.azure.com/<org>`. Omit these Azure-specific fields for other board types; their existing configuration stays unchanged.
+
 For the `## System Docs` section:
 - If the user answered **no** to the multi-repo question: omit the `## System Docs` section entirely (do not write it with blank values).
 - If the user answered **yes** and provided a **relative path**: check whether that directory exists before writing. If it does not exist, warn the user ("System docs path not found — writing the pointer anyway; ensure the repo is cloned before running commands") and write it as given.
@@ -192,7 +220,7 @@ For the `## System Docs` section:
 
 ### `.copilot/team.md`
 
-Synthesize this file from the team roster the user gave in Step 2. The file is a markdown table with columns `Name | Role | GitHub | Linear | Jira | Notes` — one row per team member the user named. Also include `Default engineering lead:`, `Default domain expert:`, and `Default ops lead:` lines below the table populated from the roles the user assigned.
+Synthesize this file from the team roster the user gave in Step 2. The file is a markdown table with columns `Name | Role | GitHub | Linear | Jira | Azure DevOps | Notes` — one row per team member the user named. Populate Azure DevOps with the confirmed Azure identity (email) when that platform is selected; leave unused platform columns blank. Also include `Default engineering lead:`, `Default domain expert:`, and `Default ops lead:` lines below the table populated from the roles the user assigned.
 
 ### `.copilot/settings.json`
 
@@ -302,7 +330,7 @@ Architecture files:
 
 Methodology surfaces (always written):
 - ✅ Generated — `.github/copilot-instructions.md` — slim rule book + Context discovery + prompt-library pointer
-- ✅ Generated — `.github/prompts/` — 29 invokable slash commands (14 modes, 6 skills, 7 service-builder agent prompts, 2 named agents: `docs-writer`, `cross-repo-impact`)
+- ✅ Generated — `.github/prompts/` — 31 invokable slash commands (15 modes, 7 skills, 7 service-builder agent prompts, 2 named agents: `docs-writer`, `cross-repo-impact`)
 - ✅ Generated — `.github/instructions/` — 5 auto-attaching guidance files (`git`, `data-model`, `arch-drift`, `context-discovery`, `decisions`)
 - ✅ Generated — `.copilot/pai-orbit-config.md` — board, branch model, deploy targets, docs home, team conventions
 - ✅ Generated — `.copilot/team.md` — team members, owners, default assignees

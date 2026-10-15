@@ -2,7 +2,7 @@
 
 A structured developer methodology harness for Claude Code that enforces disciplined working modes, prevents context loss, and produces local-first documentation at every stage of development.
 
-**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.8.0
+**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.11.0
 
 ---
 
@@ -28,9 +28,8 @@ pai-orbit/                          # repo = marketplace
 │   └── pai-orbit/
 │       ├── core/                   # tool-agnostic source of truth
 │       │   ├── plugin.json
-│       │   ├── modes/              # /arch, /build, /design, /domain, /groom, /plan, /ux, /data
-│       │   ├── skills/             # analysis, board, data-model, deploy, epic, git, incident,
-│       │   │                       # review, security-review, setup, simplify, suggest-skills, test
+│       │   ├── modes/              # /arch, /build, /design, /domain, /groom, /plan, /playwright, /ux, /data
+│       │   ├── skills/             # analysis, board, data-model, epic, git, process-map, simplify
 │       │   ├── agents/             # docs-writer, cross-repo-impact
 │       │   ├── hooks/              # bash-guard, lint-python, lint-ts, arch-drift-guard
 │       │   ├── reference/          # shared instruction fragments read by modes/skills/agents at runtime
@@ -93,20 +92,21 @@ Each `/command` locks Claude into a distinct headspace. Modes do not bleed into 
 
 | Mode | Purpose | Primary Output |
 |------|---------|----------------|
-| `/arch` | Declare and maintain system architecture | `docs/architecture/`, `docs/decisions/YYYY-MM-DD-*.md` |
+| `/arch` | Define (greenfield), declare (existing), and maintain system architecture | `docs/architecture/`, `docs/decisions/YYYY-MM-DD-*.md` |
 | `/domain` | Capture expert domain knowledge | `docs/domain/*.md` |
 | `/ux` | Define user flows and interface behavior | `docs/features/*/ux.md` |
 | `/groom` | Formalize acceptance criteria | `docs/features/*/requirements.md` |
 | `/design` | Architect technical solutions, record trade-offs | `docs/features/*/design.md`, `docs/decisions/YYYY-MM-DD-*.md` |
 | `/build` | Implement features and fixes | Code + updated docs |
 | `/test` | Write test plans, run QA | `docs/features/*/test-plan.md` |
+| `/playwright` | Implement Playwright automation from a test plan | e2e specs, Page Objects, fixtures (e2e dir only) |
 | `/plan` | Prioritize and sequence work | `docs/plans/*.md` |
 
 ### Skills
 
 Skills are multi-step procedures callable from any mode. Each skill lives in `plugins/pai-orbit/core/skills/<name>/`.
 
-Key skills: `/git`, `/board`, `/deploy`, `/analysis`, `/security-review`, `/review`, `/simplify`, `/incident`, `/data-model`, `/epic`, `/suggest-skills`, `/setup`, `/test`.
+Key skills: `/git`, `/board`, `/analysis`, `/data-model`, `/epic`, `/process-map`, `/simplify`.
 
 ### Agents
 
@@ -120,13 +120,15 @@ Named sub-agents spawned for parallel or specialized work:
 Every mode declares what it reads and what it writes. This is the discipline that prevents context loss:
 
 ```
-/arch   → produces docs/architecture/ (system.md, constraints.md, stack.md) + ADRs
+/arch   → define consumes domain + processes + ux → produces docs/architecture/ (drivers.md, system.md, constraints.md, stack.md) + ADRs
 /domain → produces docs/domain/*.md
 /ux     → consumes domain docs → produces docs/features/*/ux.md
+/process-map (skill) → consumes domain + architecture → produces docs/processes/ (JSON spec → swimlane SVG + narrative)
 /groom  → consumes ux + domain + architecture (+ product-capabilities + roadmap for new features) → produces requirements.md
 /design → consumes requirements + domain + architecture → produces design.md + ADRs
 /build  → consumes all docs + constraints.md + board → produces code + updated docs
 /test   → consumes requirements → produces test-plan.md
+/playwright → consumes test-plan.md + requirements → produces e2e specs, Page Objects, fixtures (e2e dir only; no docs)
 ```
 
 ---
@@ -162,6 +164,7 @@ Hooks are shell scripts wired to Claude Code tool use events. They run outside C
 ```
 docs/
 ├── domain/       Expert knowledge, business rules (produced by /domain)
+├── processes/    To-be swimlane maps: specs/*.json → svg/, narratives, INDEX.md (produced by /process-map)
 ├── features/     One subfolder per feature, each with ux.md, requirements.md, design.md, test-plan.md
 ├── decisions/    Architecture Decision Records (ADRs)
 ├── epics/        Epic tracking files
@@ -211,7 +214,7 @@ For GitHub Copilot (VS Code), single command from the project root (requires Nod
 npx github:the-psi/pai-orbit init copilot
 ```
 
-Installs 29 invokable prompts, 5 auto-attaching instructions files, and the rule book at `.github/copilot-instructions.md`. Also supports `update copilot` and `migrate copilot`. See [docs/copilot-install-and-usage.md](docs/copilot-install-and-usage.md) for the full walkthrough (Business vs Free tier behaviour, `/setup` in Chat, pre-commit hook templates).
+Installs 31 invokable prompts, 5 auto-attaching instructions files, and the rule book at `.github/copilot-instructions.md`. Also supports `update copilot` and `migrate copilot`. See [docs/copilot-install-and-usage.md](docs/copilot-install-and-usage.md) for the full walkthrough (Business vs Free tier behaviour, `/setup` in Chat, pre-commit hook templates).
 
 ---
 

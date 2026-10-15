@@ -29,7 +29,7 @@ Modes are entered with a slash command. They change Claude's headspace and outpu
 **Headspace:** Domain knowledge production  
 **Reads:** Domain expert input, existing docs/domain/  
 **Writes:** docs/domain/*.md  
-**Switch to:** `/groom` when knowledge informs a feature, `/design` when it informs architecture
+**Switch to:** `/groom` when knowledge informs a feature, `/design` when it informs architecture, `/process-map` when a multi-party process needs its to-be shape drawn
 
 Distinguishes established knowledge, working hypotheses, and unknowns. Does not implement.
 
@@ -49,28 +49,29 @@ Leads with the user's goal and context before discussing interface. Describes fl
 ### `/groom` — Groom Mode
 
 **Headspace:** Feature requirements  
-**Reads:** CLAUDE.md, docs/domain/, docs/features/ (existing), docs/epics/, ux.md; for new-feature issues also docs/domain/product-capabilities.md, docs/plans/, and the board  
+**Reads:** CLAUDE.md, docs/domain/, docs/features/ (existing), docs/epics/, ux.md; task board for ticketed story checks; for new-feature issues also docs/domain/product-capabilities.md and docs/plans/
 **Writes:** docs/features/*/requirements.md  
 **Switch to:** `/domain` for unresolved expert knowledge, `/design` when ready, `/plan` for priority decisions
 
-Before Phase 1, an entry gate resolves the session's ticket number: checks context for one already referenced, otherwise asks the user directly and waits for an answer. Standalone/exploratory grooming with no ticket requires an explicit, confirmed opt-out — never inferred from silence. A resolved ticket becomes the parent board issue used later for posting open questions and offering a column move; an opted-out session skips those two steps.
+Before Phase 1, an entry gate resolves the session's ticket number: checks context for one already referenced, otherwise asks the user directly and waits for an answer. For ticketed sessions, Groom checks open stories for requirement changes, overlaps, or duplicates before drafting and pauses for the developer to classify plausible matches. Standalone/exploratory grooming with no ticket requires an explicit, confirmed opt-out — never inferred from silence. A resolved ticket becomes the parent board issue used later for posting open questions and offering a column move; an opted-out session skips those two steps.
 
-Runs in three gated phases with explicit transitions, with a scope gate (Phase 1b) closing Phase 1. **Phase 1** classifies the issue first (new feature vs bug/small enhancement, from labels or by asking), reads product context to match — always CLAUDE.md, domain docs, `ux.md` and the parent epic; for new features also the capabilities registry (`docs/domain/product-capabilities.md`, falling back to `docs/features/*`) and both roadmap sources — then reasons about the *why* **before** drafting anything, asking direct why-questions when context is sparse and offering a stated-assumption-vs-open-question choice when it is genuinely undocumented. Overlaps and conflicts name the specific epic, feature, plan file, or board item and block until resolved. **Phase 1b** produces a discrete list of what will be changed or newly implemented and requires explicit confirmation. **Phase 2** confirms each scenario in scope with examples (granularity: distinct if acceptance criteria differ); **Phase 3** analyzes requirements with traceability mapping. Roadmap precedence is per-field — board for status/ownership/existence, `docs/plans/*.md` for sequencing rationale; an unreachable board degrades to plans-only with the caveat recorded, never a failed phase. Session-close pre-flight blocks groomed status if purpose, scope, or scenarios are incomplete; new scenarios in Phase 3 return to Phase 2. Scopes to minimal deliverable. Captures open questions with owners. Does not design solutions.
+Runs in three gated phases with explicit transitions, with a scope gate (Phase 1b) closing Phase 1. **Phase 1** classifies the issue first (new feature vs bug/small enhancement, from labels or by asking), reads product context to match — always CLAUDE.md, domain docs, `ux.md` and the parent epic; for new features also the capabilities registry (`docs/domain/product-capabilities.md`, falling back to `docs/features/*`) and both roadmap sources — then reasons about the *why* **before** drafting anything, asking direct why-questions when context is sparse and offering a stated-assumption-vs-open-question choice when it is genuinely undocumented. Overlaps and conflicts name the specific epic, feature, plan file, or board item and block until resolved. **Phase 1b** produces a discrete list of what will be changed or newly implemented and requires explicit confirmation. **Phase 2** opens with a **consumer check**: groom names each signal the change touches and classifies it New / Existing / Unclear (Unclear runs the check; only Unclear may be overridden, with a recorded reason). For Existing or Unclear signals it searches every locally reachable declared repo (the `CLAUDE.md` Sub-projects table merged with `docs/architecture/system.md` services) for other consuming surfaces, using casing variants, derived names and aliases, and reads the optional concept map `docs/domain/concept-consumers.md` (table: `| Concept | Aliases | Consumer | Repo |`, one row per consumer) — taking the union with the code search, flagging discrepancies by direction, and never editing the map. Each consumer found becomes a candidate scenario; a visible `🔎 Consumer check` outcome line is shown every session, unsearchable code is stated and asked about (never "none found"), and the result is recorded under `## Consumer check` in `requirements.md`. It is a completeness check, not a breakage assessment. Phase 2 then confirms each scenario in scope with examples (granularity: distinct if acceptance criteria differ); **Phase 3** analyzes requirements with traceability mapping. Roadmap precedence is per-field — board for status/ownership/existence, `docs/plans/*.md` for sequencing rationale; an unreachable board degrades to plans-only with the caveat recorded, never a failed phase. Reads `docs/architecture/constraints.md` at session start when present. Session-close pre-flight blocks groomed status if purpose, scope, scenarios, or the consumer-check record are incomplete; new scenarios in Phase 3 return to Phase 2. Scopes to minimal deliverable. Captures open questions with owners. Does not design solutions.
 
 ---
 
 ### `/arch` — Architecture Mode
 
 **Headspace:** System-wide structure — services, boundaries, data flow, constraints  
-**Reads:** CLAUDE.md, docs/architecture/, docs/decisions/, system_docs_repo (if configured)  
-**Writes:** docs/architecture/system.md, docs/architecture/constraints.md, docs/architecture/stack.md, docs/decisions/YYYY-MM-DD-*.md, docs/wip/arch-validate-*.md, CLAUDE.md → ## Architecture  
+**Reads:** CLAUDE.md, docs/architecture/, docs/decisions/, docs/domain/, docs/processes/, docs/features/*/ux.md, system_docs_repo (if configured)  
+**Writes:** docs/architecture/system.md, docs/architecture/constraints.md, docs/architecture/stack.md, docs/architecture/drivers.md, docs/decisions/YYYY-MM-DD-*.md, docs/wip/arch-validate-*.md, CLAUDE.md → ## Architecture  
 **Switch to:** `/design` for feature-level technical decisions, `/build` when ready to implement
 
-Four sub-modes:
-- `/arch init` — guided interview to declare services, communication, data stores, constraints, and trust boundaries for the first time
+Five sub-modes:
+- `/arch define` — greenfield: decide the architecture in confirmed phases — drivers (measurable quality scenarios, constraints, team capability) → system context (people and external systems, derived from process-map lanes and UX roles) → decomposition (domain language + process lanes, per `reference/architecture-decomposition.md`) → architectural style (deployment topology, interaction style, internal structure, scored against ranked drivers from `reference/architecture-styles.md`, recorded as an ADR) → structure → constraints and fitness functions → stack → risks. Records the inputs it was derived from
+- `/arch init` — existing codebase: guided interview to declare services, communication, data stores, constraints, and trust boundaries for the first time
 - `/arch view` — render a summary of the current declaration (no writes)
-- `/arch update` — amend the declaration when structure changes; creates an ADR for irreversible decisions
-- `/arch validate` — compare recent code changes against the declaration; classifies findings as constraint violations (blocking), ADR conflicts (blocking), or unrecorded evolution (advisory); writes `docs/wip/arch-validate-<date>.md`
+- `/arch update` — amend the declaration when structure changes, or when an upstream input changed since the architecture was derived (process map, UX, domain, drivers); assesses impact per change and creates an ADR for decision changes
+- `/arch validate` — compare recent code changes against the declaration; checks fitness functions; classifies findings as constraint violations (blocking), ADR conflicts (blocking), unrecorded evolution (advisory), or upstream drift (advisory); writes `docs/wip/arch-validate-<date>.md`
 
 `constraints.md` is the enforcement contract — `/build` reads it before generating code; `/review` checks every diff against it.
 
@@ -79,22 +80,22 @@ Four sub-modes:
 ### `/design` — Design Mode
 
 **Headspace:** Technical trade-offs  
-**Reads:** CLAUDE.md, docs/architecture/, docs/features/, docs/decisions/, docs/domain/  
+**Reads:** CLAUDE.md, docs/architecture/, docs/features/, docs/decisions/, docs/domain/; task board for ticketed design
 **Writes:** docs/features/*/design.md, docs/decisions/YYYY-MM-DD-*.md  
 **Switch to:** `/groom` for unclear requirements, `/arch` for system-level boundary changes, `/build` when ready to implement
 
-No implementation. Reads `requirements.md`'s open questions as a starting point, not a boundary — designs the feature comprehensively, surfacing decision areas grooming never raised. Drives the session in small interactions, one decision area at a time (mirroring `/groom`'s phased flow): presents 2–3 options with tradeoffs, recommends, and gets the user's pick before moving on. Flags irreversible decisions. Reads `docs/architecture/constraints.md` — design options that violate a constraint are flagged explicitly. Uses Mermaid diagrams. Ends every session by listing open questions with owners.
+Before design discussion for ticketed work, checks open stories for requirement changes, overlaps, or duplicates and pauses for the developer to classify plausible matches. No implementation. Reads `requirements.md`'s open questions as a starting point, not a boundary — designs the feature comprehensively, surfacing decision areas grooming never raised. Drives the session in small interactions, one decision area at a time (mirroring `/groom`'s phased flow): presents 2–3 options with tradeoffs, recommends, and gets the user's pick before moving on. Flags irreversible decisions. Reads `docs/architecture/constraints.md` — design options that violate a constraint are flagged explicitly. Uses Mermaid diagrams. Ends every session by listing open questions with owners.
 
 ---
 
 ### `/build` — Build Mode
 
 **Headspace:** Implementation  
-**Reads:** CLAUDE.md, docs/features/, docs/decisions/  
+**Reads:** CLAUDE.md, docs/features/, docs/decisions/; task board for ticketed builds
 **Writes:** Code (in sub-repos), docs/domain/product-capabilities.md  
 **Switch to:** `/design` for non-trivial design questions, `/groom` for unclear requirements, `/plan` for priority questions
 
-Reads CLAUDE.md and relevant docs before starting. Checks the task board. Spawns sub-agents per service for parallel work. Before switching modes mid-session, saves a handoff note to `docs/wip/session-capture-<date>.md`. After shipping: closes the board item, creates issues for newly discovered tasks, updates product-capabilities.md, records design choices as ADRs.
+Before branch setup and code edits for ticketed work, checks open stories for requirement changes, overlaps, or duplicates and pauses for the developer to classify plausible matches. Reads CLAUDE.md and relevant docs before starting. Checks the task board. Spawns sub-agents per service for parallel work. Before switching modes mid-session, saves a handoff note to `docs/wip/session-capture-<date>.md`. After shipping: closes the board item, creates issues for newly discovered tasks, updates product-capabilities.md, records design choices as ADRs.
 
 ---
 
@@ -134,11 +135,22 @@ Discovers repo structure and tech stack, asks targeted questions in one block, q
 ### `/test` — Test Mode
 
 **Headspace:** QA and test planning  
-**Reads:** docs/features/\*/requirements.md, CLAUDE.md, docs/decisions/  
+**Reads:** docs/features/\*/requirements.md, CLAUDE.md, docs/decisions/; task board for ticketed test planning and execution
 **Writes:** docs/features/\*/test-plan.md, docs/wip/test-failure-\*.md  
 **Switch to:** `/build` for code bug fixes, `/groom` for requirements gaps, `/design` for architecture issues
 
-Reviews a feature's requirements for testability, produces a structured test plan with test cases (happy path, edge cases, failure paths), maps each acceptance criterion to a test case ID, and distinguishes automated vs manual coverage. Runs a release readiness check. When a test run fails, classifies the failure (code bug / requirements gap / test setup) and hands off to `/build` or `/groom` with a failure doc as context.
+Before reading ticketed requirements as current or preparing/running tests, checks open stories for requirement changes, overlaps, or duplicates and pauses for the developer to classify plausible matches. Reviews a feature's requirements for testability, produces a structured test plan with test cases (happy path, edge cases, failure paths), maps each acceptance criterion to a test case ID, and distinguishes automated vs manual coverage. Runs a release readiness check. When a test run fails, classifies the failure (code bug / requirements gap / test setup) and hands off to `/build` or `/groom` with a failure doc as context.
+
+---
+
+### `/playwright` — Playwright Mode
+
+**Headspace:** Test automation  
+**Reads:** docs/features/\*/test-plan.md, docs/features/\*/requirements.md, CLAUDE.md, docs/decisions/  
+**Writes:** The project's e2e directory only (specs, Page Objects, fixtures, e2e config) — never app code or docs  
+**Switch to:** `/build` for product bugs (developer fixes), `/test` for plan gaps, `/groom` for requirements gaps
+
+Implements Playwright automation from a generated test plan — the automation counterpart of `/build` for test work. Generates specs (via Playwright MCP when available), one `test()` per automated case in Arrange–Act–Assert form, titled `[ticket·AC-k][TC-ID]`, using Page Objects, saved `storageState` sessions, per-test unique data, and hard assertions only. Classifies failures as test bug (fix in spec), product bug (report, never fix), or harness gap (report as blocked). Enforces a write boundary: the e2e directory only.
 
 ---
 
@@ -216,7 +228,7 @@ Git operations following the project's configured branching model. Covers commit
 
 ### `/board`
 
-Task management — create issues, move cards, assign work, close on ship. Reads board config from `.claude/pai-orbit-config.md → ## Agile Board` and team roster from `.claude/team.md`. Supports GitHub Issues, Linear, and Jira.
+Task management — scan open stories for requirement changes, overlaps, and duplicates before creating stories or starting/resuming ticketed workflows; create issues, move cards, assign work, and close on ship. Records scan checkpoints in stable per-board, per-ticket files and resumes incrementally when the board supports a reliable complete query, otherwise running a full scan. Reports candidate status, assignee, evidence, requirement delta, impacted acceptance criteria, and confidence. For confirmed requirement changes, routes to `/groom` to propose exact acceptance-criteria edits classified as retain, revise, remove, or add; waits for developer approval before updating tickets or linking/commenting. Reads board config from `.claude/pai-orbit-config.md → ## Agile Board` and team roster from `.claude/team.md`. Supports GitHub Issues, GitHub Projects v2, Linear, Jira, GitLab, and Azure DevOps.
 
 ---
 
@@ -229,6 +241,18 @@ Change impact and dependency analysis — assess the blast radius of a proposed 
 ### `/data-model`
 
 Schema reference and change management — read the current schema for any table, propose new columns or tables, draft migrations with rollback, and assess query/API impact. Documents schema decisions as ADRs. Enforces safety rules: no dropping columns without deprecation, no NOT NULL without default or backfill, no editing applied migrations.
+
+---
+
+### `/process-map`
+
+To-be business process modelling — true swimlane diagrams (roles, teams, and systems as lanes; phases as columns) as a high-level solution blueprint for process-driven systems (back-office, multi-party workflows, integrations). Reads existing `docs/domain/` and `docs/architecture/system.md` rather than re-interviewing. A JSON spec per process (`docs/processes/specs/<slug>.json`) is the source of truth; the vendored renderer `docs/processes/_render/swimlane.py` (Python 3, standard library) validates it and generates the SVG, a Mermaid preview, the step table with permanent step IDs (e.g. `OTC-3`), and `docs/processes/INDEX.md`. Steps carry Agreed / Proposed / Open confidence, shown in the border style.
+
+- `/process-map create <name> [source]` — extracts hierarchy, trigger, outcome, and lanes from domain docs, confirms them, walks the happy path and exceptions, then derives solution implications: integration points (→ `/design`), architecture gaps (→ `/arch update`), automation points, and feature slices (→ `/groom`)
+- `/process-map update <name>` — proposes a numbered diff; retires steps instead of renumbering
+- `/process-map trace <name>` — read-only: which features cite which step IDs, and which steps nothing implements
+
+`/groom` cites the step IDs a feature implements; `/design` treats system-lane hand-offs as integration points; `/arch` treats `new` system lanes as architecture gaps.
 
 ---
 
