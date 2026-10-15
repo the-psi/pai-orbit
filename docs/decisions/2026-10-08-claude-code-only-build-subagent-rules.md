@@ -54,6 +54,7 @@ This is a recorded exception to `constraints.md` rule 6 for the worktree rule on
 
 **Neutral:**
 - The adapter-side injection pattern matches how codex/copilot/cursor-plugin already rewrite core text at build time.
+- Per-spawn `model` overrides the builder templates' `model: sonnet` default (the Agent tool's `model` param takes precedence over frontmatter); `docs-writer` pins no model and handles substantial docs, so tiering only covers small doc edits.
 - Follow-up: per-adapter model-tiering guidance (Codex `model`, Cursor `model`, Copilot `model`). Not part of #32.
 
 ## References
