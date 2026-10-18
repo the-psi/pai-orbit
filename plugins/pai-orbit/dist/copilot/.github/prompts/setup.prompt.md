@@ -207,7 +207,7 @@ Example — columns Backlog, Ready, In progress, In review, Done: groom → Read
 | ID gone | flag as broken; re-run the suggestion for that mode |
 | A new column matches a mode's synonyms better | flag as an optional change; default keeps the saved row |
 
-Show only the flagged rows; keep every row the user does not change. A table with non-standard headers (hand-written) is read by position — mode, target, ID — and rewritten with the canonical headers, rows kept. If the section is absent (a project set up before 1.10.0), run the full flow above.
+Show only the flagged rows; keep every row the user does not change. A table with non-standard headers (hand-written) is read by position — mode, target, ID — and rewritten with the canonical headers, rows kept. If the section is absent (a project set up before 1.12.0), run the full flow above.
 
 ---
 
@@ -234,7 +234,7 @@ Create the `.copilot/*`, `AGENTS.md`, and `docs/` files. Tell the user what was 
 The `npx github:the-psi/pai-orbit init copilot` step writes these files before `/setup` runs:
 
 - `.github/copilot-instructions.md` — always-loaded rule book
-- `.github/prompts/*.prompt.md` — 30 slash-command prompt files
+- `.github/prompts/*.prompt.md` — 31 slash-command prompt files
 - `.github/instructions/*.instructions.md` — 5 auto-attaching guidance files
 - `.husky/pre-commit.template` and `.pre-commit-config.yaml.template` — inert hook templates
 
@@ -382,7 +382,7 @@ Architecture files:
 
 Methodology surfaces (always written):
 - ✅ Generated — `.github/copilot-instructions.md` — slim rule book + Context discovery + prompt-library pointer
-- ✅ Generated — `.github/prompts/` — 30 invokable slash commands (15 modes, 6 skills, 7 service-builder agent prompts, 2 named agents: `docs-writer`, `cross-repo-impact`)
+- ✅ Generated — `.github/prompts/` — 31 invokable slash commands (15 modes, 7 skills, 7 service-builder agent prompts, 2 named agents: `docs-writer`, `cross-repo-impact`)
 - ✅ Generated — `.github/instructions/` — 5 auto-attaching guidance files (`git`, `data-model`, `arch-drift`, `context-discovery`, `decisions`)
 - ✅ Generated — `.copilot/pai-orbit-config.md` — board, branch model, deploy targets, docs home, team conventions
 - ✅ Generated — `.copilot/team.md` — team members, owners, default assignees

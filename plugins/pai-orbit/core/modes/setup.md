@@ -199,7 +199,7 @@ Example — columns Backlog, Ready, In progress, In review, Done: groom → Read
 | ID gone | flag as broken; re-run the suggestion for that mode |
 | A new column matches a mode's synonyms better | flag as an optional change; default keeps the saved row |
 
-Show only the flagged rows; keep every row the user does not change. A table with non-standard headers (hand-written) is read by position — mode, target, ID — and rewritten with the canonical headers, rows kept. If the section is absent (a project set up before 1.10.0), run the full flow above.
+Show only the flagged rows; keep every row the user does not change. A table with non-standard headers (hand-written) is read by position — mode, target, ID — and rewritten with the canonical headers, rows kept. If the section is absent (a project set up before 1.12.0), run the full flow above.
 
 ---
 
@@ -350,7 +350,7 @@ and without them the file drifts into a reverse-chronological build log.
 
 ### Architecture scaffold
 
-Copy `templates/docs/architecture/system.md`, `constraints.md`, and `stack.md` to `docs/architecture/` (replacing `{{PROJECT_NAME}}` and `{{DATE}}`).
+Copy `templates/docs/architecture/system.md`, `constraints.md`, `stack.md`, and `drivers.md` to `docs/architecture/` (replacing `{{PROJECT_NAME}}` and `{{DATE}}`).
 
 Populate `stack.md` from the language and framework info discovered in Step 1.
 

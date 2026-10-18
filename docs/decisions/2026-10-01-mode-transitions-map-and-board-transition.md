@@ -71,7 +71,7 @@ Supporting rules:
 
 **Negative / trade-offs:**
 - `/build` no longer closes the ticket; it closes on merge via `closes #N`. That's a visible
-  workflow change, covered by the 1.10.0 migration note.
+  workflow change, covered by the 1.12.0 migration note.
 - The copilot adapter's hand-written setup step must be kept in step with core's setup by
   hand.
 
@@ -90,4 +90,4 @@ Supporting rules:
 
 ## Review Date
 
-Revisit after the requesting team has run 1.10.0 for one release cycle.
+Revisit after the requesting team has run 1.12.0 for one release cycle.

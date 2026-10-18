@@ -6,7 +6,7 @@
 **Branch:** `feat/mode-transitions`
 **ADR:** [2026-10-01-mode-transitions-map-and-board-transition.md](../../decisions/2026-10-01-mode-transitions-map-and-board-transition.md)
 **Status:** Designed — ready for /build
-**Target version:** 1.10.0
+**Target version:** 1.12.0
 
 ---
 
@@ -255,7 +255,7 @@ Because IDs are stored, re-running setup (REQ-14) compares by **ID**, not name:
 | ID present, name changed | renamed | flag; suggest updating the name, keep the ID |
 | ID gone | broken | flag; re-run the ⑥ suggestion for that mode |
 | New column matches a mode's synonyms better | candidate | flag as an optional change; default keeps the saved row |
-| Section absent (pre-1.10.0 project) | new | run the full ⑥ flow |
+| Section absent (pre-1.12.0 project) | new | run the full ⑥ flow |
 
 ### ⑦ Adapter parity (D5)
 
@@ -275,11 +275,11 @@ Verification (AC-14): grep every `dist/` for `transition(` and `## Mode transiti
 
 ### ⑧ Version and migration note (D6)
 
-**Decision:** **1.10.0** (minor). New capability; older projects don't break — they get the
+**Decision:** **1.12.0** (minor). New capability; older projects don't break — they get the
 REQ-10 message instead. Migration note in the plugin README and release notes:
 
 ```markdown
-### Migrating to 1.10.0
+### Migrating to 1.12.0
 - Re-run `/setup` once — it adds `## Mode transitions` to `.claude/pai-orbit-config.md`
   (existing sections untouched).
 - Until you do, groom/design/build/review finish normally and print:
@@ -369,7 +369,7 @@ block the commit (REQ-11). Review calls `transition()` only when ⑤ allows.
 8. **`adapters/copilot/build.sh`** — add `## Mode transitions` to the hand-written setup
    section list (⑦).
 9. **Rebuild + verify** — `bash plugins/pai-orbit/build.sh`; grep every `dist/` (AC-14).
-10. **Release** — `core/plugin.json` → 1.10.0; README/CLAUDE.md version refs; migration note
+10. **Release** — `core/plugin.json` → 1.12.0; README/CLAUDE.md version refs; migration note
     (⑧); `docs/capabilities.md` board-skill entry.
 11. **Dogfood** — re-run `/setup` here; expect AC-13's map; exercise AC-4/5/11/12 on a test
     issue on board #3.

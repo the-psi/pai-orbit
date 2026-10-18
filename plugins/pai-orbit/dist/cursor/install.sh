@@ -31,6 +31,8 @@ RULES=(
 )
 
 REFERENCE=(
+  "reference/architecture-decomposition.md"
+  "reference/architecture-styles.md"
   "reference/docs-path-resolution.md"
 )
 

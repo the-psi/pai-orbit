@@ -9,7 +9,7 @@ bash plugins/pai-orbit/build.sh
 ## What ships
 
 - `.github/copilot-instructions.md` — slim rule book + Context discovery + prompt-library pointer
-- `.github/prompts/*.prompt.md` — invokable slash commands (mode, skill, agent — 30 total)
+- `.github/prompts/*.prompt.md` — invokable slash commands (mode, skill, agent — 31 total)
 - `.github/instructions/*.instructions.md` — auto-attaching guidance (5 total)
 - `.husky/pre-commit.template` — opt-in commit-time lint + weak secret tripwire (husky variant)
 - `.pre-commit-config.yaml.template` — same enforcement scope, pre-commit-framework variant
@@ -17,7 +17,7 @@ bash plugins/pai-orbit/build.sh
 ## What's covered vs the Claude Code plugin
 
 - Full mode set (15) — arch, build, data, design, domain, groom, incident, plan, playwright, release, review, setup, suggest-skills, test, ux. `/setup` and `/suggest-skills` emit as agent-mode prompts (Business tier agentic; Free tier advisory).
-- Full skill set (6) — analysis, board, data-model, epic, git, simplify. `git` and `data-model` also render as always-attached instructions files.
+- Full skill set (7) — analysis, board, data-model, epic, git, process-map, simplify. `git` and `data-model` also render as always-attached instructions files.
 - Named sub-agents (2) — `docs-writer` (edit tools), `cross-repo-impact` (read-only tools).
 - Service-builder templates (7) — django, express, fastapi, generic-service, infra, nextjs, react-vite.
 - ADR obligation rules — `.github/instructions/decisions.instructions.md` (always attached).

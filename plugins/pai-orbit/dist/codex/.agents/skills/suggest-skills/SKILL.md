@@ -64,7 +64,7 @@ Ask: "Want me to scaffold any of these?" If yes, create the skill file at `.agen
 Codex CLI has a different skill-discovery model than Claude Code. Notes on how "loading" a skill in Claude Code maps onto Codex behaviour:
 
 - In Claude Code, `$suggest-skills` loads skills into the session so they can be called explicitly. On Codex, all skills at `.agents/skills/<name>/` are always discoverable — no explicit "load" step.
-- **Operational skills** (`analysis`, `board`, `data-model`, `epic`, `git`, `simplify`) can be invoked two ways:
+- **Operational skills** (`analysis`, `board`, `data-model`, `epic`, `git`, `process-map`, `simplify`) can be invoked two ways:
   - Explicitly, by typing `$skill-name` in the composer.
   - Implicitly, when the description matches your natural-language prompt. Codex chooses which skill to fire based on the `description` field in each skill's frontmatter. When the user says "commit these changes", Codex sees `git`'s description and invokes it automatically.
 - **Mode skills** (`arch`, `build`, `data`, `design`, `domain`, `groom`, `incident`, `orbit-plan`, `orbit-review`, `release`, `setup`, `suggest-skills`, `test`, `ux`) are **explicit-only**. They ship with `agents/openai.yaml` `policy.allow_implicit_invocation: false`, which means Codex will not fire them on description match — you have to type `$mode-name` to enter that headspace. This is intentional: modes are deliberate context switches, not something to trigger by accident.

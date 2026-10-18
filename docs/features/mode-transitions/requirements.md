@@ -98,7 +98,7 @@ Design questions deferred to `/design` (no functional gaps remain):
 - [x] D3: How `transition(mode)` determines board order to detect a backwards move — **Resolved:** row order of the existing columns table (design ③)
 - [x] D4: How the name matching for setup's suggestions works — **Resolved:** per-mode synonym lists + board-order fallback + collapse rule (design ⑥)
 - [x] D5: How each adapter (copilot, legacy cursor, and the others) carries the new operation at full parity — **Resolved:** core + rebuild all dists, plus one copilot adapter edit (design ⑦)
-- [x] D6: Version number and migration-note wording — **Resolved:** 1.10.0 minor, migration note in design ⑧
+- [x] D6: Version number and migration-note wording — **Resolved:** 1.12.0 minor, migration note in design ⑧
 - [x] D7: Whether to align with the requesting team's hand-written `## Mode transitions` format for compatibility — **Resolved:** yes, positional read keeps their table working (design ①)
 
 ## Acceptance criteria

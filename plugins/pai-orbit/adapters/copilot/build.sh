@@ -13,7 +13,7 @@
 #   .github/copilot-instructions.md          slim rule book + context discovery
 #   .github/prompts/<mode>.prompt.md         14 mode prompts (all of core/modes/;
 #                                             /setup and /suggest-skills use agent runtime)
-#   .github/prompts/<skill>.prompt.md         6 skill prompts
+#   .github/prompts/<skill>.prompt.md         7 skill prompts
 #   .github/prompts/<stack>-builder.prompt.md 7 service-builder agent prompts (mode: agent per D30)
 #   .github/instructions/git.instructions.md
 #   .github/instructions/data-model.instructions.md
@@ -217,7 +217,7 @@ Create the `.copilot/*`, `AGENTS.md`, and `docs/` files. Tell the user what was 
 The `npx github:the-psi/pai-orbit init copilot` step writes these files before `/setup` runs:
 
 - `.github/copilot-instructions.md` — always-loaded rule book
-- `.github/prompts/*.prompt.md` — 30 slash-command prompt files
+- `.github/prompts/*.prompt.md` — 31 slash-command prompt files
 - `.github/instructions/*.instructions.md` — 5 auto-attaching guidance files
 - `.husky/pre-commit.template` and `.pre-commit-config.yaml.template` — inert hook templates
 
@@ -370,7 +370,7 @@ Architecture files:
 
 Methodology surfaces (always written):
 - ✅ Generated — `.github/copilot-instructions.md` — slim rule book + Context discovery + prompt-library pointer
-- ✅ Generated — `.github/prompts/` — 30 invokable slash commands (15 modes, 6 skills, 7 service-builder agent prompts, 2 named agents: `docs-writer`, `cross-repo-impact`)
+- ✅ Generated — `.github/prompts/` — 31 invokable slash commands (15 modes, 7 skills, 7 service-builder agent prompts, 2 named agents: `docs-writer`, `cross-repo-impact`)
 - ✅ Generated — `.github/instructions/` — 5 auto-attaching guidance files (`git`, `data-model`, `arch-drift`, `context-discovery`, `decisions`)
 - ✅ Generated — `.copilot/pai-orbit-config.md` — board, branch model, deploy targets, docs home, team conventions
 - ✅ Generated — `.copilot/team.md` — team members, owners, default assignees
@@ -609,7 +609,7 @@ The path-scoped detail lives in `.github/instructions/arch-drift.instructions.md
 All mode and skill prompts live in `.github/prompts/`. Invoke them by typing `/<name>` in Copilot Chat. The slash-command picker prefixes them so kind is visible:
 
 - `[mode]` — pai-orbit working modes (15): `/arch`, `/build`, `/data`, `/design`, `/domain`, `/groom`, `/incident`, `/plan`, `/playwright`, `/release`, `/review`, `/setup`, `/suggest-skills`, `/test`, `/ux` (`/setup` and `/suggest-skills` run in agent mode on Business tier)
-- `[skill]` — invokable procedures (6): `/analysis`, `/board`, `/data-model`, `/epic`, `/git`, `/simplify`
+- `[skill]` — invokable procedures (7): `/analysis`, `/board`, `/data-model`, `/epic`, `/git`, `/process-map`, `/simplify`
 - `[agent]` — agent-mode prompts (9, Pro/Business agentic; Free regular):
   - Service builders (7): `/django-builder`, `/express-builder`, `/fastapi-builder`, `/generic-service-builder`, `/infra-builder`, `/nextjs-builder`, `/react-vite-builder`
   - Named sub-agents (2): `/docs-writer` (writes documentation; edits files in `docs/`), `/cross-repo-impact` (read-only cross-repo analysis; no file edits)
@@ -1158,7 +1158,7 @@ bash plugins/pai-orbit/build.sh
 ## What ships
 
 - `.github/copilot-instructions.md` — slim rule book + Context discovery + prompt-library pointer
-- `.github/prompts/*.prompt.md` — invokable slash commands (mode, skill, agent — 30 total)
+- `.github/prompts/*.prompt.md` — invokable slash commands (mode, skill, agent — 31 total)
 - `.github/instructions/*.instructions.md` — auto-attaching guidance (5 total)
 - `.husky/pre-commit.template` — opt-in commit-time lint + weak secret tripwire (husky variant)
 - `.pre-commit-config.yaml.template` — same enforcement scope, pre-commit-framework variant
@@ -1166,7 +1166,7 @@ bash plugins/pai-orbit/build.sh
 ## What's covered vs the Claude Code plugin
 
 - Full mode set (15) — arch, build, data, design, domain, groom, incident, plan, playwright, release, review, setup, suggest-skills, test, ux. `/setup` and `/suggest-skills` emit as agent-mode prompts (Business tier agentic; Free tier advisory).
-- Full skill set (6) — analysis, board, data-model, epic, git, simplify. `git` and `data-model` also render as always-attached instructions files.
+- Full skill set (7) — analysis, board, data-model, epic, git, process-map, simplify. `git` and `data-model` also render as always-attached instructions files.
 - Named sub-agents (2) — `docs-writer` (edit tools), `cross-repo-impact` (read-only tools).
 - Service-builder templates (7) — django, express, fastapi, generic-service, infra, nextjs, react-vite.
 - ADR obligation rules — `.github/instructions/decisions.instructions.md` (always attached).
@@ -1227,29 +1227,33 @@ emit_service_builder_prompts
 emit_named_agent_prompts
 
 # Copilot prompt files are flat, self-contained files with no sibling-file
-# convention — a prompt can't resolve a relative "reference/docs-path-resolution.md"
-# pointer at runtime. Inline the referenced content as an appendix wherever a
-# mode/skill/agent prompt mentions it, so the file stays self-contained.
-if [ -f "$CORE_DIR/reference/docs-path-resolution.md" ]; then
-  # The reference doc carries its own `.claude/pai-orbit-config.md` mention —
-  # run it through the standard rewrite so it becomes `.copilot/` like the rest.
-  docs_path_resolution_content="$(rewrite_paths < "$CORE_DIR/reference/docs-path-resolution.md")"
+# convention — a prompt can't resolve a relative "reference/<name>.md" pointer at
+# runtime. Inline each referenced file from core/reference/ as an appendix
+# wherever a mode/skill/agent prompt mentions it, so the file stays self-contained.
+for ref in "$CORE_DIR"/reference/*.md; do
+  [ -f "$ref" ] || continue
+  ref_name="$(basename "$ref")"
+  # Appendix title = the reference file's H1, lower-cased.
+  ref_title="$(head -n 1 "$ref" | sed 's/^# *//' | tr '[:upper:]' '[:lower:]')"
+  # Reference docs may mention `.claude/pai-orbit-config.md` — run them through
+  # the standard rewrite so it becomes `.copilot/` like the rest.
+  ref_content="$(rewrite_paths < "$ref")"
   for f in "$DIST_DIR"/.github/prompts/*.prompt.md; do
     [ -f "$f" ] || continue
-    if grep -q "reference/docs-path-resolution.md" "$f"; then
+    if grep -q "reference/$ref_name" "$f"; then
       {
         echo ""
         echo "---"
         echo ""
-        echo "## Appendix: docs path resolution"
+        echo "## Appendix: $ref_title"
         echo ""
-        echo "Referenced above as \`reference/docs-path-resolution.md\` — inlined here since Copilot prompts are flat files with no sibling-file lookup:"
+        echo "Referenced above as \`reference/$ref_name\` — inlined here since Copilot prompts are flat files with no sibling-file lookup:"
         echo ""
-        echo "$docs_path_resolution_content"
+        echo "$ref_content"
       } >> "$f"
     fi
   done
-fi
+done
 
 emit_skill_instructions
 emit_decisions_instructions

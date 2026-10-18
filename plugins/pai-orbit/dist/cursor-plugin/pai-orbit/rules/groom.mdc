@@ -32,7 +32,7 @@ Before any scoping or requirements work:
 
 1. **Classify the issue first — it decides how much context to read.** If the session is tied to a board issue, read its labels (via `/board`). Labels such as `bug` or `fix` mean *bug fix / small enhancement*; a label such as `feature`, or `enhancement` on genuinely new capability, means *new feature*. If labels are absent, or ambiguous about which of the two this is, **ask the user directly** — "Is this a new feature/capability, or a bug fix / small enhancement?" — and wait for an answer. Do not infer it from the issue title.
 
-2. **Read product context before forming any opinion.** Always read: `AGENTS.md` (who the product serves and what it is), `<docs root>/domain/*.md` (business rules bearing on this issue), the feature's existing `ux.md`, and the parent epic in `<docs root>/epics/`.
+2. **Read product context before forming any opinion.** Always read: `AGENTS.md` (who the product serves and what it is), `<docs root>/domain/*.md` (business rules bearing on this issue), the feature's existing `ux.md`, the parent epic in `<docs root>/epics/`, and any to-be process map in `<docs root>/processes/` the feature implements. When a process map applies, cite the step IDs the feature implements under `## Context`.
 
    **Additionally, only when classified as a new feature/capability:**
    - `<docs root>/domain/product-capabilities.md` — the canonical record of what the product already does. Read it first when checking for overlap. If it does not exist, fall back to scanning `<docs root>/features/*` for features that already cover this ground.
