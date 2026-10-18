@@ -1,4 +1,4 @@
-# pai-orbit · v1.11.0
+# pai-orbit · v1.12.0
 
 A structured developer methodology harness for Claude Code, Cursor, GitHub Copilot, and OpenAI Codex (beta) — installed as a plugin in Claude Code and Cursor, and with one command for Copilot and Codex.
 
@@ -119,6 +119,13 @@ Workflow skills (`/git`, `/board`, `/analysis`, `/data-model`, `/process-map`, `
 > **`/groom` readiness gate** — before handing off to `/design`, `/groom` audits every open question and classifies it as a *functional gap* (what the system does — must be resolved) or a *design question* (how it does it — deferred to `/design`). The feature is not marked groomed until all functional gaps are closed. This prevents half-specified features from entering design.
 
 > **`/review security`** — the security-focused pass is a sub-mode of `/review`. Use `/review` for full code review, `/review security` for the OWASP checklist, or `/review full` for both in sequence. Critical and High findings block merge.
+
+> **Migrating to v1.12.0 — modes now move their own ticket.** `/groom`, `/design`, `/build` and `/review` move the ticket at close-out using a `## Mode transitions` map that `/setup` writes.
+> - Re-run `/setup` once — it adds `## Mode transitions` to `.claude/pai-orbit-config.md` (existing sections untouched).
+> - Until you do, those modes finish normally and print: "No mode-transition map — re-run /setup to enable automatic board moves."
+> - `/build` no longer closes the issue; it moves it (e.g. to In review). The issue closes on merge via `closes #N`.
+> - `/review` never moves the issue to Done by default. Done comes from the merge (your board's merge automation or `closes #N`). If your board has an "Approved" or "Ready to merge" column, an approving review moves the issue there.
+> - GitHub Projects: run `gh auth refresh -s project` if moves fail with a permission error.
 
 > **v1.11.0 — `/arch define` for greenfield architecture.** A new `/arch` sub-mode that *decides* an architecture instead of describing one: measurable drivers (`docs/architecture/drivers.md`, new), a system context diagram, a decomposition derived from domain language and `/process-map` lanes, style selection from a catalogue scored against the ranked drivers (with an ADR), structure, constraints with fitness functions, and stack last. `/arch update` now detects upstream changes — a process map, UX journey, domain knowledge, or drivers changed since the architecture was derived — and assesses their impact. `/arch init` remains the path for existing codebases. Existing `system.md` / `constraints.md` files keep working; the new sections are optional. Update pai-orbit to pick it up (see [Updating](#updating)).
 
