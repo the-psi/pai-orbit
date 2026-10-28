@@ -36,6 +36,10 @@ if ! grep -qxF "$MARKER" "$BUILD_MD"; then
   exit 1
 fi
 RULES_FILE="$ADAPTER_DIR/build-subagent-rules.md"
+if [ ! -f "$RULES_FILE" ]; then
+  echo "claude-code adapter: rules file '$RULES_FILE' missing" >&2
+  exit 1
+fi
 awk -v m="$MARKER" -v f="$RULES_FILE" '$0==m { while ((getline l < f) > 0) print l; next } { print }' "$BUILD_MD" > "$BUILD_MD.tmp"
 mv "$BUILD_MD.tmp" "$BUILD_MD"
 
