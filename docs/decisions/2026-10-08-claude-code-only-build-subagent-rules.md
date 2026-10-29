@@ -30,7 +30,7 @@ we decided **to keep the generic sub-agent text in `core/modes/build.md` and add
 to achieve **enforced worktree isolation where the tool supports it, without forking `core/` prose or leaking Claude-only primitives into other adapters**,
 accepting **that worktree isolation is enforced only on Claude Code (best-effort elsewhere) and that the marker comment remains visible in the other adapters' `dist/` output**.
 
-This is a recorded exception to `constraints.md` rule 6 for the worktree rule only. Model tiering is portable, so it is not an exception: it is deferred to a follow-up ticket (see Consequences).
+This is a recorded exception to `constraints.md` rule 6 for the worktree rule only. Model tiering is portable, so it is not an exception: it is deferred to follow-up #84 (see Consequences).
 
 ## Options Considered
 
@@ -49,13 +49,13 @@ This is a recorded exception to `constraints.md` rule 6 for the worktree rule on
 
 **Negative / trade-offs:**
 - Codex, Cursor and Copilot have no enforced worktree isolation: parallel builders there rely on the generic guidance, or on the user starting separate worktrees.
-- Model tiering exists only on Claude Code until the follow-up ticket lands, even though all four tools support a per-agent model.
+- Model tiering exists only on Claude Code until #84 lands, even though all four tools support a per-agent model.
 - `<!-- CLAUDE_CODE_ONLY: ... -->` appears in five non-Claude-Code `dist/` files (harmless HTML comment).
 
 **Neutral:**
 - The adapter-side injection pattern matches how codex/copilot/cursor-plugin already rewrite core text at build time.
 - Per-spawn `model` overrides the builder templates' `model: sonnet` default (the Agent tool's `model` param takes precedence over frontmatter); `docs-writer` pins no model and handles substantial docs, so tiering only covers small doc edits.
-- Follow-up: per-adapter model-tiering guidance (Codex `model`, Cursor `model`, Copilot `model`). Not part of #32.
+- Follow-up #84: per-adapter model-tiering guidance (Codex `model`, Cursor `model`, Copilot `model`). Not part of #32.
 
 ## References
 
