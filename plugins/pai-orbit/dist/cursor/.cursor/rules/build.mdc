@@ -46,6 +46,7 @@ Before starting:
 During build:
 - Spawn sub-agents per repo where tasks are independent; run in parallel where possible
 - Each sub-agent must read the repo's own `CLAUDE.md` before starting
+<!-- CLAUDE_CODE_ONLY: build-subagent-rules -->
 - Surface design blockers immediately — do not make silent architectural decisions; switch to `/design` if a non-trivial design choice surfaces
 - Do not add error handling, fallbacks, or validation for scenarios that can't happen
 - Do not add features, refactors, or abstractions beyond what the task requires
