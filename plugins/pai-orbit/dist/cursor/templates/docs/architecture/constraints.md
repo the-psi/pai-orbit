@@ -26,3 +26,12 @@ Last updated: {{DATE}}
 - **Logging:** <!-- TODO -->
 - **Error handling:** <!-- TODO -->
 - **API versioning:** <!-- TODO -->
+
+## Fitness Functions
+
+<!-- Automated or reviewable checks that keep the architecture honest. /arch validate checks each one.
+     Example: "No module imports another module's internals — enforced by <tool> in CI". -->
+
+| ID | Protects | Check | How enforced |
+|----|----------|-------|--------------|
+| FF-1 | <!-- driver or constraint ID --> | <!-- TODO --> | <!-- CI tool / review / dashboard --> |

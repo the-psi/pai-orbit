@@ -8,8 +8,8 @@ You are now in DESIGN MODE.
 This is a technical design and trade-offs session. No implementation.
 
 Output saved to:
-- `docs/features/<feature>/design.md` — feature-level design notes
-- `docs/decisions/<slug>.md` — Architecture Decision Records (ADRs)
+- `<docs root>/features/<feature>/design.md` — feature-level design notes
+- `<docs root>/decisions/<slug>.md` — Architecture Decision Records (ADRs)
 
 Switch out when:
 - Requirements are not yet clear → `/groom`
@@ -18,6 +18,8 @@ Switch out when:
 - Priority of this feature needs deciding → `/plan`
 
 ## Behaviour
+
+**At session start — related open-story gate:** For ticketed design work, run the board skill's Related open-story check before impact analysis or design discussion. Skip for standalone design work.
 
 **At session start — impact analysis gate (before any design discussion):**
 
@@ -29,12 +31,11 @@ Switch out when:
    - **Purely additive change (new endpoint, new field, no existing consumers affected):** state "No shared interface changes detected — skipping analysis" and proceed.
    - **Developer explicitly states analysis is done or change is self-contained:** acknowledge ("Noted — proceeding without analysis") and proceed.
 
-- Read `.cursor/pai-orbit-config.md`. If a `## System Docs` section is present:
-  - If `system_docs_repo` is a relative path: check whether the directory exists. If yes, add `<system_docs_repo>/<system_docs_path>` to the doc read set. If no, warn once ("System docs path unreachable — continuing with local docs only") and proceed.
-  - If `system_docs_repo` is a git URL: check whether a local clone exists at a resolvable path. If yes, add it. If no, warn once and proceed.
-  - Read docs from all resolved paths before starting the session.
+- Resolve the docs root per `reference/docs-path-resolution.md` (config: `.cursor/pai-orbit-config.md → ## System Docs`).
 - Read `AGENTS.md` for project architecture context before designing
 - If `docs/architecture/system.md` exists, read it — design proposals must fit within declared service boundaries or explicitly propose boundary changes with an ADR
+- If the feature implements steps of a to-be process map in `<docs root>/processes/`, read it — every hand-off between system lanes is an integration point this design must cover
+- If `<docs root>/architecture/drivers.md` exists, read its quality-attribute scenarios — design options are evaluated against them, and an option that weakens a ranked scenario says so explicitly
 - If `docs/architecture/constraints.md` exists, read it — design options that violate a constraint must flag this explicitly; violating a constraint requires `/arch update` to ratify the change before implementation
 - Read relevant existing docs before making recommendations
 - Read the feature's `requirements.md`, including its `## Open questions`. Treat any design questions deferred from grooming as a **starting point, not a boundary** — design the feature comprehensively. Surface and decide design aspects grooming never raised (data model, failure modes, migration, observability, etc.); do not limit the session to only the questions groom happened to flag.
@@ -47,7 +48,7 @@ Switch out when:
 
 Every design session should end by:
 
-1. **Save output.** Write to `docs/features/<feature>/design.md` or `docs/decisions/YYYY-MM-DD-<slug>.md`. List open questions explicitly — who owns each, what is blocked on it.
+1. **Save output.** Write to `<docs root>/features/<feature>/design.md` or `<docs root>/decisions/YYYY-MM-DD-<slug>.md`. List open questions explicitly — who owns each, what is blocked on it.
 
 2. **Commit.** Use `/git` to stage and commit the design file:
    ```

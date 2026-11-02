@@ -27,10 +27,27 @@ mkdir -p "$DIST_DIR/.claude-plugin"
 mkdir -p "$DIST_DIR/commands"
 cp -R "$CORE_DIR/modes/." "$DIST_DIR/commands/"
 
+# Claude-Code-only: `isolation` and per-agent `model` are Claude Code Task features, so the
+# sub-agent rules are injected into build.md at the core marker; other adapters keep the generic text.
+BUILD_MD="$DIST_DIR/commands/build.md"
+MARKER='<!-- CLAUDE_CODE_ONLY: build-subagent-rules -->'
+if ! grep -qxF "$MARKER" "$BUILD_MD"; then
+  echo "claude-code adapter: marker '$MARKER' missing from core/modes/build.md" >&2
+  exit 1
+fi
+RULES_FILE="$ADAPTER_DIR/build-subagent-rules.md"
+if [ ! -f "$RULES_FILE" ]; then
+  echo "claude-code adapter: rules file '$RULES_FILE' missing" >&2
+  exit 1
+fi
+awk -v m="$MARKER" -v f="$RULES_FILE" '$0==m { while ((getline l < f) > 0) print l; next } { print }' "$BUILD_MD" > "$BUILD_MD.tmp"
+mv "$BUILD_MD.tmp" "$BUILD_MD"
+
 cp -R "$CORE_DIR/skills"    "$DIST_DIR/"
 cp -R "$CORE_DIR/agents"    "$DIST_DIR/"
 cp -R "$CORE_DIR/hooks"     "$DIST_DIR/"
 cp -R "$CORE_DIR/templates" "$DIST_DIR/"
+cp -R "$CORE_DIR/reference" "$DIST_DIR/"
 cp    "$CORE_DIR/plugin.json" "$DIST_DIR/.claude-plugin/plugin.json"
 
 # arch-drift-guard.sh is not +x in source; restore exec bit on all dist hooks.

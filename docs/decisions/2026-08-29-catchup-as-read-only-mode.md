@@ -42,7 +42,7 @@ the board, and existing docs and can be regenerated at any time**.
 
 | Option | Pros | Cons |
 |--------|------|------|
-| (chosen) Core mode, read-only, config-driven | Fits "each command = one headspace"; picked up by every adapter's `modes/*.md` glob (codex and copilot also need a one-line description entry); consistent with `/arch view` (read-only sub-mode) | Adds a 15th mode to the listing |
+| (chosen) Core mode, read-only, config-driven | Fits "each command = one headspace"; picked up by every adapter's `modes/*.md` glob (codex and copilot also need a one-line description entry); consistent with `/arch view` (read-only sub-mode) | Adds a 16th mode to the listing |
 | Skill (`core/skills/catchup/SKILL.md`) | Callable from any mode | Skills are procedures invoked *inside* a headspace; `/catchup` is the entry point *before* one — and its stop-and-wait contract is a headspace, not a procedure |
 | Mode that also writes `docs/wip/catchup-<date>.md` | Honours "written outputs" literally | Pure derivation of git + board + docs; a daily file per developer is noise in `docs/wip/` with no reader — regenerating is cheaper than storing |
 | Extend `/build`'s session-start block instead | No new command | Couples orientation to implementation; a developer catching up on a review queue or a sprint is not in a build headspace, and `/build` immediately creates a branch |

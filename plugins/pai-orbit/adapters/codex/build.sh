@@ -2,7 +2,7 @@
 # OpenAI Codex CLI adapter — full-parity build.
 #
 # Emits dist/codex/ containing:
-#   AGENTS.md, .agents/skills/ (21 skills), .codex/agents/ (2 TOML subagents),
+#   AGENTS.md, .agents/skills/ (23 skills), .codex/agents/ (2 TOML subagents),
 #   .codex/hooks/ + .codex/hooks.json, .codex/config.toml, .codex/templates/,
 #   README.md.
 #
@@ -100,12 +100,53 @@ rewrite_slash_cross_refs() {
   mv "$tmp" "$file"
 }
 
+# Codex skills are flat, self-contained SKILL.md files with no sibling-file
+# convention — a skill can't resolve a relative "reference/<name>.md" pointer at
+# runtime. Inline each referenced file from core/reference/ as an appendix
+# wherever a skill body mentions it, so the file stays self-contained the same
+# way every other cross-reference here already is.
+DOCS_PATH_RESOLUTION_CONTENT=""
+if [ -f "$CORE_DIR/reference/docs-path-resolution.md" ]; then
+  DOCS_PATH_RESOLUTION_CONTENT="$(cat "$CORE_DIR/reference/docs-path-resolution.md")"
+fi
+
+# Appendix title = the reference file's H1, lower-cased ("# Docs path resolution" → "docs path resolution").
+reference_title() {
+  head -n 1 "$1" | sed 's/^# *//' | tr '[:upper:]' '[:lower:]'
+}
+
+append_reference_appendix() {
+  local target_file="$1"
+  local ref name appended=0
+  for ref in "$CORE_DIR"/reference/*.md; do
+    [ -f "$ref" ] || continue
+    name="$(basename "$ref")"
+    grep -q "reference/$name" "$target_file" || continue
+    {
+      echo ""
+      echo "---"
+      echo ""
+      echo "## Appendix: $(reference_title "$ref")"
+      echo ""
+      echo "Referenced above as \`reference/$name\` — inlined here since Codex skills are flat files with no sibling-file lookup:"
+      echo ""
+      cat "$ref"
+    } >> "$target_file"
+    appended=1
+  done
+  # Appendices may carry their own `.claude/pai-orbit-config.md` reference —
+  # re-run the standard rewrite so it becomes `.codex/` like everything else.
+  if [ "$appended" -eq 1 ]; then
+    rewrite_paths_in_place "$target_file"
+  fi
+}
+
 # ── Mode-skill descriptions ─────────────────────────────────────────────────
 # Hand-crafted descriptions surfaced in Codex's /skills picker. Under 400 chars
 # each; total mode-skill sum well under the 8000-char budget policy (checked
 # in the post-build guard).
 declare -A MODE_DESCRIPTIONS
-MODE_DESCRIPTIONS[arch]="Declare and maintain system architecture. Use when discussing architecture decisions, constraints, tech-stack choices, or system-level design. Writes docs/architecture/ and ADRs to docs/decisions/. Explicit invocation only."
+MODE_DESCRIPTIONS[arch]="Define, declare, and maintain system architecture. Use to derive a greenfield architecture (drivers, system context, decomposition, style selection), declare an existing one, or update it when process maps, UX, or domain change. Writes docs/architecture/ and ADRs to docs/decisions/. Explicit invocation only."
 MODE_DESCRIPTIONS[build]="Implement features and fixes. Use for coding sessions where requirements and design are already clear and it's time to write code. Writes code and updates docs/features/<feature>/. Explicit invocation only."
 MODE_DESCRIPTIONS[catchup]="Read-only session-start briefing. Use at the start of a work session to learn what the team shipped, what is open, what is assigned to you, and what to pick up next. Writes nothing — the briefing is printed to the conversation; hands off to build once an item is picked. Explicit invocation only."
 MODE_DESCRIPTIONS[data]="Explore data before coding. Use when a question about the data model, query results, or dataset shape must be answered before implementing. Writes docs/reports/. Explicit invocation only."
@@ -115,6 +156,7 @@ MODE_DESCRIPTIONS[groom]="Formalize acceptance criteria. Use to convert vague fe
 MODE_DESCRIPTIONS[incident]="Investigate and record a production incident. Use for post-mortems, root-cause analysis, and remediation planning. Writes docs/reports/incident-<date>.md. Explicit invocation only."
 MODE_DESCRIPTIONS[orbit-plan]="Prioritize and sequence work. Use to build a work plan, sequence features, or arrange sprints. Writes docs/plans/. Renamed from plan to avoid Codex's built-in /plan slash command. Explicit invocation only."
 MODE_DESCRIPTIONS[orbit-review]="Review code, PRs, or design against pai-orbit conventions and architectural constraints. Writes review notes; suggests follow-ups. Renamed from review to avoid Codex's built-in /review slash command. Explicit invocation only."
+MODE_DESCRIPTIONS[playwright]="Implement Playwright automation from a test plan. Use after /test, once the code under test has landed. Writes only inside the project's e2e directory; reports product bugs, never fixes them. Explicit invocation only."
 MODE_DESCRIPTIONS[release]="Coordinate a release. Use for release planning, cut list, changelog assembly, and deploy sequencing. Writes docs/plans/release-<version>.md. Explicit invocation only."
 MODE_DESCRIPTIONS[setup]="Interactive first-run scaffolding. Generates .codex/pai-orbit-config.md, .codex/team.md, .codex/config.toml, docs/ scaffold; fills lint hook repo paths and stack-builder agents. Explicit invocation only."
 MODE_DESCRIPTIONS[suggest-skills]="Recommend which pai-orbit skill or mode fits the user's current problem. Use when unsure what to invoke or wanting a guided walkthrough of the framework. Explicit invocation only."
@@ -177,6 +219,7 @@ for skill_dir in "$CORE_DIR"/skills/*/; do
   while IFS= read -r -d '' f; do
     rewrite_paths_in_place "$f"
     rewrite_slash_cross_refs "$f"
+    append_reference_appendix "$f"
   done < <(find "$dest_dir" \( -name '*.md' -o -name '*.mdc' -o -name '*.template' \) -print0)
 done
 
@@ -227,6 +270,7 @@ YAML
   # Standard path rewrites + cross-reference rewrites on every mode body
   rewrite_paths_in_place "$skill_md"
   rewrite_slash_cross_refs "$skill_md"
+  append_reference_appendix "$skill_md"
 }
 
 # Emit all 15 mode skills. plan → orbit-plan; review → orbit-review.
@@ -270,6 +314,21 @@ markdown_agent_to_toml() {
     -e 's|\.claude/settings\.json|.codex/config.toml|g' \
     -e 's|\.claude/|.codex/|g' \
     -e 's|\bCLAUDE\.md\b|AGENTS.md|g')
+
+  # Inline the docs-path-resolution reference (see append_reference_appendix)
+  # if this agent body points at it — TOML subagents have no sibling-file lookup.
+  if [ -n "$DOCS_PATH_RESOLUTION_CONTENT" ] && printf '%s' "$body_rewritten" | grep -q "reference/docs-path-resolution.md"; then
+    # The appendix carries its own `.claude/pai-orbit-config.md` reference —
+    # apply the same rewrite so it becomes `.codex/` like the rest of the body.
+    local appendix_rewritten
+    appendix_rewritten=$(printf '%s' "$DOCS_PATH_RESOLUTION_CONTENT" | sed \
+      -e 's|\.claude/skills/|.agents/skills/|g' \
+      -e 's|\.claude/settings\.local\.json|.codex/config.toml|g' \
+      -e 's|\.claude/settings\.json|.codex/config.toml|g' \
+      -e 's|\.claude/|.codex/|g' \
+      -e 's|\bCLAUDE\.md\b|AGENTS.md|g')
+    body_rewritten="$(printf '%s\n\n---\n\n## Appendix: docs path resolution\n\nReferenced above as \`reference/docs-path-resolution.md\` — inlined here since Codex agents have no sibling-file lookup:\n\n%s' "$body_rewritten" "$appendix_rewritten")"
+  fi
 
   # Escape any occurrences of """ inside the body so the TOML triple-quoted
   # string closes correctly. Rare, but defensive.
@@ -364,7 +423,7 @@ registered hooks; hook trust is invalidated by every hook edit.
 \`\`\`
 project-root/
 ├── AGENTS.md                             # Codex reads at project root
-├── .agents/skills/                       # 6 operational + 15 mode skills
+├── .agents/skills/                       # 7 operational + 16 mode skills
 ├── .codex/agents/                        # docs-writer.toml, cross-repo-impact.toml
 ├── .codex/hooks/                         # bash-guard, arch-drift-wrapper, lint-*-wrapper (+ .ps1 variants)
 ├── .codex/hooks.json                     # official nested schema with commandWindows overrides
@@ -377,17 +436,17 @@ project-root/
 1. Launch \`codex\` in the project. Trust the project when prompted.
 2. Run \`/hooks\` to trust the four registered hooks. Every hook edit invalidates trust — re-run after upgrades.
 3. Run \`\\\$setup\` to scaffold \`.codex/pai-orbit-config.md\`, \`.codex/team.md\`, and to fill in the lint hooks' \`repo=\` block.
-4. Run \`/skills\` to see the 21 skills.
+4. Run \`/skills\` to see the 23 skills.
 
 ## Skills
 
-**6 operational skills** — fire implicitly on description match OR explicit as \`\\\$skill-name\`:
+**7 operational skills** — fire implicitly on description match OR explicit as \`\\\$skill-name\`:
 
-- \`analysis\`, \`board\`, \`data-model\`, \`epic\`, \`git\`, \`simplify\`
+- \`analysis\`, \`board\`, \`data-model\`, \`epic\`, \`git\`, \`process-map\`, \`simplify\`
 
 **15 mode skills** — explicit-only (invoked as \`\\\$mode-name\`; \`agents/openai.yaml\` disables implicit invocation):
 
-- \`arch\`, \`build\`, \`catchup\`, \`data\`, \`design\`, \`domain\`, \`groom\`, \`incident\`, \`orbit-plan\`, \`orbit-review\`, \`release\`, \`setup\`, \`suggest-skills\`, \`test\`, \`ux\`
+- \`arch\`, \`build\`, \`catchup\`, \`data\`, \`design\`, \`domain\`, \`groom\`, \`incident\`, \`orbit-plan\`, \`orbit-review\`, \`playwright\`, \`release\`, \`setup\`, \`suggest-skills\`, \`test\`, \`ux\`
 
 Two modes are renamed in the Codex build to avoid ergonomic collision with Codex's built-in slash commands:
 
@@ -475,8 +534,8 @@ fi
 # (Nothing to assert on absence — just don't emit warnings.)
 
 # Guard D: every mode skill has agents/openai.yaml; operational skills do NOT
-mode_skills=(arch build catchup data design domain groom incident orbit-plan orbit-review release setup suggest-skills test ux)
-operational_skills=(analysis board data-model epic git simplify)
+mode_skills=(arch build catchup data design domain groom incident orbit-plan orbit-review playwright release setup suggest-skills test ux)
+operational_skills=(analysis board data-model epic git process-map simplify)
 
 for m in "${mode_skills[@]}"; do
   if [ ! -f "$DIST_DIR/.agents/skills/$m/agents/openai.yaml" ]; then
@@ -529,7 +588,7 @@ fi
 
 echo ""
 echo "codex adapter: built $DIST_DIR"
-echo "  21 skills / description sum: $total_desc chars (budget 8000)"
+echo "  23 skills / description sum: $total_desc chars (budget 8000)"
 echo "  2 subagents / 4 hooks + 3 wrappers + PS1 variants"
 echo "  README.md, config.toml, hooks.json"
 echo "  install: npx github:${GITHUB_REPO} init codex"

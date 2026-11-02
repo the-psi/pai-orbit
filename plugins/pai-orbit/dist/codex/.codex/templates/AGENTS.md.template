@@ -76,6 +76,8 @@ flowchart LR
 {{LINT_CMD}}
 ```
 
+<!-- OPTIONAL: if this project has Playwright e2e tests, name the directory here. `/playwright` reads it as its write boundary and will only write inside it. Example: `E2E directory: apps/web/e2e/` -->
+
 ---
 
 ## Environment Variables

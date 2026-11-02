@@ -1,0 +1,7 @@
+interface:
+  display_name: "playwright"
+  short_description: "pai-orbit mode: playwright"
+  default_prompt: "Use $playwright to enter this mode."
+
+policy:
+  allow_implicit_invocation: false

@@ -11,9 +11,9 @@
 #
 # Emits dist/copilot/ with:
 #   .github/copilot-instructions.md          slim rule book + context discovery
-#   .github/prompts/<mode>.prompt.md         15 mode prompts (all of core/modes/;
+#   .github/prompts/<mode>.prompt.md         16 mode prompts (all of core/modes/;
 #                                             /setup and /suggest-skills use agent runtime)
-#   .github/prompts/<skill>.prompt.md         6 skill prompts
+#   .github/prompts/<skill>.prompt.md         7 skill prompts
 #   .github/prompts/<stack>-builder.prompt.md 7 service-builder agent prompts (mode: agent per D30)
 #   .github/instructions/git.instructions.md
 #   .github/instructions/data-model.instructions.md
@@ -217,7 +217,7 @@ Create the `.copilot/*`, `AGENTS.md`, and `docs/` files. Tell the user what was 
 The `npx github:the-psi/pai-orbit init copilot` step writes these files before `/setup` runs:
 
 - `.github/copilot-instructions.md` — always-loaded rule book
-- `.github/prompts/*.prompt.md` — 30 slash-command prompt files
+- `.github/prompts/*.prompt.md` — 32 slash-command prompt files
 - `.github/instructions/*.instructions.md` — 5 auto-attaching guidance files
 - `.husky/pre-commit.template` and `.pre-commit-config.yaml.template` — inert hook templates
 
@@ -245,6 +245,8 @@ The file has these top-level sections:
 - `## System Docs` — see rules below
 - `## MCP` — see the MCP subsection later in this step
 
+When `type` is **Azure DevOps**, also record `Organisation:`, `Project:`, `Team:`, `Area path:`, `Work-item type:`, and `Closing state:` under `## Agile Board`, using only the values confirmed in Step 2b. The `columns` table maps `Column` to `Work-item state`. Organisation is the organisation name used in `https://dev.azure.com/<org>`. Omit these Azure-specific fields for other board types; their existing configuration stays unchanged.
+
 For the `## System Docs` section:
 - If the user answered **no** to the multi-repo question: omit the `## System Docs` section entirely (do not write it with blank values).
 - If the user answered **yes** and provided a **relative path**: check whether that directory exists before writing. If it does not exist, warn the user ("System docs path not found — writing the pointer anyway; ensure the repo is cloned before running commands") and write it as given.
@@ -252,7 +254,7 @@ For the `## System Docs` section:
 
 ### `.copilot/team.md`
 
-Synthesize this file from the team roster the user gave in Step 2. The file is a markdown table with columns `Name | Role | GitHub | Linear | Jira | Notes` — one row per team member the user named. Also include `Default engineering lead:`, `Default domain expert:`, and `Default ops lead:` lines below the table populated from the roles the user assigned.
+Synthesize this file from the team roster the user gave in Step 2. The file is a markdown table with columns `Name | Role | GitHub | Linear | Jira | Azure DevOps | Notes` — one row per team member the user named. Populate Azure DevOps with the confirmed Azure identity (email) when that platform is selected; leave unused platform columns blank. Also include `Default engineering lead:`, `Default domain expert:`, and `Default ops lead:` lines below the table populated from the roles the user assigned.
 
 ### `.copilot/settings.json`
 
@@ -367,7 +369,7 @@ Architecture files:
 
 Methodology surfaces (always written):
 - ✅ Generated — `.github/copilot-instructions.md` — slim rule book + Context discovery + prompt-library pointer
-- ✅ Generated — `.github/prompts/` — 30 invokable slash commands (15 modes, 6 skills, 7 service-builder agent prompts, 2 named agents: `docs-writer`, `cross-repo-impact`)
+- ✅ Generated — `.github/prompts/` — 32 invokable slash commands (16 modes, 7 skills, 7 service-builder agent prompts, 2 named agents: `docs-writer`, `cross-repo-impact`)
 - ✅ Generated — `.github/instructions/` — 5 auto-attaching guidance files (`git`, `data-model`, `arch-drift`, `context-discovery`, `decisions`)
 - ✅ Generated — `.copilot/pai-orbit-config.md` — board, branch model, deploy targets, docs home, team conventions
 - ✅ Generated — `.copilot/team.md` — team members, owners, default assignees
@@ -475,6 +477,7 @@ mode_description() {
     domain)   echo "Capture expert domain knowledge. Writes docs/domain/*.md." ;;
     groom)    echo "Groom feature requirements — purpose, scenarios, then acceptance criteria. Writes docs/features/*/requirements.md." ;;
     incident) echo "Production-incident fast path: triage → build → review → release → post-mortem. Trades thoroughness for speed." ;;
+    playwright) echo "Playwright automation from a test plan. Writes only inside the e2e directory; reports product bugs, never fixes them." ;;
     plan)     echo "Roadmap, prioritisation, and sprint scoping. Writes docs/plans/*.md." ;;
     release)  echo "Deployment session with preflight + post-deploy verification. Stay until healthy or explicitly rolled back." ;;
     review)   echo "Code review against the project's documented architecture, conventions, and requirements." ;;
@@ -498,6 +501,7 @@ mode_donot_line() {
     domain)   echo "Do NOT propose technical solutions or designs — those belong to \`/design\`." ;;
     groom)    echo "Do NOT propose solutions or implementations — that's \`/design\`. Do NOT write code — that's \`/build\`." ;;
     incident) echo "Do NOT plan new features — that's \`/plan\`. Do NOT refactor opportunistically — focus on the incident." ;;
+    playwright) echo "Do NOT edit app code or docs — only the e2e directory. Report product bugs; fixing them is \`/build\`." ;;
     plan)     echo "Do NOT design solutions for the items you're prioritising — that's \`/design\`." ;;
     release)  echo "Do NOT design new features mid-release — that's \`/design\`. Do NOT add scope." ;;
     review)   echo "Do NOT design replacements for the code under review — flag, don't rewrite." ;;
@@ -605,8 +609,8 @@ The path-scoped detail lives in `.github/instructions/arch-drift.instructions.md
 
 All mode and skill prompts live in `.github/prompts/`. Invoke them by typing `/<name>` in Copilot Chat. The slash-command picker prefixes them so kind is visible:
 
-- `[mode]` — pai-orbit working modes (15): `/arch`, `/build`, `/catchup`, `/data`, `/design`, `/domain`, `/groom`, `/incident`, `/plan`, `/release`, `/review`, `/setup`, `/suggest-skills`, `/test`, `/ux` (`/setup` and `/suggest-skills` run in agent mode on Business tier)
-- `[skill]` — invokable procedures (6): `/analysis`, `/board`, `/data-model`, `/epic`, `/git`, `/simplify`
+- `[mode]` — pai-orbit working modes (16): `/arch`, `/build`, `/catchup`, `/data`, `/design`, `/domain`, `/groom`, `/incident`, `/plan`, `/playwright`, `/release`, `/review`, `/setup`, `/suggest-skills`, `/test`, `/ux` (`/setup` and `/suggest-skills` run in agent mode on Business tier)
+- `[skill]` — invokable procedures (7): `/analysis`, `/board`, `/data-model`, `/epic`, `/git`, `/process-map`, `/simplify`
 - `[agent]` — agent-mode prompts (9, Pro/Business agentic; Free regular):
   - Service builders (7): `/django-builder`, `/express-builder`, `/fastapi-builder`, `/generic-service-builder`, `/infra-builder`, `/nextjs-builder`, `/react-vite-builder`
   - Named sub-agents (2): `/docs-writer` (writes documentation; edits files in `docs/`), `/cross-repo-impact` (read-only cross-repo analysis; no file edits)
@@ -1155,15 +1159,15 @@ bash plugins/pai-orbit/build.sh
 ## What ships
 
 - `.github/copilot-instructions.md` — slim rule book + Context discovery + prompt-library pointer
-- `.github/prompts/*.prompt.md` — invokable slash commands (mode, skill, agent — 30 total)
+- `.github/prompts/*.prompt.md` — invokable slash commands (mode, skill, agent — 32 total)
 - `.github/instructions/*.instructions.md` — auto-attaching guidance (5 total)
 - `.husky/pre-commit.template` — opt-in commit-time lint + weak secret tripwire (husky variant)
 - `.pre-commit-config.yaml.template` — same enforcement scope, pre-commit-framework variant
 
 ## What's covered vs the Claude Code plugin
 
-- Full mode set (15) — arch, build, catchup, data, design, domain, groom, incident, plan, release, review, setup, suggest-skills, test, ux. `/setup` and `/suggest-skills` emit as agent-mode prompts (Business tier agentic; Free tier advisory).
-- Full skill set (6) — analysis, board, data-model, epic, git, simplify. `git` and `data-model` also render as always-attached instructions files.
+- Full mode set (16) — arch, build, catchup, data, design, domain, groom, incident, plan, playwright, release, review, setup, suggest-skills, test, ux. `/setup` and `/suggest-skills` emit as agent-mode prompts (Business tier agentic; Free tier advisory).
+- Full skill set (7) — analysis, board, data-model, epic, git, process-map, simplify. `git` and `data-model` also render as always-attached instructions files.
 - Named sub-agents (2) — `docs-writer` (edit tools), `cross-repo-impact` (read-only tools).
 - Service-builder templates (7) — django, express, fastapi, generic-service, infra, nextjs, react-vite.
 - ADR obligation rules — `.github/instructions/decisions.instructions.md` (always attached).
@@ -1222,6 +1226,36 @@ emit_mode_prompts
 emit_skill_prompts
 emit_service_builder_prompts
 emit_named_agent_prompts
+
+# Copilot prompt files are flat, self-contained files with no sibling-file
+# convention — a prompt can't resolve a relative "reference/<name>.md" pointer at
+# runtime. Inline each referenced file from core/reference/ as an appendix
+# wherever a mode/skill/agent prompt mentions it, so the file stays self-contained.
+for ref in "$CORE_DIR"/reference/*.md; do
+  [ -f "$ref" ] || continue
+  ref_name="$(basename "$ref")"
+  # Appendix title = the reference file's H1, lower-cased.
+  ref_title="$(head -n 1 "$ref" | sed 's/^# *//' | tr '[:upper:]' '[:lower:]')"
+  # Reference docs may mention `.claude/pai-orbit-config.md` — run them through
+  # the standard rewrite so it becomes `.copilot/` like the rest.
+  ref_content="$(rewrite_paths < "$ref")"
+  for f in "$DIST_DIR"/.github/prompts/*.prompt.md; do
+    [ -f "$f" ] || continue
+    if grep -q "reference/$ref_name" "$f"; then
+      {
+        echo ""
+        echo "---"
+        echo ""
+        echo "## Appendix: $ref_title"
+        echo ""
+        echo "Referenced above as \`reference/$ref_name\` — inlined here since Copilot prompts are flat files with no sibling-file lookup:"
+        echo ""
+        echo "$ref_content"
+      } >> "$f"
+    fi
+  done
+done
+
 emit_skill_instructions
 emit_decisions_instructions
 emit_arch_drift_instructions

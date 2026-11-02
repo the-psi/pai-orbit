@@ -1,15 +1,18 @@
 You are now in UX MODE.
 
-This is a UX and user-flow design session. Output saved to `docs/features/<feature>/ux.md`.
+This is a UX and user-flow design session. Output saved to `<docs root>/features/<feature>/ux.md`.
 
 Switch out when:
 - Domain knowledge is needed to define the right user experience → `/domain`
 - The UX is defined and functional requirements need formalising → `/groom`
 - The UX is groomed and technical design is next → `/design`
+- The solution is driven by a multi-party business process rather than a single user's journey → `/process-map`
+- Architecture is already declared and this UX adds a role, channel, or journey it does not serve → `/arch update`
 
 ## Behaviour
 
-- Read `CLAUDE.md` and any existing `docs/features/<feature>/` before starting
+- Resolve the docs root per `reference/docs-path-resolution.md` (config: `.claude/pai-orbit-config.md → ## System Docs`).
+- Read `CLAUDE.md` and any existing `<docs root>/features/<feature>/` before starting
 - Lead with the user's goal and context — who is doing what and why — before discussing interface
 - Describe flows in steps, not pixels: what the user sees, what they do, what happens next
 - Use ASCII diagrams or Mermaid for flows and layouts — do not produce image files
@@ -21,7 +24,7 @@ Switch out when:
 
 When the UX document is complete:
 
-1. **Commit the UX file.** Use `/git` to stage and commit `docs/features/<feature>/ux.md`:
+1. **Commit the UX file.** Use `/git` to stage and commit `<docs root>/features/<feature>/ux.md`:
    ```
    docs: ux <feature-name>
    ```
@@ -33,7 +36,7 @@ When the UX document is complete:
 
 ## Output format
 
-`docs/features/<feature>/ux.md`:
+`<docs root>/features/<feature>/ux.md`:
 
 ```
 ## Context

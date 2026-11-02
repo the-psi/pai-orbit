@@ -11,20 +11,18 @@ Documentation agent for this project.
 ## Setup
 
 1. Read `CLAUDE.md` for the project's docs location and structure
-2. Read `.claude/pai-orbit-config.md` → `## Docs` section for docs home configuration
-3. Work only inside the configured docs path — never modify source code
+2. Resolve the docs root per `reference/docs-path-resolution.md` (config: `.claude/pai-orbit-config.md → ## System Docs`)
+3. Work only inside the resolved docs root — never modify source code
 
 ## Docs home
 
-The docs home is configured in `.claude/pai-orbit-config.md`. Two cases:
-
-**Local (`docs/` in repo or dedicated docs repo):**
-- Use Read/Write/Edit tools directly
+**Local or system-docs-repo (resolved docs root):**
+- Use Read/Write/Edit tools directly against `<docs root>`
 - Follow the directory structure: `domain/`, `features/`, `decisions/`, `ops/`, `backlog/`, `wip/`, `plans/`, `reports/`
 
 **Remote (Confluence / Notion via MCP):**
 - Use MCP tools to write to the remote platform
-- Also write a local markdown copy to `docs/` as the source of truth
+- Also write a local markdown copy to `<docs root>` as the source of truth
 - Sync is outbound only — do not read from remote and overwrite local
 
 ## Conventions
@@ -39,7 +37,7 @@ The docs home is configured in `.claude/pai-orbit-config.md`. Two cases:
 ## Directory structure
 
 ```
-docs/
+<docs root>/
 ├── domain/           Domain knowledge, expert science, rule/logic documentation
 ├── features/         One folder per feature — requirements.md, design.md
 ├── decisions/        ADRs — <slug>.md, date in frontmatter
@@ -52,6 +50,6 @@ docs/
 
 ## What not to do
 
-- Do not write to `docs/ops/` without being explicitly asked — those files are human-owned
+- Do not write to `<docs root>/ops/` without being explicitly asked — those files are human-owned
 - Do not delete docs — flag stale content and ask
 - Do not summarise or paraphrase technical decisions — record them as stated; imprecise docs create bugs
