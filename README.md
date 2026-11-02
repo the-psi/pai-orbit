@@ -1,4 +1,4 @@
-# pai-orbit · v1.11.0
+# pai-orbit · v1.11.1
 
 A structured developer methodology harness for Claude Code, Cursor, GitHub Copilot, and OpenAI Codex (beta) — installed as a plugin in Claude Code and Cursor, and with one command for Copilot and Codex.
 
