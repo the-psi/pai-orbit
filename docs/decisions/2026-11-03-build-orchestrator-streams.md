@@ -38,11 +38,11 @@ accepting **test-vs-code mismatches surface only at the final verification pass,
 - Copilot Free degrades to the same layer order, sequentially.
 
 **Negative / trade-offs:**
-- Codex 4-thread cap queues extra tasks.
+- Codex caps open agent threads and errors at the cap (no queue): the orchestrator must close finished agents and hold excess tasks itself.
 - Shared files need an orchestrator-assigned owner.
 
 **Neutral:**
-- Version 1.12.0 (minor); worktree isolation from #32 stays as a Claude Code safety net.
+- Version 1.13.0 (minor; main already at 1.12.0); worktree isolation from #32 stays as a Claude Code safety net.
 
 ## Related Decisions
 

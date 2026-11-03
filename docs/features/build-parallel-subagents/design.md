@@ -32,8 +32,8 @@ sequenceDiagram
 | 1 | Orchestrator | Primary session agent | Depth 1; fits Codex `max_depth = 2`; no extra agent |
 | 2 | Change propagation | Return-time **change report** to orchestrator, at every **dependency-layer** boundary (not only stream end) | Works on all adapters; layer checkpoints stop late discovery and rework piling up. Rework needing a redo of finished work → ask user (REQ-5) |
 | 3 | Same-repo conflicts | **File ownership**: code → source, tests → test dirs, docs → `docs/`. A stream needing another's path reports it as a change instead of editing. Merge at end, order code → tests → docs. Claude Code also uses `isolation: "worktree"` (#32) as a safety net | Conflict-free by construction, no worktree needed on Codex/Cursor/Copilot. Shared files (fixtures, config): orchestrator assigns an owner |
-| 4 | Adapters / depth | **Flat model**: orchestrator spawns all task agents; no stream agent has children. Excess tasks queue at the tool's cap (Codex `max_threads = 4`). No parallel support (Copilot Free) → same layer order, sequential | Full parity (rule 6), no Codex limit change, no rule 7 migration |
-| 5 | Version | Minor bump to **1.12.0**, no migration note; sync version refs (plugin.json, README, CLAUDE.md) | Behaviour change but `dist/` structure unchanged |
+| 4 | Adapters / depth | **Flat model**: orchestrator spawns all task agents; no stream agent has children. Orchestrator keeps open agents at or below the tool's cap, closes finished agents, and holds excess tasks until a slot frees (Codex errors at the cap, it does not queue). No parallel support (Copilot Free) → same layer order, sequential | Full parity (rule 6), no Codex limit change, no rule 7 migration |
+| 5 | Version | Minor bump to **1.13.0** (main already at 1.12.0 via #61), no migration note; sync version refs (plugin.json, README, CLAUDE.md) | Behaviour change but `dist/` structure unchanged |
 | 6 | Running tests | **One verification pass** after merge: full suite (regression + new). Code stream runs only existing tests for its own layer and writes no new tests. Failure → orchestrator classifies (code / test / AC wrong) and follows REQ-5 | No duplicate runs (REQ-10); no worktree sync |
 
 ## Requirement coverage
@@ -45,12 +45,12 @@ sequenceDiagram
 3. `adapters/codex/build.sh` (~459), `adapters/codex/setup-append.md` (~55), `docs/codex-install-and-usage.md` (~220) — flat-model wording, `spawn_agent` / `wait_agent`, thread cap.
 4. `adapters/cursor-plugin/build.sh` (~235), `adapters/copilot/build.sh` (~342) — limit notes; Copilot Free sequential degrade.
 5. `docs/capabilities.md` lines 98 and 267.
-6. Bump version to 1.12.0; `bash plugins/pai-orbit/build.sh`.
+6. Bump version to 1.13.0; `bash plugins/pai-orbit/build.sh`.
 7. `docs/architecture/constraints.md` / `system.md`: no exception added (parity kept) — only a note if the worktree wording changes.
 
 ## Irreversible decisions
 None. All text; reversible by editing `core/` and rebuilding.
 
 ## Open questions
-- [ ] Verify how Codex `max_threads` counts (all open agent threads vs concurrently running) before wording the queue rule — owner: Upneet Singh, blocks: Codex wording in task 3 only
-- [ ] Cursor / Copilot actual parallel limits ("test per version") — owner: Upneet Singh, blocks: wording in task 4 only
+- [x] Codex cap counts open threads (finished-but-unclosed likely hold a slot) and errors at the cap; wording kept number-free (research 2026-11-03). Still verify `agents.max_threads` legacy alias works on v0.144+ (`config.toml.template:21`)
+- [x] Cursor / Copilot limits not documented; wording stays generic ("the tool's cap"), Copilot Free degrades to sequential
