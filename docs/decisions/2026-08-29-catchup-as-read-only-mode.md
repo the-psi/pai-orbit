@@ -58,9 +58,8 @@ the board, and existing docs and can be regenerated at any time**.
   capture → sprint/priority/unblocked/smallest) is now a documented convention.
 
 **Negative / trade-offs:**
-- `/git` has no PR-listing procedure today; `/catchup` relies on the agent applying `/git`'s
-  MCP-vs-shell rule to the host's own listing command. Adding an explicit "list PRs" section
-  to `/git` would tighten this.
+- `/catchup` needs PR listing, so `/git` gained a read-only `## List PRs` section (GitHub,
+  GitLab, Azure Repos shell fallbacks). Other hosts degrade to "PR listing unavailable".
 - No persisted artefact — a briefing cannot be diffed against yesterday's.
 
 **Neutral:**

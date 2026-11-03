@@ -73,13 +73,13 @@ Read enough to hold the project in context. Prefer breadth over depth; skim, don
 
 Report what has happened, at three horizons. Use git and the board; **do not** rely on memory.
 
-Resolve `<main>` from `.copilot/pai-orbit-config.md → ## Git`: the `Main branch` for GitHub Flow / trunk-based, or the `Development branch` for GitFlow. Fetch first (`git fetch --prune`) so remote refs are current.
+Resolve `<main>` from `.copilot/pai-orbit-config.md → ## Git`: the `Main branch` for GitHub Flow / trunk-based, or the `Development branch` for GitFlow. Fetch first (`git fetch --all --prune`) so remote refs are current. Resolve `<remote-main>` as the branch `<main>` tracks — `git rev-parse --abbrev-ref <main>@{upstream}` (e.g. `upstream/main` in a fork workflow). If `<main>` has no tracking branch, use `origin/<main>` and say so in the briefing.
 
 - **Overall (where the project is):** current phase/sprint from `docs/plans/`, epic progress from `docs/epics/`. One or two sentences, not a history dump.
 - **Recent (last ~7 days):** merges to `<main>`, notable ADRs, new/changed docs:
-  - `git log --since="7 days ago" --first-parent origin/<main> --pretty=format:'%h %ad %s' --date=short`
-  - `git log --since="7 days ago" --first-parent origin/<main> --name-only --pretty=format:'%h %s' -- docs/` for doc and ADR changes
-- **Open PRs (team-wide):** list every open PR against `<main>` using the project's git host, following `/git`'s MCP-vs-shell rule (`## MCP → git`: prefer the configured MCP, otherwise the host's CLI). Summarise who has what open, what is approved-but-unmerged, what is waiting on review. Flag anything stale (open more than a few days). If no PR listing is available for this host, say so and skip the bullet.
+  - `git log --since="7 days ago" --first-parent <remote-main> --pretty=format:'%h %ad %s' --date=short`
+  - `git log --since="7 days ago" --first-parent <remote-main> --name-only --pretty=format:'%h %s' -- docs/` for doc and ADR changes
+- **Open PRs (team-wide):** list every open PR against `<main>` via `/git` → `## List PRs`. Summarise who has what open, what is approved-but-unmerged, what is waiting on review. Flag anything stale (open more than a few days). If no PR listing is available for this host, say so and skip the bullet.
 - **Recently merged PRs (last ~7 days):** same source — the PR view of the merge log above; cross-check the two. Call out who shipped what. If `## Git → Protected branches` implies review is required, flag any PR that merged without an approving review as a governance gap.
 - **Yesterday (bias here if `/catchup yesterday`):** `git log --all --since="yesterday" --until="today" --pretty=format:'%h %an %ad %s' --date=short` — call out what merged and what is mid-flight.
 

@@ -233,7 +233,7 @@ Features link to an epic via the `## Epic` field in `requirements.md`. `/plan` r
 
 ### `/git`
 
-Git operations following the project's configured branching model. Covers commit conventions, branch naming, PR process, and safety rules (no force-push, no bulk staging, no hook bypass). Reads from `.claude/pai-orbit-config.md → ## Git`.
+Git operations following the project's configured branching model. Covers commit conventions, branch naming, PR process, PR listing (open and recently merged), and safety rules (no force-push, no bulk staging, no hook bypass). Reads from `.claude/pai-orbit-config.md → ## Git`.
 
 ---
 
