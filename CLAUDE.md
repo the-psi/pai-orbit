@@ -2,7 +2,7 @@
 
 A structured developer methodology harness for Claude Code that enforces disciplined working modes, prevents context loss, and produces local-first documentation at every stage of development.
 
-**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.12.0
+**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.13.0
 
 ---
 
@@ -28,7 +28,7 @@ pai-orbit/                          # repo = marketplace
 │   └── pai-orbit/
 │       ├── core/                   # tool-agnostic source of truth
 │       │   ├── plugin.json
-│       │   ├── modes/              # /arch, /build, /design, /domain, /groom, /plan, /playwright, /ux, /data
+│       │   ├── modes/              # /arch, /build, /catchup, /design, /domain, /groom, /plan, /playwright, /ux, /data
 │       │   ├── skills/             # analysis, board, data-model, epic, git, process-map, simplify
 │       │   ├── agents/             # docs-writer, cross-repo-impact
 │       │   ├── hooks/              # bash-guard, lint-python, lint-ts, arch-drift-guard
@@ -101,6 +101,7 @@ Each `/command` locks Claude into a distinct headspace. Modes do not bleed into 
 | `/test` | Write test plans, run QA | `docs/features/*/test-plan.md` |
 | `/playwright` | Implement Playwright automation from a test plan | e2e specs, Page Objects, fixtures (e2e dir only) |
 | `/plan` | Prioritize and sequence work | `docs/plans/*.md` |
+| `/catchup` | Read-only session-start briefing: what shipped, what's open, what's yours, what next | None (conversation only) |
 
 ### Skills
 
@@ -128,6 +129,7 @@ Every mode declares what it reads and what it writes. This is the discipline tha
 /design → consumes requirements + domain + architecture → produces design.md + ADRs
 /build  → consumes all docs + constraints.md + board → produces code + updated docs
 /test   → consumes requirements → produces test-plan.md
+/catchup → consumes all docs + board + git history → produces nothing (briefing in conversation only)
 /playwright → consumes test-plan.md + requirements → produces e2e specs, Page Objects, fixtures (e2e dir only; no docs)
 ```
 
@@ -214,7 +216,7 @@ For GitHub Copilot (VS Code), single command from the project root (requires Nod
 npx github:the-psi/pai-orbit init copilot
 ```
 
-Installs 31 invokable prompts, 5 auto-attaching instructions files, and the rule book at `.github/copilot-instructions.md`. Also supports `update copilot` and `migrate copilot`. See [docs/copilot-install-and-usage.md](docs/copilot-install-and-usage.md) for the full walkthrough (Business vs Free tier behaviour, `/setup` in Chat, pre-commit hook templates).
+Installs 32 invokable prompts, 5 auto-attaching instructions files, and the rule book at `.github/copilot-instructions.md`. Also supports `update copilot` and `migrate copilot`. See [docs/copilot-install-and-usage.md](docs/copilot-install-and-usage.md) for the full walkthrough (Business vs Free tier behaviour, `/setup` in Chat, pre-commit hook templates).
 
 ---
 

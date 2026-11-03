@@ -199,7 +199,7 @@ Example — columns Backlog, Ready, In progress, In review, Done: groom → Read
 | ID gone | flag as broken; re-run the suggestion for that mode |
 | A new column matches a mode's synonyms better | flag as an optional change; default keeps the saved row |
 
-Show only the flagged rows; keep every row the user does not change. A table with non-standard headers (hand-written) is read by position — mode, target, ID — and rewritten with the canonical headers, rows kept. If the section is absent (a project set up before 1.12.0), run the full flow above.
+Show only the flagged rows; keep every row the user does not change. A table with non-standard headers (hand-written) is read by position — mode, target, ID — and rewritten with the canonical headers, rows kept. If the section is absent (a project set up before 1.13.0), run the full flow above.
 
 ---
 

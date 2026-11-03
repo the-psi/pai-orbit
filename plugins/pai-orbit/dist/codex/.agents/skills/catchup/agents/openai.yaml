@@ -1,0 +1,7 @@
+interface:
+  display_name: "catchup"
+  short_description: "pai-orbit mode: catchup"
+  default_prompt: "Use $catchup to enter this mode."
+
+policy:
+  allow_implicit_invocation: false
