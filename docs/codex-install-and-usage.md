@@ -86,7 +86,7 @@ project-root/
 │       ├── process-map/    SKILL.md
 │       ├── simplify/       SKILL.md
 │       │
-│       ├── arch/           SKILL.md + agents/openai.yaml   # 14 mode skills — explicit only
+│       ├── arch/           SKILL.md + agents/openai.yaml   # 15 mode skills — explicit only
 │       ├── build/          SKILL.md + agents/openai.yaml   # (allow_implicit_invocation: false)
 │       ├── data/           SKILL.md + agents/openai.yaml
 │       ├── design/         SKILL.md + agents/openai.yaml
@@ -181,7 +181,7 @@ The setup skill will:
 /skills
 ```
 
-You should see all 22 skills. Seven operational (`analysis`, `board`, `data-model`, `epic`, `git`, `process-map`, `simplify`) plus 15 mode skills. The two renamed modes (`orbit-plan`, `orbit-review`) are in the list; `plan` and `review` are NOT (those would invoke Codex's built-ins).
+You should see all 23 skills. Seven operational (`analysis`, `board`, `data-model`, `epic`, `git`, `process-map`, `simplify`) plus 16 mode skills. The two renamed modes (`orbit-plan`, `orbit-review`) are in the list; `plan` and `review` are NOT (those would invoke Codex's built-ins).
 
 ---
 

@@ -2,7 +2,7 @@
 # OpenAI Codex CLI adapter — full-parity build.
 #
 # Emits dist/codex/ containing:
-#   AGENTS.md, .agents/skills/ (22 skills), .codex/agents/ (2 TOML subagents),
+#   AGENTS.md, .agents/skills/ (23 skills), .codex/agents/ (2 TOML subagents),
 #   .codex/hooks/ + .codex/hooks.json, .codex/config.toml, .codex/templates/,
 #   README.md.
 #
@@ -148,6 +148,7 @@ append_reference_appendix() {
 declare -A MODE_DESCRIPTIONS
 MODE_DESCRIPTIONS[arch]="Define, declare, and maintain system architecture. Use to derive a greenfield architecture (drivers, system context, decomposition, style selection), declare an existing one, or update it when process maps, UX, or domain change. Writes docs/architecture/ and ADRs to docs/decisions/. Explicit invocation only."
 MODE_DESCRIPTIONS[build]="Implement features and fixes. Use for coding sessions where requirements and design are already clear and it's time to write code. Writes code and updates docs/features/<feature>/. Explicit invocation only."
+MODE_DESCRIPTIONS[catchup]="Read-only session-start briefing. Use at the start of a work session to learn what the team shipped, what is open, what is assigned to you, and what to pick up next. Writes nothing — the briefing is printed to the conversation; hands off to build once an item is picked. Explicit invocation only."
 MODE_DESCRIPTIONS[data]="Explore data before coding. Use when a question about the data model, query results, or dataset shape must be answered before implementing. Writes docs/reports/. Explicit invocation only."
 MODE_DESCRIPTIONS[design]="Architect a technical solution for a specific feature. Use to weigh trade-offs and record ADRs. Writes docs/features/<feature>/design.md and docs/decisions/. Explicit invocation only."
 MODE_DESCRIPTIONS[domain]="Capture domain and expert knowledge. Use when eliciting business rules, invariants, or specialist knowledge from a subject matter expert. Writes docs/domain/. Explicit invocation only."
@@ -222,7 +223,7 @@ for skill_dir in "$CORE_DIR"/skills/*/; do
   done < <(find "$dest_dir" \( -name '*.md' -o -name '*.mdc' -o -name '*.template' \) -print0)
 done
 
-# ── 6. .agents/skills/ — 14 mode skills (with openai.yaml gate) ────────────
+# ── 6. .agents/skills/ — 15 mode skills (with openai.yaml gate) ────────────
 emit_mode_skill() {
   local mode_source="$1"        # e.g. .../core/modes/build.md
   local skill_dirname="$2"      # e.g. build, orbit-plan, orbit-review
@@ -422,7 +423,7 @@ registered hooks; hook trust is invalidated by every hook edit.
 \`\`\`
 project-root/
 ├── AGENTS.md                             # Codex reads at project root
-├── .agents/skills/                       # 7 operational + 15 mode skills
+├── .agents/skills/                       # 7 operational + 16 mode skills
 ├── .codex/agents/                        # docs-writer.toml, cross-repo-impact.toml
 ├── .codex/hooks/                         # bash-guard, arch-drift-wrapper, lint-*-wrapper (+ .ps1 variants)
 ├── .codex/hooks.json                     # official nested schema with commandWindows overrides
@@ -435,7 +436,7 @@ project-root/
 1. Launch \`codex\` in the project. Trust the project when prompted.
 2. Run \`/hooks\` to trust the four registered hooks. Every hook edit invalidates trust — re-run after upgrades.
 3. Run \`\\\$setup\` to scaffold \`.codex/pai-orbit-config.md\`, \`.codex/team.md\`, and to fill in the lint hooks' \`repo=\` block.
-4. Run \`/skills\` to see the 22 skills.
+4. Run \`/skills\` to see the 23 skills.
 
 ## Skills
 
@@ -445,7 +446,7 @@ project-root/
 
 **15 mode skills** — explicit-only (invoked as \`\\\$mode-name\`; \`agents/openai.yaml\` disables implicit invocation):
 
-- \`arch\`, \`build\`, \`data\`, \`design\`, \`domain\`, \`groom\`, \`incident\`, \`orbit-plan\`, \`orbit-review\`, \`playwright\`, \`release\`, \`setup\`, \`suggest-skills\`, \`test\`, \`ux\`
+- \`arch\`, \`build\`, \`catchup\`, \`data\`, \`design\`, \`domain\`, \`groom\`, \`incident\`, \`orbit-plan\`, \`orbit-review\`, \`playwright\`, \`release\`, \`setup\`, \`suggest-skills\`, \`test\`, \`ux\`
 
 Two modes are renamed in the Codex build to avoid ergonomic collision with Codex's built-in slash commands:
 
@@ -533,7 +534,7 @@ fi
 # (Nothing to assert on absence — just don't emit warnings.)
 
 # Guard D: every mode skill has agents/openai.yaml; operational skills do NOT
-mode_skills=(arch build data design domain groom incident orbit-plan orbit-review playwright release setup suggest-skills test ux)
+mode_skills=(arch build catchup data design domain groom incident orbit-plan orbit-review playwright release setup suggest-skills test ux)
 operational_skills=(analysis board data-model epic git process-map simplify)
 
 for m in "${mode_skills[@]}"; do
@@ -587,7 +588,7 @@ fi
 
 echo ""
 echo "codex adapter: built $DIST_DIR"
-echo "  22 skills / description sum: $total_desc chars (budget 8000)"
+echo "  23 skills / description sum: $total_desc chars (budget 8000)"
 echo "  2 subagents / 4 hooks + 3 wrappers + PS1 variants"
 echo "  README.md, config.toml, hooks.json"
 echo "  install: npx github:${GITHUB_REPO} init codex"
