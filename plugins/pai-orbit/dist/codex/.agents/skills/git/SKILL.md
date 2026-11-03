@@ -66,6 +66,30 @@ Read PR conventions from `.codex/pai-orbit-config.md`. Defaults:
 - Body: what changed, why, how to test, closes #N
 - Squash merge by default; merge commit only if history granularity matters
 
+## List PRs
+
+Read-only. Used by `/catchup` and whenever someone asks what is open or recently merged. Follow the MCP vs shell rule above; the shell fallback depends on the host in the main branch's remote URL (`git remote get-url <remote>`):
+
+**GitHub:**
+```bash
+gh pr list --base <main> --state open --json number,title,author,reviewDecision,reviewRequests,createdAt
+gh pr list --base <main> --state merged --search "merged:>=<YYYY-MM-DD>" --json number,title,author,mergedAt,reviewDecision
+```
+
+**GitLab:**
+```bash
+glab mr list --target-branch <main>
+glab mr list --target-branch <main> --merged
+```
+
+**Azure Repos:**
+```bash
+az repos pr list --target-branch <main> --status active
+az repos pr list --target-branch <main> --status completed
+```
+
+Any other host, or the CLI is missing or unauthenticated: say "PR listing unavailable for this host" and continue — never block on it.
+
 ## Safety rules (always apply)
 
 - Never force-push to the main/protected branch

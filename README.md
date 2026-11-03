@@ -1,4 +1,4 @@
-# pai-orbit · v1.11.0
+# pai-orbit · v1.12.0
 
 A structured developer methodology harness for Claude Code, Cursor, GitHub Copilot, and OpenAI Codex (beta) — installed as a plugin in Claude Code and Cursor, and with one command for Copilot and Codex.
 
@@ -11,6 +11,9 @@ pai-orbit gives your project a shared vocabulary for how work gets done — dist
 Software teams waste context constantly: half-designed features get built, build sessions derail into planning debates, agronomic (or domain) questions get answered with guesses. pai-orbit imposes a light discipline: **each slash command puts Claude into a distinct headspace with a defined output destination.** Switching is explicit. Outputs are saved. Nothing important lives only in a conversation.
 
 ```
+Session start
+/catchup         → read-only briefing — what the team shipped, open PRs, what's assigned to you, what to pick next
+
 Backlog
 /arch            → architecture declaration — produces docs/architecture/ (system, constraints, stack)
 /domain          → domain knowledge — produces docs/domain/
@@ -120,6 +123,8 @@ Workflow skills (`/git`, `/board`, `/analysis`, `/data-model`, `/process-map`, `
 
 > **`/review security`** — the security-focused pass is a sub-mode of `/review`. Use `/review` for full code review, `/review security` for the OWASP checklist, or `/review full` for both in sequence. Critical and High findings block merge.
 
+> **v1.12.0 — `/catchup` session-start briefing.** A new read-only mode for the start of a work session: it reads the project baseline, reports what the team shipped and what is open, lists what is assigned to you and any reviews waiting on you, and proposes what to pick next. It writes nothing and creates no branch — hand off to `/build` when you pick something. PR and board access go through `/git` and `/board`; handles and keys resolve from `.claude/pai-orbit-config.md` and `.claude/team.md`. Update pai-orbit to pick it up (see [Updating](#updating)).
+
 > **v1.11.0 — `/arch define` for greenfield architecture.** A new `/arch` sub-mode that *decides* an architecture instead of describing one: measurable drivers (`docs/architecture/drivers.md`, new), a system context diagram, a decomposition derived from domain language and `/process-map` lanes, style selection from a catalogue scored against the ranked drivers (with an ADR), structure, constraints with fitness functions, and stack last. `/arch update` now detects upstream changes — a process map, UX journey, domain knowledge, or drivers changed since the architecture was derived — and assesses their impact. `/arch init` remains the path for existing codebases. Existing `system.md` / `constraints.md` files keep working; the new sections are optional. Update pai-orbit to pick it up (see [Updating](#updating)).
 
 > **v1.10.0 — `/process-map` skill for to-be process modelling.** Draws true swimlane diagrams (roles and systems as lanes, phases as columns, permanent step IDs) from a JSON spec in a new `docs/processes/` folder, as a high-level solution blueprint for process-driven systems. Rendering uses a small Python 3 script that `/setup` vendors into `docs/processes/_render/`. It reads existing `docs/domain/` docs, so run it any time after `/domain`. `/groom`, `/design`, and `/arch` now read `docs/processes/` when present. Existing projects need no migration: the skill copies the renderer in on first use — re-running `/setup` is optional. Update pai-orbit to pick it up (see [Updating](#updating)).
@@ -165,7 +170,7 @@ See [`docs/cursor-plugin-install-and-usage.md`](docs/cursor-plugin-install-and-u
 
 ### GitHub Copilot (VS Code)
 
-Copilot users get real invokable slash commands (`/groom`, `/design`, `/build`, `/git`, …) — 29 prompts (14 modes, 6 skills, 7 service-builder agents, 2 named agents: `/docs-writer` and `/cross-repo-impact`) plus 5 auto-attaching instructions files. Install with one command from the project root:
+Copilot users get real invokable slash commands (`/groom`, `/design`, `/build`, `/git`, …) — 30 prompts (15 modes, 6 skills, 7 service-builder agents, 2 named agents: `/docs-writer` and `/cross-repo-impact`) plus 5 auto-attaching instructions files. Install with one command from the project root:
 
 ```bash
 npx github:the-psi/pai-orbit init copilot
