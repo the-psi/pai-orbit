@@ -1,4 +1,4 @@
-# pai-orbit · v1.12.0
+# pai-orbit · v1.13.0
 
 A structured developer methodology harness for Claude Code, Cursor, GitHub Copilot, and OpenAI Codex (beta) — installed as a plugin in Claude Code and Cursor, and with one command for Copilot and Codex.
 
@@ -122,6 +122,8 @@ Workflow skills (`/git`, `/board`, `/analysis`, `/data-model`, `/process-map`, `
 > **`/groom` readiness gate** — before handing off to `/design`, `/groom` audits every open question and classifies it as a *functional gap* (what the system does — must be resolved) or a *design question* (how it does it — deferred to `/design`). The feature is not marked groomed until all functional gaps are closed. This prevents half-specified features from entering design.
 
 > **`/review security`** — the security-focused pass is a sub-mode of `/review`. Use `/review` for full code review, `/review security` for the OWASP checklist, or `/review full` for both in sequence. Critical and High findings block merge.
+
+> **v1.13.0 — `/build` orchestrates parallel streams.** For builds over 3 files, `/build` now splits work into code, tests and docs streams run by the primary agent: dependent tasks in order, independent tasks together, changes reported and reconciled at each layer, then one verification run. Same behaviour on every adapter within the tool's agent cap. Update pai-orbit to pick it up (see [Updating](#updating)).
 
 > **v1.12.0 — `/catchup` session-start briefing.** A new read-only mode for the start of a work session: it reads the project baseline, reports what the team shipped and what is open, lists what is assigned to you and any reviews waiting on you, and proposes what to pick next. It writes nothing and creates no branch — hand off to `/build` when you pick something. PR and board access go through `/git` and `/board`; handles and keys resolve from `.claude/pai-orbit-config.md` and `.claude/team.md`. Update pai-orbit to pick it up (see [Updating](#updating)).
 

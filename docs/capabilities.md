@@ -95,7 +95,7 @@ Before design discussion for ticketed work, checks open stories for requirement 
 **Writes:** Code (in sub-repos), docs/domain/product-capabilities.md  
 **Switch to:** `/design` for non-trivial design questions, `/groom` for unclear requirements, `/plan` for priority questions
 
-Before branch setup and code edits for ticketed work, checks open stories for requirement changes, overlaps, or duplicates and pauses for the developer to classify plausible matches. Reads CLAUDE.md and relevant docs before starting. Checks the task board. Spawns sub-agents per service for parallel work. Before switching modes mid-session, saves a handoff note to `docs/wip/session-capture-<date>.md`. After shipping: closes the board item, creates issues for newly discovered tasks, updates product-capabilities.md, records design choices as ADRs.
+Before branch setup and code edits for ticketed work, checks open stories for requirement changes, overlaps, or duplicates and pauses for the developer to classify plausible matches. Reads CLAUDE.md and relevant docs before starting. Checks the task board. For builds over 3 files the primary agent orchestrates parallel code / tests / docs streams (per repo; dependent tasks in order, independent tasks together, change reports reconciled at each layer, one verification run after merge); ≤ 3 files run without an orchestrator. Works on every adapter, within each tool's agent cap (excess tasks wait; tools without parallel agents run the same order sequentially). Before switching modes mid-session, saves a handoff note to `docs/wip/session-capture-<date>.md`. After shipping: closes the board item, creates issues for newly discovered tasks, updates product-capabilities.md, records design choices as ADRs.
 
 ---
 
@@ -275,7 +275,7 @@ Code simplification pass — reviews recently changed code for over-engineering,
 
 ## Agents
 
-Agents are spawned by modes (primarily `/build`) for parallel sub-repo work.
+Agents are spawned by modes (primarily `/build`) for parallel work across repos and code / tests / docs streams; the primary agent spawns them directly (no nesting).
 
 ### `docs-writer`
 

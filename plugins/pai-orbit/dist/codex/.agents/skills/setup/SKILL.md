@@ -388,7 +388,7 @@ If either is missing, check `.codex/agents/docs-writer.toml` and `.codex/agents/
 
 ### 5. Initialise `.codex/config.toml`
 
-The adapter ships a `.codex/config.toml` template with pai-orbit's default approval policy (`on-request`), sandbox mode (`workspace-write`), and multi-agent bounds (`max_threads=4`, `max_depth=2`). Review these before your first session and adjust if your team runs in a stricter or more permissive posture.
+The adapter ships a `.codex/config.toml` template with pai-orbit's default approval policy (`on-request`), sandbox mode (`workspace-write`), and multi-agent bounds (`max_threads=4`, `max_depth=2`; `/build` runs a flat orchestrator within these, spawning task agents directly and closing finished ones). Review these before your first session and adjust if your team runs in a stricter or more permissive posture.
 
 Any MCP servers you use (GitHub, Slack, Linear, etc.) can be added to the `[mcp_servers.<name>]` blocks in the same file. pai-orbit ships no MCP integrations by default.
 

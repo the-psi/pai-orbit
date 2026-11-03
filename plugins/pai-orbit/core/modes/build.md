@@ -39,7 +39,13 @@ Before starting:
 - **Build-readiness gate:** only build issues that are groomed **and** design-resolved. If the body or comments still pose an open question ("confirm whether…", "before deploying, confirm…"), or non-trivial work has no design doc, stop and switch to `/design` — do not proceed, and do not just move the card.
 
 During build:
-- Spawn sub-agents per repo where tasks are independent; run in parallel where possible
+- **Orchestrate parallel work (more than 3 files; ≤ 3 files — work directly, no orchestrator):** you, the primary agent, are the orchestrator. Split per repo; inside each repo spawn task agents **directly** (no agent spawns children), each tagged with a stream:
+  - **code** — source; **tests** — new tests from `test-plan.md` / AC; **docs** — drafted from requirements + design. Tasks within a stream run in dependency order: dependent tasks wait, independent tasks start together. Start the next dependency layer only after the previous one is reconciled.
+  - **Own your paths:** code → source, tests → test dirs, docs → `<docs root>/`. A stream that needs another stream's path reports it instead of editing; you assign an owner for shared files (fixtures, config).
+  - **Change reports:** every task agent returns a change report (what it changed that others depend on). At each layer boundary, reconcile: a spec-neutral change (rename, file path, message text) → adjust the other streams automatically and list it in the final summary; a change that alters requirements, design, AC or user-facing behaviour, or forces finished work to be redone → ask the user first. When in doubt, ask.
+  - **Missing spec** (e.g. no `test-plan.md`): tell the user which stream is delayed and why; it runs after code, using the code as the spec.
+  - **Tests:** the code stream runs only existing tests for its own layer and writes no new ones. After merging streams (order: code → tests → docs) do **one** verification run (regression + new tests). On failure, decide whether the code, the test, or the AC is wrong and follow the ask rule above.
+  - **Tool limits:** keep open agents at or below the tool's cap, close finished agents, and hold excess tasks until a slot frees. If the tool cannot run agents in parallel, follow the same layer order sequentially.
 - Each sub-agent must read the repo's own `CLAUDE.md` before starting
 <!-- CLAUDE_CODE_ONLY: build-subagent-rules -->
 - Surface design blockers immediately — do not make silent architectural decisions; switch to `/design` if a non-trivial design choice surfaces
