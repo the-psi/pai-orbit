@@ -273,7 +273,7 @@ Before marking a feature as groomed and ready for `/design`, run a readiness gat
 
    This is a local commit only. Do not push yet.
 
-6. **Offer to move the board issue.** If a parent board issue was resolved at the entry gate: read the target "Groomed" or backlog-ready column name from `.copilot/pai-orbit-config.md → ## Agile Board`. Offer: "Move issue #N to `<column name>`?" Wait for confirmation before acting via `/board`. Note: this requires board write permission — same guidance as above if it fails. If the session opted out of a ticket number, skip this step.
+6. **Move the board issue.** Run `/board` `transition(groom)` — no "Offer to move?" prompt. It moves the entry-gate ticket to the column mapped in `.copilot/pai-orbit-config.md → ## Mode transitions`, or says in one line why it did not (no map, `no move`, already at or past the target, failure + fix). It never blocks the commit above. If the session opted out of a ticket number, it skips quietly.
 
 7. **Offer to push.** After the commit, ask: "Push this branch to remote?" Wait for explicit confirmation. Note: this requires push permission for the branch.
 
