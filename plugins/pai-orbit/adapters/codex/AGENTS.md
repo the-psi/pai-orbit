@@ -4,7 +4,7 @@ pai-orbit — Codex CLI project rule book. Always loaded at project root.
 
 ## What this project uses
 
-- **Skills** live at `.agents/skills/`. Seven operational skills (`analysis`, `board`, `data-model`, `epic`, `git`, `process-map`, `simplify`) can be invoked as `$skill-name` or fire implicitly on description match. Sixteen mode skills (`arch`, `build`, `catchup`, `data`, `design`, `domain`, `groom`, `incident`, `orbit-plan`, `orbit-review`, `playwright`, `release`, `setup`, `suggest-skills`, `test`, `ux`) are explicit-only — the user invokes them as `$mode-name` when they want to enter that headspace.
+- **Skills** live at `.agents/skills/`. Eight operational skills (`analysis`, `board`, `data-model`, `epic`, `git`, `process-map`, `security-fix`, `simplify`) can be invoked as `$skill-name` or fire implicitly on description match. Sixteen mode skills (`arch`, `build`, `catchup`, `data`, `design`, `domain`, `groom`, `incident`, `orbit-plan`, `orbit-review`, `playwright`, `release`, `setup`, `suggest-skills`, `test`, `ux`) are explicit-only — the user invokes them as `$mode-name` when they want to enter that headspace.
 - **Subagents** live at `.codex/agents/`. `docs-writer` handles documentation work; `cross-repo-impact` handles read-only cross-repository analysis. Codex spawns them via natural-language requests; use `/agent` to switch active agent threads.
 - **Hooks** live at `.codex/hooks/` (registered in `.codex/hooks.json`). Trust them via `/hooks` on first install. Every hook script edit invalidates trust — re-run `/hooks` after upgrades.
 - **Project config** lives at `.codex/pai-orbit-config.md` (board type, git model, deploy targets, docs home) and `.codex/team.md` (roster).
@@ -49,6 +49,6 @@ pai-orbit's founding rule: if it matters, it goes to a file. Session captures at
 
 1. Run `$setup` to fill in `.codex/pai-orbit-config.md`, `.codex/team.md`, and the lint hooks' `repo=` block.
 2. Run `/hooks` to review and trust the four registered hooks (`bash-guard`, `arch-drift-wrapper`, `lint-python-wrapper`, `lint-ts-wrapper`).
-3. Run `/skills` to see the 20 available skills. Type `$build`, `$design`, etc. to enter mode headspaces.
+3. Run `/skills` to see the 24 available skills. Type `$build`, `$design`, etc. to enter mode headspaces.
 
 If the project scope for `.codex/hooks.json` doesn't load (project untrusted in Codex), user-scope `~/.codex/hooks.json` is an **additive complement** — both layers fire together when trusted, not one-or-the-other. Set up whichever fits your workflow.

@@ -29,7 +29,7 @@ pai-orbit/                          # repo = marketplace
 │       ├── core/                   # tool-agnostic source of truth
 │       │   ├── plugin.json
 │       │   ├── modes/              # /arch, /build, /catchup, /design, /domain, /groom, /plan, /playwright, /ux, /data
-│       │   ├── skills/             # analysis, board, data-model, epic, git, process-map, simplify
+│       │   ├── skills/             # analysis, board, data-model, epic, git, process-map, security-fix, simplify
 │       │   ├── agents/             # docs-writer, cross-repo-impact
 │       │   ├── hooks/              # bash-guard, lint-python, lint-ts, arch-drift-guard
 │       │   ├── reference/          # shared instruction fragments read by modes/skills/agents at runtime
@@ -107,7 +107,7 @@ Each `/command` locks Claude into a distinct headspace. Modes do not bleed into 
 
 Skills are multi-step procedures callable from any mode. Each skill lives in `plugins/pai-orbit/core/skills/<name>/`.
 
-Key skills: `/git`, `/board`, `/analysis`, `/data-model`, `/epic`, `/process-map`, `/simplify`.
+Key skills: `/git`, `/board`, `/analysis`, `/data-model`, `/epic`, `/process-map`, `/security-fix`, `/simplify`.
 
 ### Agents
 
@@ -216,7 +216,7 @@ For GitHub Copilot (VS Code), single command from the project root (requires Nod
 npx github:the-psi/pai-orbit init copilot
 ```
 
-Installs 32 invokable prompts, 5 auto-attaching instructions files, and the rule book at `.github/copilot-instructions.md`. Also supports `update copilot` and `migrate copilot`. See [docs/copilot-install-and-usage.md](docs/copilot-install-and-usage.md) for the full walkthrough (Business vs Free tier behaviour, `/setup` in Chat, pre-commit hook templates).
+Installs 33 invokable prompts, 5 auto-attaching instructions files, and the rule book at `.github/copilot-instructions.md`. Also supports `update copilot` and `migrate copilot`. See [docs/copilot-install-and-usage.md](docs/copilot-install-and-usage.md) for the full walkthrough (Business vs Free tier behaviour, `/setup` in Chat, pre-commit hook templates).
 
 ---
 

@@ -117,7 +117,7 @@ flowchart TD
     incident --> release
 ```
 
-Workflow skills (`/git`, `/board`, `/analysis`, `/data-model`, `/process-map`, `/simplify`) can be invoked from any phase.
+Workflow skills (`/git`, `/board`, `/analysis`, `/data-model`, `/process-map`, `/security-fix`, `/simplify`) can be invoked from any phase.
 
 > **`/groom` readiness gate** — before handing off to `/design`, `/groom` audits every open question and classifies it as a *functional gap* (what the system does — must be resolved) or a *design question* (how it does it — deferred to `/design`). The feature is not marked groomed until all functional gaps are closed. This prevents half-specified features from entering design.
 

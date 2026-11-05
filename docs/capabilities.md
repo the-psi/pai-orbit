@@ -273,6 +273,12 @@ Code simplification pass — reviews recently changed code for over-engineering,
 
 ---
 
+### `/security-fix`
+
+Security findings remediation — the step between finding issues (`security-scan`) and verifying fixes (`security-scan-retest`). Reads a findings tracker (`.xlsx` / `.csv`) or assessment report, triages every finding against the current code (still present? really High/Critical? fix or not, with a reason), groups findings by root cause (auth, token forging, IDOR, business logic, secrets, dependencies, password storage, injection, CI/CD), and routes each to a lane: **code** (mini-spec in `docs/features/security-remediation-<date>/` handed to `/build`), **design** (`/design`), or **ops** (rotate credentials, purge history: a human checklist, never marked done by code). One confirmation checkpoint on the triage plan. Every code fix needs an attack-reproducing regression test named with the finding ID, failing before and passing after. Writes `triage.md`, `ops-actions.md` and `tracker-update.csv` under `docs/wip/security-fix-<date>/`, plus an updated **copy** of the tracker. Never overwrites the original.
+
+---
+
 ## Agents
 
 Agents are spawned by modes (primarily `/build`) for parallel work across repos and code / tests / docs streams; the primary agent spawns them directly (no nesting).
