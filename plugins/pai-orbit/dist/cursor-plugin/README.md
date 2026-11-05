@@ -53,7 +53,7 @@ If you cannot use the plugin format, the lossy bundle remains at `dist/cursor/` 
 | `/setup` interactive board query | Full | Full — writes `.cursor/pai-orbit-config.md`, `.cursor/team.md`, and `AGENTS.md` (no `.claude/` or `CLAUDE.md`) |
 | Live `/board` label resolution | Full | Depends on agent + CLI |
 | Hook blocking (bash-guard) | PreToolUse | `beforeShellExecution` — script expects Claude stdin JSON; test per Cursor version |
-| Subagent parallel tasks | Yes | Cursor subagents — test per version |
+| Subagent parallel tasks | Yes | Cursor subagents; no documented cap, one nesting level — /build's orchestrator spawns task agents directly |
 
 ## Rebuild
 

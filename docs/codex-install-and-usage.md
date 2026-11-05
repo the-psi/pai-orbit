@@ -219,6 +219,8 @@ Mode skills ship with `agents/openai.yaml` `allow_implicit_invocation: false`, s
 
 Codex enables five collaboration tools by default via `features.multi_agent` (stable): `spawn_agent`, `send_input`, `resume_agent`, `wait_agent`, `close_agent`. The primary agent uses these to orchestrate subagents. Type `/agent` in the TUI to switch active agent threads.
 
+`/build` splits work into code, tests and docs streams that the primary agent spawns directly (subagents never spawn children). Codex caps open agent threads and `spawn_agent` errors at the cap instead of queueing, so the orchestrator keeps open agents within the cap, closes finished ones with `close_agent`, and holds excess tasks until a slot frees.
+
 pai-orbit ships two subagents:
 
 - **`docs-writer`** — writes documentation in the project's `docs/` directory. Reads `.codex/pai-orbit-config.md → ## Docs` for the docs home configuration.
