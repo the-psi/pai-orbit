@@ -749,6 +749,609 @@ python3 <docs root>/processes/_render/swimlane.py index <docs root>/processes
 - Never write a spec or narrative without showing it and getting confirmation first.
 
 
+## /security-scan-retest
+
+---
+name: security-scan-retest
+description: Validates whether a client's fix tracker (dev team's "Completed and Deployed" claims) actually closed the findings from a prior security assessment, by cross-checking the fixed-issues tracker against the original report's exact citations, reading the current codebase, and non-destructively re-testing live where safe. Use when asked to re-validate/retest security fixes, check a fix tracker against a security report, cross-check a dev team's "resolved" claims, or produce a remediation-validation report for a new release/codebase drop of a project that already had a security assessment done against it.
+---
+
+# Security Fix Retesting / Remediation Validation
+
+Re-run this whenever a client/dev team claims a prior security assessment's findings are fixed,
+and you need to prove — not assume — whether that's true. The core discipline: **never accept
+"fixed" on anyone's word, including your own prior pass's.** Every verdict needs either a live
+HTTP observation or a direct, quoted read of the current source — not a paraphrase, not an
+inference from a tracker's prose.
+
+## 0. Inputs — get these before starting, don't guess
+
+- The **original security assessment report** (PDF/HTML) — the one with the numbered findings
+  (F1, S1, I1, C1, D1... or whatever scheme it uses). If not in the repo root, ask or search for
+  it (often named `security-review-report.pdf` or similar, or in an `ProjectDocumentation`/
+  `fixedIssues`-style folder).
+- The **fix tracker** (usually a client-maintained spreadsheet, e.g. `*_High_Critical_Findings.xlsx`)
+  with columns like Finding/Severity/Our Action/Status. This is the thing you're validating, not
+  trusting.
+- **Test environment access**: a UAT/staging URL and a dedicated low-privilege test account's
+  credentials (often in a `User creds.txt`/`usercred.txt`-style file, or ask). Never use prod
+  creds or a real customer account.
+- Confirm with the user **before any live testing**: is destructive testing acceptable in this
+  environment (data loss doesn't matter), or must everything be strictly read-only/non-destructive?
+  Default to non-destructive unless told otherwise, and even with destructive permission, SQLi
+  verification should still use the non-destructive single-quote differential first — a write test
+  needs its own justification, not just "we're allowed to."
+- Note whether the project has `.git` history available. If not (a plain extracted archive), every
+  "fixed/removed" verdict is a **snapshot comparison**, not a diff — state this as an explicit
+  scope limitation in the final report (see §7).
+- Confirm the test environment is one the user owns or is explicitly authorized to test — a UAT/
+  staging host named in the engagement's own credentials file or the user's direct instruction.
+  Never extend live testing to a host you're inferring is related but wasn't named.
+
+## 1. Re-derive the finding list independently — don't trust the tracker's summary
+
+Read the **original report's own detail section** for every High/Critical finding and pull its
+exact: file/line location, the vulnerable pattern described (string concatenation, missing auth
+check, hardcoded key, etc.), and any especially specific/non-obvious technical detail (e.g. "proc
+A escapes quotes but sibling proc B doesn't" — these specific asymmetries are gold: if your own
+independent re-test reproduces the *exact same* specific detail without having been told to look
+for it, that's the strongest possible corroboration you can offer later when a dev team disputes
+the finding).
+
+Build a short working table: `ID | file:line in original report | vulnerable pattern | tracker's claimed status | tracker's "Our Action" note`.
+
+## 2. Static cross-check — exhaustive, not a spot check
+
+For each finding, in the **current** codebase:
+
+- Does the exact file/line from the original report still exist? If the file/folder is gone
+  entirely (e.g. a `db_scripts/`-style folder restructured into a new migration tool), **do not
+  accept "removed" as proof of a fix** when the vulnerable logic lives in a database stored
+  procedure, Lambda, or anything not fully checked into source. A migration-script folder being
+  edited or deleted does NOT prove what's deployed to the live database. Mark these explicitly as
+  needing live verification or direct DBA review (`sp_helptext` or equivalent), not "fixed."
+- When checking "is X still present/absent," run an **exhaustive, repo-wide** search (every
+  extension, every folder, case-insensitive) and show the exact command + exact output in your
+  evidence — not a spot check of the folder you expect it in. A prior pass in this exact workflow
+  once disputed a finding as "still present" based on an incomplete search; a fuller search proved
+  it was genuinely gone. Always re-verify a disputed "absent" claim with a fresh, maximally broad
+  search before asserting either way.
+- For findings where the vulnerable code has no direct caller in this layer, trace the full call
+  chain: which handler invokes it, which service calls that handler, which controller route
+  exposes it — then test *that route* live. Also check sibling verbs/routes on the same
+  controller/feature that might reach the identical vulnerable sink through a second door (this
+  surfaced real, previously-unknown-to-the-tracker exposure in practice — e.g. the same vulnerable
+  stored procedure reachable via both a GET and an unrelated POST endpoint).
+- **Mandatory on every run, not just when prompted by a dispute**: run a dedicated discovery pass
+  across every `GET`, `POST`, `PUT`, and `DELETE`/`PATCH` action in the entire backend, independent
+  of what the original report named. For each, check whether any free-text field (filter value,
+  search term, sort/column-name parameter, comment) reaches a database call with no visible
+  parameterization, or reaches a stored procedure not present in source control (flag explicitly —
+  a clean-looking parameterized call proves nothing about what that procedure does internally).
+  This breadth pass is pure read-only code search — delegate it to a subagent to go fast — but
+  hand-pick a small, deliberate set of real candidates from its output to test live yourself;
+  never auto-fire payloads at everything it finds. Full CRUD/verb coverage is a correctness
+  requirement for this skill, not an optional extra.
+- Quote real code, verbatim, with line numbers — never paraphrase "the code does X." A developer
+  who disputes a paraphrase can't dispute a verbatim quote with a line number next to it.
+
+## 3. Live verification — ground rules (non-negotiable)
+
+- Log in once via the real login endpoint with the test account. Keep the bearer token out of
+  everything you print to a report or leave on disk — delete scratch token files after use.
+- **Non-destructive differential technique by default**: send a benign baseline value, then a
+  single SQL-breaking value (one extra `'`), and compare responses (200/clean vs 500/raw error, or
+  a leaked query fragment). Never use payloads that write/delete/drop data unless explicitly
+  pre-approved for that specific, reversible, same-account-only action.
+- **No stacked/UNION/DDL/time-based/boolean-blind payloads** by default, even to "prove harm" —
+  this crosses from verification into exploitation. If the environment's own safety tooling blocks
+  an attempt (time-based blind SQLi, UNION-based extraction, probing a live third-party credential
+  like a webhook), **respect that block completely** — do not retry with different encodings,
+  different endpoints, a subagent, or any other phrasing of the same outcome. Report the block
+  honestly and explain what evidence is still sufficient without it (see §5).
+- **No mass sweeps.** If you need to find "a record with property X" among many, narrow first via
+  a read-only metadata/config endpoint, then test a small handful (3-5) sequentially. If a search
+  starts turning into an unthrottled sweep, stop it immediately.
+- **No WAF/control evasion.** A control blocking a more diagnostic payload = inconclusive, not a
+  reason to craft something cleverer to get past it.
+- Do **not** delegate live HTTP testing to a background subagent/workflow — do it directly,
+  one call at a time, visible and interruptible. Subagents are for read-only code search only
+  (see §4).
+- When a live test on a confirmed-vulnerable endpoint comes back clean, don't stop at "fixed" —
+  check nearby parameter positions and any sibling endpoint reaching the same sink before
+  concluding. A fix applied to one parameter/route and not its sibling is a real, common pattern.
+
+## 4. What's safe to delegate to parallel subagents (and what isn't)
+
+Safe to delegate (pure read-only static analysis, can run in parallel, speeds things up a lot):
+- Re-deriving exhaustive file:line evidence + reproducible search commands for a disputed finding.
+- Discovering all POST/PUT/DELETE endpoints across a backend and triaging which ones build SQL
+  dynamically vs. call clean parameterized/EF code (a breadth-first discovery pass before you
+  pick live-test candidates yourself).
+- Building a "developer-shareable evidence dossier" when a dev team says evidence "isn't deep
+  enough" — ask for verbatim code quotes + exact search output for every disputed claim, not
+  summaries.
+- Reformatting/highlighting an already-finalized report for readability (do this from your own
+  authoritative HTML source if you have it in context, not by re-extracting text from a rendered
+  PDF, which risks silent fidelity loss in tables/formatting).
+
+Never delegate: anything that sends a live HTTP request. Keep that in your own hands, one call at
+a time.
+
+## 5. Verdict taxonomy
+
+- **FIXED — LIVE CONFIRMED**: code changed + a live test proves the old exploit no longer works.
+- **FIXED — CODE ONLY**: code changed, live-testing would require a destructive write so it wasn't
+  attempted — say so explicitly.
+- **PARTIALLY FIXED**: some of the fix is in, a specific gap remains — describe the gap precisely
+  with file/line.
+- **STILL VULNERABLE / TRACKER CLAIM NOT SUPPORTED**: tracker says fixed, evidence says otherwise.
+  This is the most important category to get right — verify it harder than any other.
+- **MITIGATED, NOT RESOLVED**: a genuine compensating control exists today (an unrelated permission
+  check, a second independent lock, a narrowed call path) that blocks the specific exploit tested,
+  but the underlying unsafe-by-design code is still there and the control covering it is
+  undocumented, caller-dependent, or could be removed without anyone noticing it was load-bearing.
+  Use this instead of forcing the finding into "fixed" (overstates it — the root cause remains) or
+  "still vulnerable" (understates it — today's real callers are actually blocked). Report this
+  honestly even when it softens a finding you expected to stay severe; it is a distinct, common
+  real-world outcome, not a reluctant compromise between the other two.
+- **INCONCLUSIVE**: reached the real code path but the safe test didn't produce a clear signal.
+  Don't force a finding to stay "still vulnerable" just because that's where it started — if what
+  you actually found during the test is better described as MITIGATED above, use that category
+  instead, not this one.
+- **OPEN, AS TRACKER STATES**: no dispute, tracker already says not fixed.
+
+## 6. When a dev team disputes your findings
+
+This is the real test of the methodology. Expect responses like "it only gives an error, no
+harm," "this is intentionally exposed," "a separate effort already covers this," or — the one to
+check hardest — **"these are new issues, the ones in the original report were already fixed."**
+
+For every dispute:
+1. **Pull the original report's exact LOCATION/DESCRIPTION text for that finding** (file/line,
+   procedure name, any distinctive technical detail) and compare it directly against what you
+   traced/tested. If the procedure names, endpoints, and code paths match, say so with a
+   side-by-side table — this is the single most effective rebuttal format. If a specific,
+   non-obvious detail from the original report (like "sibling function A escapes but B doesn't")
+   reproduces independently in your own live test, call that out explicitly — two independent
+   methods landing on the same specific signature is much stronger evidence than either alone.
+2. **For "no harm" claims on injection-class findings**: don't just re-assert CWE severity —
+   explain the standard next steps (error-based → column-count enumeration → UNION/blind
+   extraction) as a plain-language attack walkthrough, grounded in exactly what you observed (the
+   real leaked table/column names, the real error text), making clear which steps you actually
+   performed live vs. which are the well-documented next steps you deliberately didn't take.
+3. **For "intentionally exposed" / access-control claims**: search the whole repo (comments,
+   doc-comments, steering/spec docs) for any documentation supporting that claim — usually there's
+   none. Then check sibling endpoints handling identical data for an inconsistency (if every
+   similar endpoint enforces a check and only the disputed ones don't, that's evidence of an
+   omission, not a design decision). Check whether a genuine alternate access model exists
+   elsewhere in the codebase for comparison.
+4. **For a nuanced case where the dev team turns out to be partly right**: say so. Report it as
+   found — e.g., "a real compensating control exists, but it's undocumented and only covers
+   today's callers" — rather than forcing it to match the pattern of the other disputed findings.
+   Credibility on the findings you push back on hard depends on being visibly honest about the
+   ones where the pushback doesn't fully apply.
+5. State the **no-git-history limitation** plainly wherever it's relevant: you can say what's
+   present/absent in this snapshot, not when/why it changed, or whether a claimed fix predates or
+   postdates the finding. This cuts both ways — it weakens unverifiable "already fixed" claims,
+   but it equally means your own "confirmed removed" verdicts (where you didn't also get a live
+   test) should be labeled as snapshot-only evidence, not overstated as "we watched it get fixed."
+
+## 7. Deliverables
+
+Produce these as PDFs (build HTML, render with `wkhtmltopdf` — check what's actually installed in
+this environment first, don't assume):
+
+1. **Full technical validation report**: cover + executive summary table (verdict counts) +
+   methodology/scope (state explicitly what was/wasn't tested live and why, including the no-git
+   caveat) + one section per finding (tracker's claim → dev evidence → live test → verdict) +
+   ranked recommendations.
+2. **Plain-English version** of the same report, same structure, no code/jargon — translate every
+   technical finding into an everyday analogy and a one-paragraph "why this matters," for
+   non-technical stakeholders. Keep the same verdict categories, just explained in plain language.
+3. **Dev-team rebuttal report**, produced reactively once they respond to the first report: one
+   section per disputed finding, dev's quote verbatim, your verdict, then deep evidence per §6.
+   Use parallel subagents to go deep on each disputed finding simultaneously (one agent per
+   finding) since this is pure static analysis and massively parallelizable — then synthesize
+   their findings yourself rather than pasting raw agent output into the report.
+4. **Threat/attack deep-dive** for the findings that need to convince a skeptical engineer that
+   "it gives an error" is real harm: plain-language, step-by-step attack walkthroughs grounded in
+   real evidence, explicit about which steps were actually performed vs. which are the standard
+   next steps not executed. If the request is "make this one document fully self-contained" (e.g.
+   because only this file will be shared), fold the complete file:line evidence and exact
+   command/output proof into it too, not just the narrative — don't assume the reader also has the
+   other companion reports.
+5. Keep report file names stable across revisions when asked to "update" rather than "replace" —
+   overwrite in place so a previously-shared link/filename keeps working.
+
+## 8. Stakeholder email
+
+Keep it short. Default format: a verdict breakdown (Fixed / Partial / Still Open), one line per
+finding with its name, a numbered action list, and a pointer to the attached report(s) for detail
+— never inline the full evidence into the email body. Adjust length/format on request (e.g. "just
+list what's fixed/open, one-liners," "give me Outlook-paste-friendly text" → drop markdown tables
+for plain indented text, since Outlook doesn't render markdown pipe-tables).
+
+## 9. Hard-won gotchas from prior runs
+
+- A disputed "removed" finding can go either way — always re-verify with a fresh exhaustive search
+  rather than trusting either side's prior claim, including your own report from an earlier pass.
+- The procedure/script body behind a stored-proc-based finding is very often **not in source
+  control at all** — only the application-layer caller is (whatever the stack: C#, Java, Python,
+  Node, ...). A "clean" parameterized call in that layer proves nothing about the procedure's own
+  internal SQL; say this explicitly whenever it applies, since it's exactly the gap a dev team will
+  exploit ("look, our code is parameterized").
+- Safety classifiers in the execution environment may block live exfiltration-style payloads
+  (UNION extraction, timing-based blind SQLi) and even unrelated follow-up commands right after
+  such a block. Respect every block as final for that outcome — don't reframe, re-encode, or
+  retry through another tool. Explain plainly to the user what was attempted and why it stopped
+  there; let them decide whether to grant broader permission through their own settings.
+- When asked to test "all PUT/POST/DELETE endpoints," split the work: delegate the breadth-first
+  discovery/triage to a subagent, then hand-pick a small, deliberate set of real candidates to test
+  yourself — never auto-fire payloads at every endpoint a discovery pass turns up.
+
+
+## /security-scan
+
+---
+name: security-scan
+description: Runs an adaptive parallel multi-agent security assessment of any codebase and consolidates it into a severity-ranked, verifiable report. Use when asked for a dependency audit, outdated or EOL package check, CVE/vulnerability scan, secrets or hardcoded-credentials scan, infrastructure/IaC review, CI/CD or supply-chain security review, an SBOM, or any "is this repo secure" / security report request.
+---
+
+# Parallel Security Assessment
+
+Independent scan dimensions run as concurrent subagents, then the orchestrator consolidates
+them into one report. Language- and cloud-agnostic: Phase 0 recon decides which dimensions
+exist in this repo, and only those are launched.
+
+Two rules that hold for the whole workflow:
+- **Agents find; the orchestrator reports.** Never hand back raw agent dumps.
+- **A falsely clean result is worse than a gap.** Every phase has a check for this.
+
+References (read as needed, not all upfront):
+- `references/gotchas.md` — the ways a scan silently produces a wrong answer. **Read before Phase 1.**
+- `references/ecosystems.md` — manifest → OSV id → native audit command → registry API, per ecosystem.
+- `references/api-recipes.md` — verified OSV / registry / SBOM / secret-tool request shapes.
+- `references/agent-briefs.md` — scope boundaries and task lists per dimension (baseline **and**
+  the extended deep-dive tier: AUTH, UPLOAD, BIZLOGIC, CLIENT, DATA, DISCOVERY, ACTIVE-VALIDATION,
+  DAST-PASSIVE).
+- `references/active-dast-methodology.md` — comprehensive full-API-coverage authenticated DAST
+  script pattern; reach for this instead of the lightweight ACTIVE-VALIDATION brief when the ask is
+  full DAST coverage across an entire API and a swagger/OpenAPI/Postman surface description exists.
+- `references/coverage-checklist.md` — the dimensions a COMPLETE review covers; use it to decide
+  the extended tier and to write an honest scope-&-limitations statement.
+- `references/report-format.md` — finding IDs, severity, OWASP map, confidence scoring.
+- `references/report-rendering.md` — how to render a comprehensive report as a self-contained HTML file and PDF: design system, file layout, PDF generation mechanics.
+
+---
+
+## Phase 0 — Recon (orchestrator, always first)
+
+Fast, and it determines the fan-out. Quote every glob (gotchas #1).
+
+```bash
+# Dependency manifests across all ecosystems
+find . -maxdepth 4 \( -name "package.json" -o -name "*.csproj" -o -name "requirements*.txt" \
+  -o -name "pyproject.toml" -o -name "Pipfile" -o -name "go.mod" -o -name "pom.xml" \
+  -o -name "build.gradle*" -o -name "Gemfile" -o -name "composer.json" -o -name "Cargo.toml" \) \
+  -not -path "*/node_modules/*" -not -path "*/vendor/*"
+
+# Lockfiles + duplicate-lockfile drift (gotchas #13)
+find . -maxdepth 3 \( -name "*.lock" -o -name "*-lock.json" -o -name "*.lockfile" \
+  -o -name "packages.lock.json" -o -name "go.sum" \) -not -path "*/node_modules/*"
+
+# CI/CD surface — any provider
+ls -d .github/workflows .gitlab-ci.yml Jenkinsfile .circleci azure-pipelines.yml \
+      bitbucket-pipelines.yml deployment scripts 2>/dev/null
+
+# IaC / container surface
+find . -maxdepth 4 \( -name "*.tf" -o -name "*.tfvars" -o -name "Dockerfile*" \
+  -o -name "docker-compose*.yml" -o -name "Chart.yaml" -o -name "values*.yaml" \
+  -o -name "*template*.yaml" -o -name "*.bicep" -o -path "*infrastructure*" -o -path "*k8s*" \) \
+  -not -path "*/node_modules/*"
+
+# Toolchain INSTALLED vs what the projects TARGET (gotchas #3)
+node --version; npm --version; dotnet --version; python3 --version; go version; java -version
+grep -rn "<TargetFramework\|^go \|requires-python\|rust-version\|<maven.compiler" \
+  --include="*.csproj" --include="go.mod" --include="pyproject.toml" --include="pom.xml" . 2>/dev/null
+
+# Live-target scan input (gotcha #15) — a user-supplied `credentials` file at the project root,
+# if present, is the source of truth for DISCOVERY/ACTIVE-VALIDATION/DAST target+login. Read it
+# now, not later — don't make DISCOVERY go looking for a target by other means when this already
+# states one. Never write this file up as a secrets finding (see the SWEEP brief's exception).
+ls credentials 2>/dev/null && echo "credentials file found — read it now for target URL + login"
+
+# History available? (gotchas #10)
+ls -d .git 2>/dev/null || echo "NO version history — history scan impossible; note as limitation"
+```
+
+Record: ecosystems present, infra/CI providers present, toolchain mismatches, duplicate
+lockfiles, whether history exists, and repo size.
+
+**Resolve `<SCRATCHPAD>` now, once, and pass the literal path to every agent brief** — it is never
+a placeholder agents invent themselves. Use, in this order: (1) the session's own scratch/temp
+directory convention if the harness provides one (a per-session scratch path outside the target
+project); (2) failing that, a dedicated, clearly-named directory under the target project itself
+that is NOT already tracked and gets a `.gitignore` entry added for it before any agent writes
+there, e.g. `<project-root>/.security-scan-scratch/` — never write scratch data into an existing
+tracked directory, and never reuse `security-assessment/` itself as scratch (that path is the
+FINAL deliverable location per `report-rendering.md`, kept separate so a half-finished run never
+looks like a published report). State the resolved path in the report's Scope & Method section.
+
+### Scoping the fan-out
+Spawn a dimension only when Phase 0 found evidence for it. Do not spawn no-op agents, and do
+not report a score for a dimension that does not exist here.
+
+| Dimension | Spawn when | Notes |
+|---|---|---|
+| `DEP-<ecosystem>` | a manifest for that ecosystem exists | **one agent per ecosystem**; merge ecosystems that have only one small manifest each |
+| `APP` | application source or config files exist | always, in practice |
+| `CICD` | any pipeline definition, deploy script, or container build file exists | one agent covers all providers present |
+| `IAC` | IaC templates, k8s/Helm manifests, or an infrastructure tree exist | skip entirely when absent |
+| `SWEEP` | always | the catch-all; also owns history/ignore-file/evidence checks |
+
+**Extended deep-dive tier (coverage-gap):** add these when the target is higher-value
+(money-/data-moving, multi-tenant, regulated) OR the user asks for a "complete/deep" review.
+Briefs are in `references/agent-briefs.md`; the full dimension list is in `references/coverage-checklist.md`.
+
+| Dimension | Spawn when | Finds |
+|---|---|---|
+| `AUTH` | any auth/session/JWT config | alg-confusion, missing algorithm allowlist, issuer/audience off, CORS wildcard+credentials, per-instance/fail-open rate limiting, session/refresh flaws |
+| `UPLOAD` | any file-upload, XML parse, or server-side fetch | signature-bypass, zip-bomb, path traversal, **XXE**, **SSRF** via config/tenant-controlled URLs, insecure deserialization |
+| `BIZLOGIC` | a core value flow (payments, orders, approvals) and/or two API versions | business-logic abuse (self-approval, step-skip, amount tampering, replay, TOCTOU), **BFLA** across roles and v1/v2, impersonation/proxy-user abuse |
+| `CLIENT` | a browser/SPA frontend exists | DOM-XSS sinks, `postMessage` origin checks, clickjacking, SRI, prototype-pollution reachability, token-in-storage theft surface |
+| `DATA` | regulated/PII data is handled | static read of data-protection config & code — encryption/rotation as *declared*, PII inventory, retention, logging over-capture; see `agent-briefs.md` |
+| `DAST-PASSIVE` | an authorized live target | passive GET/HEAD-only recon (headers, storage, bundles); see `agent-briefs.md` |
+| `DISCOVERY` | a live, authorized target is confirmed (host + authorization verifiable from repo config or explicit user instruction) AND working test credentials for that environment are available | builds a ranked attack-surface/endpoint inventory (read-only click-through + JS-bundle grep) ranked by likely OWASP Top 10 category (IDOR/BFLA, injection, auth); see `agent-briefs.md`. Run before `ACTIVE-VALIDATION` whenever both are in scope. |
+| `ACTIVE-VALIDATION` | a live, authorized target is confirmed (host + authorization verifiable from repo config or explicit user instruction) AND at least one static finding is a good candidate for a fixed-payload, non-destructive live proof, AND ideally after a DISCOVERY pass has produced a ranked candidate list, when one is in scope | upgrades specific findings from CONFIRMED-in-code to LIVE-VALIDATED; see `agent-briefs.md` and gotchas #15–17. Never spawn this speculatively — it targets specific findings from the other agents, so run it after (or interleaved late in) Phase 1, not as a first-wave dimension. |
+
+Mark extended findings **CONFIRMED-in-code** or **NEEDS-DYNAMIC** — never assert an exploit the
+source doesn't establish. Whatever is not run becomes an explicit scope-limitation line. When
+both are in scope, run `DISCOVERY` before `ACTIVE-VALIDATION`: active validation should target
+the specific endpoints the discovery pass ranked as high-value, not guessed ones.
+
+Sizing: aim for 4–8 agents in the baseline tier; the extended tier is additive when scoped. Below 3, run sequentially — the fan-out overhead is not worth it.
+Above 8, merge the smallest dimensions rather than splitting further. For a very large
+ecosystem (a large monorepo workspace set), split `DEP-<eco>` by workspace instead of by task.
+
+Shared files need one owner: `docker-compose*.yml` goes to `CICD` for build/secret concerns and
+`IAC` for runtime posture — state which agent covered which axis. Everything else follows the
+OWNS / DOES NOT OWN lists in `references/agent-briefs.md`.
+
+---
+
+## Phase 1 — Parallel agents
+
+Launch every selected agent **in a single message** so they run concurrently. Give each the
+shared preamble plus its OWNS / DOES NOT OWN boundary verbatim from `references/agent-briefs.md` —
+non-overlapping ownership is what keeps the fan-out from duplicating work.
+
+Dimension summary (full task lists in the briefs file):
+- **DEP-<eco>** — native audit command for the ecosystem + OSV cross-check of every resolved
+  `name@version` in the lockfile; audit override/pin blocks; fix-reachability; maintenance axis;
+  registry config and dependency-confusion exposure.
+- **APP** — config and source secrets, insecure settings, authn/authz gaps, injection surface,
+  client-exposed build-time env vars.
+- **CICD** — pipeline credentials and identity federation, token permissions, untrusted-input
+  injection, unpinned build steps, lockfile integrity, secrets in image layers, container build posture.
+- **IAC** — secrets in templates AND cloud posture: over-broad IAM/RBAC, unrestricted ingress
+  and egress, encryption at rest/in transit, audit logging, privileged containers, mutable image
+  tags, secrets as env vars instead of a secret store.
+- **SWEEP** — repo-wide regex/entropy catch-all with documented false-positive filtering,
+  ignore-file adequacy, history availability, committed prior-assessment evidence.
+
+Every brief carries: quote globs, redact secrets, `file:line` on every finding, CONFIRMED vs
+PLAUSIBLE, report PASSES as well as failures, write raw data to the scratchpad, do not write a report.
+
+### Adversarial verification pass (do this for a comprehensive/deep-dive review, or on request)
+A finding agent grading its own work is a weaker check than a second agent whose only job is to
+disprove it. For a deep-dive review (extended tier spawned, or the user asks for a "thorough" /
+"complete" assessment), run static review as two waves instead of one:
+1. **Candidate wave** — each dimension agent returns candidate findings as usual, each with a
+   self-assessed confidence 1–10.
+2. **Verify wave** — spawn one lightweight verifier agent per candidate (or a small batch per
+   dimension for cheap ones), prompted to independently re-derive the finding from the cited
+   `file:line` and argue for why it might NOT hold (wrong line, control exists elsewhere, not
+   actually reachable, confused with a safe sibling). Keep the finding only if it survives at
+   confidence ≥ 8/10; otherwise drop it or demote to PLAUSIBLE with the counter-argument recorded.
+Report the funnel plainly (e.g. "20 candidates → 14 confirmed at confidence ≥8"), the same way the
+regex-sweep raw-hits → triaged funnel is reported (gotchas #5). This roughly doubles agent count for
+the static phase, so reserve it for the deep-dive tier or an explicit request, not the default
+narrow/baseline run.
+
+### The universal advisory layer
+OSV.dev covers every ecosystem, so it works even when no native toolchain is installed.
+Run the native tool when the toolchain supports it AND cross-check with OSV — they disagree
+in both directions.
+```bash
+curl -s -X POST https://api.osv.dev/v1/querybatch -H 'Content-Type: application/json' \
+  -d '{"queries":[{"package":{"name":"<name>","ecosystem":"npm"},"version":"1.2.3"}]}'
+curl -s https://api.osv.dev/v1/vulns/<id>     # severity, fixed range, CVE/GHSA aliases
+```
+Ecosystem ids: `npm`, `NuGet`, `PyPI`, `Go`, `Maven`, `RubyGems`, `Packagist`, `crates.io`.
+Per-ecosystem manifests, audit commands and registry endpoints: `references/ecosystems.md`.
+
+---
+
+## Phase 2 — Consolidate (orchestrator only)
+
+Read the agents' returns and their scratchpad data, then write ONE report. Deduplicate across
+agents, reconcile severity disagreements, renumber into the family scheme. Full spec in
+`references/report-format.md`:
+
+- Finding IDs by family: **F**=app, **S**=secrets, **I**=infra, **C**=CI/CD, **D**=dependency.
+- Rank by severity anchored on real exploitability here, not the advisory's headline score;
+  show every adjustment.
+- CONFIRMED and PLAUSIBLE in separate subsections.
+- Every dependency finding cites an upstream URL — `https://github.com/advisories/GHSA-…` or
+  `https://nvd.nist.gov/vuln/detail/CVE-…` — so it is independently verifiable.
+- OWASP Top 10:2025 map, including the categories with no findings (verify the current taxonomy
+  at `top10.owasp.org/2025`; `D*` and CI supply-chain findings map to A03 Software Supply Chain
+  Failures — see report-format.md).
+- Confidence: **weighted per-domain mean**, never `100 − (High×5 + Med×3)` — that flat formula
+  goes negative past ~20 findings. Weight each domain by relevance; a domain with no assets is
+  excluded at weight 0, not awarded 100. Print the formula.
+- Mandatory sections: scope & method, coverage & limitations, dedicated **secrets & credential
+  exposure** section (`S*`, whenever any exist), dedicated **CI/CD & infrastructure** section
+  (`C*`/`I*`, preceded by a "controls already implemented correctly" callout), dependency
+  advisories & SBOM (with fix reachability, CVSS, structural-exposure note), maintenance risk
+  (separate from advisories), **what was checked and PASSED**, **verified-safe / refuted**
+  (specific attack hypotheses chased down and disproven — not the same as "passed", see
+  report-format.md), prioritized remediation plan, and a closing **Appendix** (active-validation
+  request log, tooling list, standards-references list, report handling & distribution).
+  Every finding needs a real Location and a specific Business Impact — no exceptions; state an
+  honest process-level location when no single file:line applies. Full specs in report-format.md.
+- For a comprehensive/deep-dive review (extended tier spawned, or ≥15 confirmed findings), also
+  produce: a **cyberattack exposure & threat assessment** (threat-actor table, numbered attack
+  chains across finding IDs, exposure-by-surface, a "what reduces exposure fastest" top-3
+  subsection cross-referencing the roadmap's most urgent phase, and its own live-validation-
+  corrections table), **quick wins as a ranked table** (#/win/finding/effort/why) with a
+  **projected-grade note per remediation phase**, a **remediation-verification retest table**
+  (what must now FAIL, per HIGH/CRITICAL), and a **systemic root-cause table** (repeating patterns
+  → one class-level control each). Full specs in `references/report-format.md`.
+- Close with the **Appendix**'s **report handling & distribution** paragraph whenever the report
+  contains live-exploit detail, a credential/key reference, a named customer/environment, or
+  internal hostnames — state the intended audience and that a wider audience needs a redacted
+  version.
+
+---
+
+## Phase 3 — Self-audit before finishing (mandatory, orchestrator only)
+
+Never declare the report done on the strength of "I wrote all the sections" alone — verify it
+programmatically, the same way you'd verify a subagent's claim rather than trust it at face value.
+This closing audit is not optional busywork; a report that skips it routinely turns out to have a
+silently-empty field, a stale PDF, or a section that exists in outline only.
+
+1. **Section-presence checklist** — for every item in `report-format.md`'s "Required report
+   sections" list (and the extended-tier additions when that tier ran), grep the rendered output
+   for its actual heading/content, don't eyeball a mental checklist. Build a literal checklist from
+   that numbered list and tick each one off against a real search, not memory.
+2. **Every finding has every mandatory field** — Location, Status, Impact, Remediation, non-empty,
+   for every single finding card. Spot-checking a few is not enough once the finding count is high;
+   script the check (e.g. parse each `### <ID>` block and assert all four fields are present and
+   non-placeholder) rather than reading through by eye.
+3. **Counts are asserted, not eyeballed** — anywhere the report states a total (findings count,
+   "N/N endpoints covered," a tier breakdown, a verdict split), independently recompute that number
+   from the underlying evidence/scan data and assert equality. A report claiming "286/286 covered"
+   is worth nothing if nobody actually counted the 286 to check.
+4. **Byte-count-comparison rule compliance** — grep for the patterns `report-format.md` forbids
+   ("N bytes" comparisons standing in for real evidence) and manually classify every hit: legitimate
+   prose (e.g. quoting a captured `[non-JSON response...]` message, or "byte-for-byte identical"
+   describing a string match) is fine; anything still functioning as "X vs Y bytes" as the evidence
+   itself must be fixed before finishing, not flagged for later.
+5. **No dangling "go look elsewhere" pointers** — if the deliverable is (or might become) a
+   standalone file the reader won't have the rest of the project alongside, grep for references to
+   external evidence files/paths and confirm each either points at content already inlined in the
+   same document or is a legitimate methodology mention (describing how evidence was gathered, not
+   telling the reader to fetch more of it themselves).
+6. **Rendered output matches source** — if `report.html`/`report.pdf` exist, confirm they were
+   regenerated from the current `FINDINGS.md` (per `report-rendering.md`'s regeneration discipline)
+   and are non-trivial (file size and page count scale with content — see that file's verification
+   section). A stale or empty rendered file is a failed task, not a finished one with a footnote.
+7. **Write the audit result down** — a short, explicit statement of what was checked and the
+   outcome (gaps found and closed, or confirmed complete) belongs in your final report to the user,
+   not just in your own reasoning. If you find a gap during this phase, close it now — don't hand
+   back a list of things you noticed but didn't fix.
+
+This phase applies to every report this skill produces, not only the largest ones — scale the
+depth of checking to the report's size, but never skip it entirely.
+
+## Adapting scope
+
+A request for one dimension is the common case. Run the narrower version — do not fan out five
+agents for a question about one.
+
+| Request | Run |
+|---|---|
+| "audit my dependencies" / "any CVEs?" | Phase 0 (manifests + toolchain only) → `DEP-<eco>` per ecosystem → consolidate `D*` |
+| "any hardcoded secrets?" | Phase 0 (tree + history check) → `APP` + `SWEEP` (+ `CICD` if pipelines exist) → `S*` |
+| "review my Terraform / k8s / cloud setup" | Phase 0 (infra surface) → `IAC` alone → `I*` |
+| "review my pipeline / supply chain" | Phase 0 (CI surface) → `CICD` alone → `C*` |
+| "what's outdated?" | `DEP-<eco>` maintenance axis only — registry freshness, deprecation, EOL; explicitly NOT an advisory scan |
+| "generate an SBOM" | Phase 0 → SBOM generation (`api-recipes.md` §5); advisory scan only if also asked |
+| single file or single PR | skip the fan-out entirely; scan directly and report inline |
+
+Rules when narrowing:
+1. **Always keep Phase 0** for the dimensions in scope — the toolchain and history checks are
+   what prevent a falsely clean answer.
+2. **Always keep the gotchas** that apply: positive control before declaring clean, false-positive
+   filtering, redaction, fix-reachability, old ≠ vulnerable.
+3. **Always keep the report skeleton**, scaled down: findings, coverage limitations, what passed.
+   Drop the sections that have no in-scope content rather than padding them.
+4. **Say what you did not look at.** A secrets-only scan must state that dependencies, IaC and
+   pipelines were out of scope, so the result is not read as a whole-repo clean bill of health.
+5. Below three agents, run the work sequentially yourself — fan-out overhead exceeds the gain.
+
+---
+
+## Critical gotchas — selected highlights, numbered to match `references/gotchas.md`
+
+Not a sequential 1–18 walkthrough — these are the ones that bite most often, each tagged with its
+real number in the reference file so a citation elsewhere (e.g. "gotcha #9") always means the same
+thing wherever it's read. Gotchas #13 (duplicate lockfiles) and #14 (report what passed) aren't
+excerpted here but apply just as fully — see the full file.
+
+- **#1 Quote every glob** — `grep -r --include="*.ext"`; unquoted globs abort under zsh.
+- **#2 Verify an endpoint carries the field before trusting its absence.** APIs return 200 with
+  complete-looking data while silently omitting deprecation/advisory fields that live on a
+  different endpoint version. Confirm against a record known to have the field.
+- **#3 The toolchain must be able to restore/build the project**, or the native audit tool fails
+  and transitive dependencies go unscanned. Detect the version mismatch in Phase 0 and declare
+  the gap — never let it read as clean.
+- **#4 Sanity-check the scanner against known-bad input** before trusting a clean result. An empty
+  response from a malformed query is indistinguishable from no vulnerabilities.
+- **#5 Regex sweeps are overwhelmingly noise.** Filter vector-graphic coordinate runs, lockfile
+  integrity hashes, minified bundles, dependency/build directories and placeholders; hand-verify
+  the survivors; report the raw-hits → findings funnel.
+- **#6 An override/pin block can itself pin a vulnerable version** — audit the override block,
+  not just declared dependencies.
+- **#7 Check fix reachability before recommending a bump.** A parent's narrow version pin can make
+  the fix unreachable, turning "bump it" into "structural — migrate or replace the parent".
+- **#8 Old ≠ vulnerable.** Advisory risk and maintenance risk are separate axes in separate sections.
+- **#9 Redact everywhere**, scratch files included: first 4 + last 2 chars; JWTs as decoded claims
+  only; account identifiers truncated. This is the one canonical redaction format — every
+  reference file uses it, with no dimension-specific variant.
+- **#10 No version history = no history scan.** Say so, recommend a history scan against origin,
+  and state that **rotation, not deletion**, remediates an exposed credential.
+- **#11 Build-time public env vars ship to every client** — `REACT_APP_*`, `NEXT_PUBLIC_*`,
+  `VITE_*`, `PUBLIC_*`, `GATSBY_*`, `EXPO_PUBLIC_*`, `NUXT_PUBLIC_*` and equivalents. Perfect
+  log masking in CI does not help; the value is in the published bundle. Always flag these.
+- **#12 Committed security-assessment evidence** — prior scan output, HAR files and debug dumps
+  routinely contain captured live tokens, cookies and credentials.
+- **#15 Live/active DAST is passive-first and consent-gated.** Verify the target host and
+  authorization from the repo's own config; decline active testing against an unverifiable
+  third-party host and validate from source instead. Passive (headers/TLS/bundle) before active;
+  active auth/injection probes use throwaway identifiers only, never real accounts or state
+  changes. If the harness refuses an active request as a third-party attack, that is correct —
+  do not route around it; confirm at source and hand the user the exact command to run.
+- **#18 Authorized test-data creation is a separate, narrower exception** from #15 — every live
+  dimension creates nothing by default; a minimal, disposable, explicitly-authorized write is the
+  exception, not the default posture, and always triggers the report's test-data disclosure list.
+  (Full list — 18 gotchas — in `references/gotchas.md`.)
+
+---
+
+## Output style
+
+- Rank by severity; every finding carries a `file:line` reference.
+- Separate **CONFIRMED** from **PLAUSIBLE** — never blur them.
+- **Explicitly list what was checked and PASSED.** A report of only bad news gives no way to
+  distinguish a thorough scan from a shallow one, and no credit for controls already correct.
+- State coverage limitations plainly: unscanned transitives, no history, no runtime testing,
+  which lockfile was used, dimensions out of scope. A stated gap beats silent under-reporting.
+- Be accurate, not alarmist. Never inflate a placeholder into a finding. Never restate an
+  advisory's score as this repo's risk without reasoning about reachability and exposure.
+  State uncertainty as uncertainty.
+
+## Reporting
+
+The **orchestrator** consolidates — per-agent output is raw material, not the deliverable.
+Deduplicate across agents, reconcile severity disagreements, renumber into the family ID scheme,
+and cite upstream advisory URLs (GitHub Advisory / NVD) for every dependency finding so the
+reader can verify each one independently without rerunning the scan.
+
+
 ## /simplify
 
 ---

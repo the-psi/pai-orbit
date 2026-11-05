@@ -116,7 +116,7 @@ verify_prompt_file() {
     return
   fi
   if [ "$mode_field" != "agent" ]; then
-    fail "$rel: prompt must declare 'mode: agent' (got mode='$mode_field'). All 32 prompts run agentically on Copilot Business — mode prompts need tool access to write docs/features/*, skills need shell for /git and /board, etc."
+    fail "$rel: prompt must declare 'mode: agent' (got mode='$mode_field'). All 34 prompts run agentically on Copilot Business — mode prompts need tool access to write docs/features/*, skills need shell for /git and /board, etc."
     return
   fi
   if [ -z "$tools_field" ]; then
@@ -235,14 +235,14 @@ done
 
 # Counts must match the target layout:
 #   16 mode prompts (14 standard + /setup + /suggest-skills; last two agent-runtime)
-# +  7 skill prompts
+# +  9 skill prompts
 # +  7 service-builder agent prompts
 # +  2 named sub-agents (docs-writer, cross-repo-impact) — added 2026-07-05
-# = 32 total prompts.
+# = 34 total prompts.
 # +  5 instructions files (git, data-model, arch-drift, context-discovery, decisions)
 #   — decisions.instructions.md added 2026-07-05 to mirror the always-on ADR
 #   obligation rule that Cursor and Claude adapters already provide.
-expected_prompts=32
+expected_prompts=34
 expected_instructions=5
 
 if [ "$prompt_count" -ne "$expected_prompts" ]; then

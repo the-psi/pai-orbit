@@ -273,6 +273,18 @@ Code simplification pass — reviews recently changed code for over-engineering,
 
 ---
 
+### `/security-scan`
+
+Whole-repository security assessment — runs an adaptive set of parallel subagents (dependencies per ecosystem with native audit plus OSV.dev cross-check, app code, CI/CD, IaC, secrets sweep; an extended tier adds auth, upload, business logic, client, data, and live DAST against an authorized target) and consolidates one severity-ranked report. Findings are CONFIRMED or PLAUSIBLE, each with `file:line`; the report also lists what passed and what was out of scope. Deep reviews add an adversarial verification wave and a mandatory self-audit. Output goes to `security-assessment/` in the target project (`FINDINGS.md` as source, rendered to HTML/PDF with Playwright). Broader than `/review security`, which checks only a branch diff.
+
+---
+
+### `/security-scan-retest`
+
+Remediation validation — checks a dev team's fix tracker against the original assessment report, the current code, and non-destructive live re-tests on a test environment. Gives each finding a verdict (fixed — live confirmed / code only, partially fixed, still vulnerable, mitigated not resolved, inconclusive, open) backed by verbatim code quotes or live observations. Live HTTP requests are made one at a time by the orchestrator, never by subagents. Produces technical and plain-English reports, a rebuttal report if findings are disputed, and a stakeholder email (PDFs via `wkhtmltopdf`).
+
+---
+
 ## Agents
 
 Agents are spawned by modes (primarily `/build`) for parallel work across repos and code / tests / docs streams; the primary agent spawns them directly (no nesting).
