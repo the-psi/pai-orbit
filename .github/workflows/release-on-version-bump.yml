@@ -1,0 +1,93 @@
+name: release-on-version-bump
+
+# Creates GitHub Release v<version> whenever package.json's version changes on
+# main, with one asset per coding agent. GitHub counts downloads per asset,
+# which is how installs are tracked per agent:
+#   pai-orbit-codex.tar.gz        ← npx … init|update codex
+#   pai-orbit-copilot.tar.gz      ← npx … init|update copilot
+#   pai-orbit-claude-code.zip     ← Claude Code marketplace `archive` source
+# Then points .claude-plugin/marketplace.json at the new zip (url + sha256).
+
+on:
+  push:
+    branches: [main]
+    paths: [package.json, plugins/pai-orbit/core/plugin.json]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read and check versions
+        id: v
+        run: |
+          pkg=$(node -p "require('./package.json').version")
+          plugin=$(node -p "require('./plugins/pai-orbit/core/plugin.json').version")
+          if [ "$pkg" != "$plugin" ]; then
+            echo "::error::Version mismatch: package.json=$pkg, core/plugin.json=$plugin. Bump both."
+            exit 1
+          fi
+          echo "version=$pkg" >> "$GITHUB_OUTPUT"
+
+      - name: Skip if release already exists
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "v${{ steps.v.outputs.version }}" >/dev/null 2>&1; then
+            echo "Release v${{ steps.v.outputs.version }} already exists — nothing to do."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build release assets
+        if: steps.check.outputs.exists != 'true'
+        id: assets
+        run: |
+          dist=plugins/pai-orbit/dist
+          tar -czf pai-orbit-codex.tar.gz   -C "$dist/codex"   .
+          tar -czf pai-orbit-copilot.tar.gz -C "$dist/copilot" .
+          (cd "$dist/claude-code" && zip -qr "$GITHUB_WORKSPACE/pai-orbit-claude-code.zip" .)
+          echo "sha256=$(sha256sum pai-orbit-claude-code.zip | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+          ls -l pai-orbit-*
+
+      - name: Create release
+        if: steps.check.outputs.exists != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ steps.v.outputs.version }}" \
+            pai-orbit-codex.tar.gz pai-orbit-copilot.tar.gz pai-orbit-claude-code.zip \
+            --target "${{ github.sha }}" \
+            --title "v${{ steps.v.outputs.version }}" \
+            --generate-notes
+
+      # Only after the assets are uploaded, so marketplace.json never points at a
+      # zip that doesn't exist yet.
+      - name: Point Claude Code marketplace at the new zip
+        if: steps.check.outputs.exists != 'true'
+        env:
+          URL: https://github.com/${{ github.repository }}/releases/download/v${{ steps.v.outputs.version }}/pai-orbit-claude-code.zip
+          SHA: ${{ steps.assets.outputs.sha256 }}
+        run: |
+          node -e '
+            const fs = require("fs");
+            const f = ".claude-plugin/marketplace.json";
+            const m = JSON.parse(fs.readFileSync(f, "utf8"));
+            const p = m.plugins.find((x) => x.name === "pai-orbit");
+            p.source = { source: "archive", url: process.env.URL, sha256: process.env.SHA };
+            fs.writeFileSync(f, JSON.stringify(m, null, 2) + "\n");
+          '
+          git diff --quiet && { echo "marketplace.json already up to date"; exit 0; }
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: point marketplace at v${{ steps.v.outputs.version }} claude-code zip"
+          git push origin HEAD:main
