@@ -41,7 +41,7 @@ Before starting:
 - Read relevant `<docs root>/features/<feature>/` and `<docs root>/decisions/` before starting significant work
 - Check the task board (see `/board` for board details): find the relevant issue and confirm it is in the right in-progress state
 - **Read full issue context before building:** read the issue's full comment history and any linked design docs/ADRs — not just the body. The body is often the original ask; a later comment or design doc may supersede it, and on conflict the later one wins.
-- **Build-readiness gate:** only build issues that are groomed **and** design-resolved. If the body or comments still pose an open question ("confirm whether…", "before deploying, confirm…"), or non-trivial work has no design doc, stop and switch to `/design` — do not proceed, and do not just move the card.
+- **Build-readiness gate:** only build issues that are groomed **and** design-resolved. If the body or comments still pose an open question ("confirm whether…", "before deploying, confirm…"), or non-trivial work has no design doc, stop and switch to `/design` — do not proceed, and do not just move the card. A list of security findings follows **Security findings** below instead.
 
 During build:
 - **Orchestrate parallel work (more than 3 files; ≤ 3 files — work directly, no orchestrator):** you, the primary agent, are the orchestrator. Split per repo; inside each repo spawn task agents **directly** (no agent spawns children), each tagged with a stream:
@@ -57,6 +57,19 @@ During build:
 - Do not add error handling, fallbacks, or validation for scenarios that can't happen
 - Do not add features, refactors, or abstractions beyond what the task requires
 - **Verify state before running scripts, migrations, or infra changes:** check current state first (schema, file existence, deployed config). If the work is already done, record an "already complete" note on the issue and move on — do not re-run completed work. (This applies to *completed* work only — genuinely idempotent setup/seed/DDL scripts are safe to just run.)
+
+## Security findings
+
+Use this path when the work is a **list** of security findings (a findings tracker `.xlsx` / `.csv`, or an assessment report) rather than a feature. One or two findings from `/review security` are fixed the normal way. Write working files to `<docs root>/wip/security-fix-<date>/`. **Never write a secret's value into any doc or working file** (triage, contracts, ops list, tracker copy): refer to it by its config key or name.
+
+1. **Intake:** read every finding (ID, severity, location, finding, recommended action, existing status). Read `.xlsx` with available tooling; if there is none, ask for a CSV export. Skip rows already marked in progress elsewhere unless told otherwise. Before triage, confirm the number of findings you read matches the number of rows in the source.
+2. **Triage against the code:** for each finding, record in `triage.md`: present? (`file:line`), really High/Critical? (with a reason), root-cause group (auth, token, IDOR, business logic, secrets, dependencies, password storage, injection, CI/CD), lane (`code` / `design` / `ops` / `skip`), and fix decision with a reason.
+3. **One checkpoint:** show counts per lane, every Lower / No / design / ops decision with its reason, and the fix order, then ask the owner once to confirm. If told to proceed without asking, state the plan and continue. The confirmed plan replaces groom and design for code-lane findings; `design`-lane findings still go to `/design`.
+4. **Fix by group, in order:** secrets → auth → tokens → ownership / IDOR → business logic → injection → password storage (migrate **all** existing rows, not only users who log in again) → dependencies. Fix a shared root cause once.
+5. **Prove each fix:** here the tests stream runs **first**: one attack test per finding, named with its ID, seen failing before the fix. Then the code stream fixes, then one full-suite run. Attack tests are required on this path, even when told not to ask; if tests cannot be run, say so and mark those findings as not proven.
+6. **Ops lane:** write `ops-actions.md` (rotate exposed credentials, purge history only with owner approval, review logs). Removing a secret from code never closes its finding.
+7. **Write back:** update `triage.md` with each outcome, and write an updated **copy** of the tracker (never overwrite the original). Fill the tracker's own columns by meaning; add a column only when none fits. Statuses: `Fixed - pending verification`, `Ops action required`, `Design required`, `Won't fix - <reason>`, `In progress elsewhere`. Add issues found along the way as new rows.
+8. **Verify independently:** recommend `/review security` (or `security-scan-retest` if installed). Nothing moves past "pending verification" until that passes.
 
 ## After shipping
 
