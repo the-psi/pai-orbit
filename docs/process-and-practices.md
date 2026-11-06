@@ -35,7 +35,7 @@ NEW FEATURE                                                         HAND OFF / R
 ```
 
 **Workflow skills** (used across all phases):
-`/git` · `/board` · `/analysis` · `/data-model` · `/process-map` · `/security-fix` · `/security-review` · `/simplify`
+`/git` · `/board` · `/analysis` · `/data-model` · `/process-map` · `/security-review` · `/simplify`
 
 `/arch validate` is used after build sessions that touch service structure.
 

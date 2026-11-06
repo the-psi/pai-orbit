@@ -62,13 +62,13 @@ project-root/
 1. Launch `codex` in the project. Trust the project when prompted.
 2. Run `/hooks` to trust the four registered hooks. Every hook edit invalidates trust — re-run after upgrades.
 3. Run `\$setup` to scaffold `.codex/pai-orbit-config.md`, `.codex/team.md`, and to fill in the lint hooks' `repo=` block.
-4. Run `/skills` to see the 24 skills.
+4. Run `/skills` to see the 23 skills.
 
 ## Skills
 
-**8 operational skills** — fire implicitly on description match OR explicit as `\$skill-name`:
+**7 operational skills** — fire implicitly on description match OR explicit as `\$skill-name`:
 
-- `analysis`, `board`, `data-model`, `epic`, `git`, `process-map`, `security-fix`, `simplify`
+- `analysis`, `board`, `data-model`, `epic`, `git`, `process-map`, `simplify`
 
 **15 mode skills** — explicit-only (invoked as `\$mode-name`; `agents/openai.yaml` disables implicit invocation):
 

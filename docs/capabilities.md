@@ -97,6 +97,8 @@ Before design discussion for ticketed work, checks open stories for requirement 
 
 Before branch setup and code edits for ticketed work, checks open stories for requirement changes, overlaps, or duplicates and pauses for the developer to classify plausible matches. Reads CLAUDE.md and relevant docs before starting. Checks the task board. For builds over 3 files the primary agent orchestrates parallel code / tests / docs streams (per repo; dependent tasks in order, independent tasks together, change reports reconciled at each layer, one verification run after merge); ≤ 3 files run without an orchestrator. Works on every adapter, within each tool's agent cap (excess tasks wait; tools without parallel agents run the same order sequentially). Before switching modes mid-session, saves a handoff note to `docs/wip/session-capture-<date>.md`. After shipping: closes the board item, creates issues for newly discovered tasks, updates product-capabilities.md, records design choices as ADRs.
 
+**Security findings:** given a list of findings (a tracker `.xlsx` / `.csv` or an assessment report), `/build` triages each against the code, asks the owner once to confirm the plan, fixes by root-cause group with an attack test per finding (failing before, passing after), lists ops work (credential rotation, history purge) as a checklist, and writes results to a **copy** of the tracker. Working files go to `docs/wip/security-fix-<date>/`.
+
 ---
 
 ### `/plan` — Plan Mode
@@ -270,12 +272,6 @@ To-be business process modelling — true swimlane diagrams (roles, teams, and s
 ### `/simplify`
 
 Code simplification pass — reviews recently changed code for over-engineering, dead code, unnecessary abstractions, and duplication, then fixes what's found. Runs the test suite after to confirm no behaviour change. Reports a summary of what was removed and why.
-
----
-
-### `/security-fix`
-
-Security findings remediation — the step between finding issues (`security-scan`) and verifying fixes (`security-scan-retest`). Reads a findings tracker (`.xlsx` / `.csv`) or assessment report, triages every finding against the current code (still present? really High/Critical? fix or not, with a reason), groups findings by root cause (auth, token forging, IDOR, business logic, secrets, dependencies, password storage, injection, CI/CD), and routes each to a lane: **code** (mini-spec in `docs/features/security-remediation-<date>/` handed to `/build`), **design** (`/design`), or **ops** (rotate credentials, purge history: a human checklist, never marked done by code). One confirmation checkpoint on the triage plan. Every code fix needs an attack-reproducing regression test named with the finding ID, failing before and passing after. Writes `triage.md`, `ops-actions.md` and `tracker-update.csv` under `docs/wip/security-fix-<date>/`, plus an updated **copy** of the tracker. Never overwrites the original.
 
 ---
 
