@@ -99,6 +99,8 @@ Before branch setup and code edits for ticketed work, checks open stories for re
 
 **Security findings:** given a list of findings (a tracker `.xlsx` / `.csv` or an assessment report), `/build` triages each against the code, asks the owner once to confirm the plan, fixes by root-cause group with an attack test per finding (failing before, passing after), lists ops work (credential rotation, history purge) as a checklist, and writes results to a **copy** of the tracker. Working files go to `docs/wip/security-fix-<date>/`.
 
+Usage: `/build Goal: fix the findings in <path-to-findings.xlsx or .csv>`. Add "fix everything, don't ask" to skip the confirmation (the plan is still written to `triage.md`). Afterwards, complete `ops-actions.md` (e.g. rotate leaked keys) and run `/review security`; findings stay "Fixed - pending verification" until then.
+
 ---
 
 ### `/plan` — Plan Mode
