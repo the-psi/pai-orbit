@@ -1,0 +1,188 @@
+name: install-stats
+
+# Daily snapshot of pai-orbit install numbers, written to the `stats` branch:
+#   docs/reports/install-stats/releases.csv  release-asset download counts (Codex, Copilot, Claude Code)
+#   docs/reports/install-stats/clones.csv    repo clones per day, minus CI checkouts (≈ Cursor + Claude Code catalog + team)
+#   docs/reports/install-stats/README.md     summary table
+#
+# Deliberately has NO actions/checkout step: a checkout is a clone and would
+# inflate the very number this workflow records. Everything goes through the API.
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  stats:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Snapshot install stats
+        env:
+          REPO: ${{ github.repository }}
+          # GITHUB_TOKEN may not be allowed to read /traffic/*; a fine-grained PAT
+          # with read access to this repo's Administration can be set as INSTALL_STATS_TOKEN.
+          TRAFFIC_TOKEN: ${{ secrets.INSTALL_STATS_TOKEN || github.token }}
+          TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64, datetime, json, os, urllib.error, urllib.request
+
+          R = os.environ["REPO"]
+          BRANCH = "stats"
+          DIR = "docs/reports/install-stats"
+          # Workflows that run actions/checkout — each job is one clone to subtract.
+          CHECKOUT_WORKFLOWS = {"dist-freshness.yml", "release-on-version-bump.yml"}
+          TODAY = datetime.datetime.now(datetime.timezone.utc).date().isoformat()
+
+          def api(path, method="GET", body=None, token=None):
+              req = urllib.request.Request(
+                  path if path.startswith("https://") else f"https://api.github.com/{path}",
+                  method=method,
+                  data=json.dumps(body).encode() if body is not None else None,
+                  headers={
+                      "Authorization": f"Bearer {token or os.environ['TOKEN']}",
+                      "Accept": "application/vnd.github+json",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                  },
+              )
+              try:
+                  with urllib.request.urlopen(req) as r:
+                      return json.load(r)
+              except urllib.error.HTTPError as e:
+                  if e.code == 404:
+                      return None
+                  raise RuntimeError(f"{method} {path} -> HTTP {e.code}: {e.read().decode()[:300]}")
+
+          def ensure_branch():
+              if api(f"repos/{R}/branches/{BRANCH}") is None:
+                  default = api(f"repos/{R}")["default_branch"]
+                  sha = api(f"repos/{R}/git/ref/heads/{default}")["object"]["sha"]
+                  api(f"repos/{R}/git/refs", "POST", {"ref": f"refs/heads/{BRANCH}", "sha": sha})
+
+          def read(name):
+              f = api(f"repos/{R}/contents/{DIR}/{name}?ref={BRANCH}")
+              return (base64.b64decode(f["content"]).decode(), f["sha"]) if f else ("", None)
+
+          def write(name, text, sha):
+              body = {"message": f"stats: {name} {TODAY}", "branch": BRANCH,
+                      "content": base64.b64encode(text.encode()).decode()}
+              if sha:
+                  body["sha"] = sha
+              api(f"repos/{R}/contents/{DIR}/{name}", "PUT", body)
+
+          def ci_clones(day):
+              runs = api(f"repos/{R}/actions/runs?created={day}&per_page=100")["workflow_runs"]
+              total = 0
+              for run in runs:
+                  if os.path.basename(run["path"]) in CHECKOUT_WORKFLOWS:
+                      total += api(run["jobs_url"])["total_count"]
+              return total
+
+          ensure_branch()
+
+          # --- release-asset downloads (one snapshot row per asset per day) ---
+          # A rerun on the same day replaces today's rows with fresh counts.
+          rel_txt, rel_sha = read("releases.csv")
+          lines = rel_txt.splitlines() or ["date,version,agent,download_count"]
+          rel = [lines[0]] + [l for l in lines[1:] if not l.startswith(TODAY + ",")]
+          page = 1
+          while True:
+              rs = api(f"repos/{R}/releases?per_page=100&page={page}")
+              if not rs:
+                  break
+              for r in rs:
+                  for a in r["assets"]:
+                      if a["name"].startswith("pai-orbit-"):
+                          agent = a["name"][len("pai-orbit-"):].split(".")[0]
+                          rel.append(f"{TODAY},{r['tag_name']},{agent},{a['download_count']}")
+              page += 1
+          write("releases.csv", "\n".join(rel) + "\n", rel_sha)
+
+          # --- clones (complete days only; GitHub keeps 14 days) ---
+          traffic_error = None
+          cl_txt, cl_sha = read("clones.csv")
+          cl = cl_txt.splitlines() or ["date,clones,unique_cloners,ci_clones,est_install_clones"]
+          try:
+              tr = api(f"repos/{R}/traffic/clones?per=day", token=os.environ["TRAFFIC_TOKEN"])
+              have = {l.split(",")[0] for l in cl[1:]}
+              new = []
+              for c in tr["clones"]:
+                  day = c["timestamp"][:10]
+                  if day >= TODAY or day in have:
+                      continue
+                  ci = ci_clones(day)
+                  new.append(f"{day},{c['count']},{c['uniques']},{ci},{max(0, c['count'] - ci)}")
+              if new:
+                  cl = [cl[0]] + sorted(cl[1:] + new)
+                  write("clones.csv", "\n".join(cl) + "\n", cl_sha)
+          except RuntimeError as e:
+              traffic_error = str(e)
+
+          # --- README summary ---
+          def downloads_total(rows, agent, on_or_before):
+              dates = sorted({r[0] for r in rows if r[2] == agent and r[0] <= on_or_before})
+              if not dates:
+                  return None
+              d = dates[-1]
+              return sum(int(r[3]) for r in rows if r[2] == agent and r[0] == d)
+
+          rows = [l.split(",") for l in rel[1:]]
+          names = {"claude-code": "Claude Code", "codex": "Codex", "copilot": "Copilot"}
+          agents = sorted({r[2] for r in rows}, key=lambda a: names.get(a, a))
+          first_snapshot = min((r[0] for r in rows), default=TODAY)
+          def ago(n):
+              return (datetime.date.fromisoformat(TODAY) - datetime.timedelta(days=n)).isoformat()
+          out = ["# pai-orbit install stats", "",
+                 f"_Updated {TODAY} by the `install-stats` workflow. Do not edit by hand._", "",
+                 "## Installs per coding agent (exact)", "",
+                 "Release-asset downloads, counted by GitHub. Includes updates and re-installs.", "",
+                 "| Agent | Last 7 days | Last 30 days | All time |", "|---|---|---|---|"]
+          short_history = False
+          for a in agents:
+              now = downloads_total(rows, a, TODAY) or 0
+              cols = []
+              for n in (7, 30):
+                  then = downloads_total(rows, a, ago(n))
+                  if then is None:
+                      short_history = True
+                      cols.append(f"{now}*")
+                  else:
+                      cols.append(str(now - then))
+              out.append(f"| {names.get(a, a)} | {cols[0]} | {cols[1]} | {now} |")
+          if short_history:
+              out += ["", f"\\* Tracking started {first_snapshot}, so this is the count since then."]
+
+          # Clones: one row per complete day, newest first, from the first day with any clones.
+          clone_rows = [l.split(",") for l in cl[1:]]
+          active = [r for r in clone_rows if int(r[1]) > 0]
+          start = min((r[0] for r in active), default=None)
+          recent = sorted([r for r in clone_rows if start and r[0] >= start], reverse=True)[:14]
+          out += ["", "## Repo clones (Cursor + team + bots, trend only, not exact)", "",
+                  "GitHub doesn't say who cloned, so Cursor installs can't be separated from bots, "
+                  "team clones and Claude Code catalog refreshes. CI checkouts are removed.", ""]
+          if recent:
+              out += ["| Date | Clones | Unique machines | CI removed |", "|---|---|---|---|"]
+              out += [f"| {r[0][5:]} | {r[4]} | {r[2]} | {r[3]} |" for r in recent]
+              if len(recent) >= 7:
+                  uniques = sorted(int(r[2]) for r in recent)
+                  typical = uniques[(len(uniques) - 1) // 2]
+                  out += ["", f"Typical quiet day: ~{typical} unique machines "
+                              f"(median of the last {len(recent)} days). Days well above this suggest real installs."]
+              else:
+                  out += ["", "Typical quiet day: shown once there are 7 days of data."]
+          else:
+              out += ["_No clones recorded yet._"]
+          if traffic_error:
+              out += ["", f"> ⚠️ Clone numbers not updated: {traffic_error}"]
+          readme_txt, readme_sha = read("README.md")
+          write("README.md", "\n".join(out) + "\n", readme_sha)
+
+          print("\n".join(out))
+          if traffic_error:
+              raise SystemExit(f"traffic API failed: {traffic_error}")
+          PY

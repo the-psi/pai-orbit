@@ -37,6 +37,8 @@ npx github:the-psi/pai-orbit init copilot
 
 The CLI drops pai-orbit files into the project (`.github/copilot-instructions.md`, `.github/prompts/`, `.github/instructions/`, `.husky/pre-commit.template`, `.pre-commit-config.yaml.template`) — no questions asked. Auto-activates `.husky/pre-commit` if the project has `.git/`.
 
+The files come from the `pai-orbit-copilot.tar.gz` asset of the matching GitHub Release (`v<version>`); GitHub counts that download, which is how pai-orbit tracks installs per coding agent. No data about you or your project is sent. If the download fails (offline, firewall), the CLI prints `using bundled files` and installs from the copy npx already fetched. To install a pinned branch's own files, set `PAI_ORBIT_OFFLINE=1`.
+
 Then `/setup` in Copilot Chat runs the **11-question interview agentically** — Copilot Business reads project files, asks questions, runs shell commands (`glab api`, `gh project field-list`) for live board column discovery, and proposes file edits (`.copilot/pai-orbit-config.md`, `.copilot/team.md`, `AGENTS.md`, `docs/architecture/*.md`) which you accept.
 
 ### Copilot Free
