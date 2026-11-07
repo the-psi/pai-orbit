@@ -26,6 +26,26 @@
 
 ---
 
+## Claude Code switch and failure tests (2026-11-07)
+
+Claude Code has **no fallback source**: a marketplace entry has exactly one `source`
+([marketplace reference](https://code.claude.com/docs/en/plugins/marketplace-reference.md)). So we
+tested what existing users experience when the switch happens or the zip fails. Isolated Claude Code
+configs; current = 2.1.308, old = 2.1.223 (last version without `archive` support).
+
+| # | Scenario | Result |
+|---|---|---|
+| C1 | **Existing user, folder → zip.** Installed v1.13.1 from the repo folder (today's setup); release v1.13.2 switched `marketplace.json` to the zip; `marketplace update` + `plugin update` | ✅ Updated 1.13.1 → 1.13.2 from the zip; 64/64 files; enabled |
+| C2a | **Zip download fails** (URL returns 404) during update | ✅ "Failed to update … HTTP 404". **Stays on 1.13.2, enabled, files intact** |
+| C2b | **Checksum mismatch** during update | ✅ "Plugin archive integrity check failed … The archive was not installed." **Stays on 1.13.2, enabled** |
+| C2c | Correct zip restored | ✅ "already at the latest version (1.13.2)": recovers with no action |
+| C3a | **Old Claude Code (2.1.223), existing user** after the switch | ✅ "This plugin uses a source type your Claude Code version does not support. Update Claude Code and try again." **Stays on 1.13.1, enabled, files intact**; the rest of the marketplace still loads |
+| C3b | **Old Claude Code, new install** after the switch | ⚠️ Install fails with the same clear "Update Claude Code" message (expected) |
+
+**Conclusion:** a failed zip update never breaks an installed pai-orbit; users keep their current
+version until the next successful update. The only user who can't get pai-orbit at all is a **new**
+user on Claude Code < 2.1.224 (released 2026-08-07), and they get a clear message to update.
+
 ## Open questions answered
 
 1. **Traffic API token:** `GITHUB_TOKEN` is **not** allowed (`403 Resource not accessible by integration`).
