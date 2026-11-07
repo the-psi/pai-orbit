@@ -3,7 +3,7 @@
 **Plan:** [docs/plans/install-tracking-github-insights-2026-11-01.md](../plans/install-tracking-github-insights-2026-11-01.md)
 **Test repo:** https://github.com/chetansharmapsi/pai-orbit-install-test (public, test only; copy of the-psi `main` @ `52895b5`)
 **Issue:** https://github.com/the-psi/pai-orbit/issues/89
-**Status:** All 10 tests run. Only open item: confirming clones (Cursor + Claude Code catalog + CI) appear in Insights traffic, which lags up to a day.
+**Status:** Complete (clone numbers confirmed 2026-11-07).
 
 ---
 
@@ -22,7 +22,7 @@
 | T9 | Release Action refuses version mismatch | ✅ Pass. "Version mismatch: package.json=1.13.1, core/plugin.json=1.13.0. Bump both." No release |
 | T10 | Stats Action | ⚠️ Partial. Created `stats` branch, wrote `releases.csv` + `README.md` with no checkout. **Clones failed: `GITHUB_TOKEN` gets HTTP 403 on `/traffic/clones`** |
 | — | **Release download counters increase** | ✅ **Works, with ~15 min delay. 1 download = 1 count** (verified on v1.13.1: Codex install 1→1, Claude Code update 1→1, control `curl` 1→1). On v1.13.0, codex and claude-code each showed one unexplained extra count (2 for 1); copilot was exact (2 for 2). Treat counts as "about right", not exact |
-| — | Insights clone numbers | ⏳ Pending. Traffic API shows 0 for today despite ≥7 CI checkouts + 3 Claude Code marketplace clones. Expected lag up to a day |
+| — | Insights clone numbers | ✅ Recorded, ⚠️ **very noisy.** With `INSTALL_STATS_TOKEN` set (2026-11-07) the stats run succeeded: 2026-11-05 = **102 clones / 29 unique**, CI subtracted correctly (6); 2026-11-06 = **15 clones / 8 unique** on a day with no test activity. Our own tests explain ~15 clones on 11-05; the rest are outside cloners (bots/indexers/scanners that clone new public repos). Release-asset downloads had no such noise |
 
 ---
 
@@ -32,7 +32,9 @@
    The user's own `gh` login can read it. **Needs a fine-grained PAT** stored as `INSTALL_STATS_TOKEN`
    (the workflow already uses it when set).
 2. **Cursor clone vs archive:** **git** (partial clone of the repo). Cursor installs should count as
-   repo clones in Insights; confirm in tomorrow's traffic numbers.
+   repo clones in Insights (confirmed: clones recorded), but the clone count is dominated by outside
+   cloners, so Cursor's number is a rough trend only.
+3. **Traffic lag:** clone numbers for a day appeared within ~2 days.
 
 ## Findings / changes to the plan
 
@@ -70,5 +72,5 @@
 - [x] Confirm release `download_count` increases: yes, after ~15 min.
 - [x] Confirm 1 download = 1 count: yes on v1.13.1 (all three exact at 07:47Z).
 - [x] T7: Cursor install from the test repo: works, fetched with git.
-- [ ] Next day: check Insights clones + rerun stats with a PAT (`INSTALL_STATS_TOKEN`) to verify CI subtraction.
+- [x] Check Insights clones + rerun stats with `INSTALL_STATS_TOKEN`: run succeeded, CI subtracted (6), clones recorded but noisy (see summary).
 - [ ] Clean-up: delete the test repo and local test folders when done.
