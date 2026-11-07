@@ -132,26 +132,51 @@ jobs:
               return sum(int(r[3]) for r in rows if r[2] == agent and r[0] == d)
 
           rows = [l.split(",") for l in rel[1:]]
-          agents = sorted({r[2] for r in rows})
+          names = {"claude-code": "Claude Code", "codex": "Codex", "copilot": "Copilot"}
+          agents = sorted({r[2] for r in rows}, key=lambda a: names.get(a, a))
+          first_snapshot = min((r[0] for r in rows), default=TODAY)
           def ago(n):
               return (datetime.date.fromisoformat(TODAY) - datetime.timedelta(days=n)).isoformat()
           out = ["# pai-orbit install stats", "",
                  f"_Updated {TODAY} by the `install-stats` workflow. Do not edit by hand._", "",
-                 "## Downloads per coding agent (release assets — installs + updates)", "",
+                 "## Installs per coding agent (exact)", "",
+                 "Release-asset downloads, counted by GitHub. Includes updates and re-installs.", "",
                  "| Agent | Last 7 days | Last 30 days | All time |", "|---|---|---|---|"]
+          short_history = False
           for a in agents:
               now = downloads_total(rows, a, TODAY) or 0
               cols = []
               for n in (7, 30):
                   then = downloads_total(rows, a, ago(n))
-                  cols.append(str(now - then) if then is not None else "n/a (not enough history)")
-              out.append(f"| {a} | {cols[0]} | {cols[1]} | {now} |")
+                  if then is None:
+                      short_history = True
+                      cols.append(f"{now}*")
+                  else:
+                      cols.append(str(now - then))
+              out.append(f"| {names.get(a, a)} | {cols[0]} | {cols[1]} | {now} |")
+          if short_history:
+              out += ["", f"\\* Tracking started {first_snapshot}, so this is the count since then."]
+
+          # Clones: one row per complete day, newest first, from the first day with any clones.
           clone_rows = [l.split(",") for l in cl[1:]]
-          def clone_sum(days):
-              return sum(int(r[4]) for r in clone_rows if r[0] > ago(days))
-          out += ["", "## Repo clones (Cursor + Claude Code marketplace catalog + team; CI removed)", "",
-                  "| Last 7 days | Last 30 days | Since tracking started |", "|---|---|---|",
-                  f"| {clone_sum(7)} | {clone_sum(30)} | {sum(int(r[4]) for r in clone_rows)} |"]
+          active = [r for r in clone_rows if int(r[1]) > 0]
+          start = min((r[0] for r in active), default=None)
+          recent = sorted([r for r in clone_rows if start and r[0] >= start], reverse=True)[:14]
+          out += ["", "## Repo clones (Cursor + team + bots, trend only, not exact)", "",
+                  "GitHub doesn't say who cloned, so Cursor installs can't be separated from bots, "
+                  "team clones and Claude Code catalog refreshes. CI checkouts are removed.", ""]
+          if recent:
+              out += ["| Date | Clones | Unique machines | CI removed |", "|---|---|---|---|"]
+              out += [f"| {r[0][5:]} | {r[4]} | {r[2]} | {r[3]} |" for r in recent]
+              if len(recent) >= 7:
+                  uniques = sorted(int(r[2]) for r in recent)
+                  typical = uniques[(len(uniques) - 1) // 2]
+                  out += ["", f"Typical quiet day: ~{typical} unique machines "
+                              f"(median of the last {len(recent)} days). Days well above this suggest real installs."]
+              else:
+                  out += ["", "Typical quiet day: shown once there are 7 days of data."]
+          else:
+              out += ["_No clones recorded yet._"]
           if traffic_error:
               out += ["", f"> ⚠️ Clone numbers not updated: {traffic_error}"]
           readme_txt, readme_sha = read("README.md")
