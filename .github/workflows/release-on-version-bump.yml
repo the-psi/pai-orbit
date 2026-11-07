@@ -59,6 +59,29 @@ jobs:
           echo "sha256=$(sha256sum pai-orbit-claude-code.zip | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
           ls -l pai-orbit-*
 
+      # Release notes = the README's "> **v<version> — …**" note for this version
+      # (if there is one), followed by GitHub's generated list of merged PRs.
+      - name: Write release notes from README
+        if: steps.check.outputs.exists != 'true'
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+          README_URL: https://github.com/${{ github.repository }}/blob/v${{ steps.v.outputs.version }}/README.md
+        run: |
+          # Take this version's note; stop at a non-quote line or the next version's note.
+          awk -v ver="> **v${VERSION} " '
+            on && (!/^>/ || /^> \*\*v[0-9]/) { exit }
+            index($0, ver) == 1 { on = 1 }
+            on { sub(/^> ?/, ""); print }
+          ' README.md > release-notes.md
+          # README anchors like (#updating) only work inside the README; point them at it.
+          sed -i "s|](#|](${README_URL}#|g" release-notes.md
+          if [ -s release-notes.md ]; then
+            echo "Using README note for v${VERSION}:"
+            cat release-notes.md
+          else
+            echo "::notice::No '> **v${VERSION} …**' note in README.md; release notes will list merged PRs only."
+          fi
+
       - name: Create release
         if: steps.check.outputs.exists != 'true'
         env:
@@ -68,6 +91,7 @@ jobs:
             pai-orbit-codex.tar.gz pai-orbit-copilot.tar.gz pai-orbit-claude-code.zip \
             --target "${{ github.sha }}" \
             --title "v${{ steps.v.outputs.version }}" \
+            --notes-file release-notes.md \
             --generate-notes
 
       # Only after the assets are uploaded, so marketplace.json never points at a
