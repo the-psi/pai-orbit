@@ -17,6 +17,7 @@
     --border: rgba(17,17,16,0.09); --shadow: 0 1px 2px rgba(17,17,16,0.04), 0 8px 24px rgba(17,17,16,0.06);
     --hero-a: #e8f0fc; --hero-b: #fcefe8;
     /* section + agent accents (dashboard palette: same agent, same colour) */
+    --claude: #d97757; --codex: #10a37f; --copilot: #8534f3;
     --blue: #2a78d6; --orange: #eb6834; --aqua: #1baf7a; --yellow: #d99400; --violet: #6250d6; --green: #0f8a4f;
     --tint: 0.10;
   }
@@ -27,6 +28,7 @@
       --text-primary: #f2f1ed; --text-secondary: #c3c2b7; --text-muted: #8f8d86;
       --border: rgba(255,255,255,0.09); --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
       --hero-a: #15233a; --hero-b: #2e1c14;
+      --claude: #d4714f; --codex: #10a37f; --copilot: #8534f3;
       --blue: #3987e5; --orange: #e0662f; --aqua: #1fae7c; --yellow: #d9a01e; --violet: #9085e9; --green: #2fb36b;
       --tint: 0.16;
     }
@@ -37,6 +39,7 @@
     --text-primary: #f2f1ed; --text-secondary: #c3c2b7; --text-muted: #8f8d86;
     --border: rgba(255,255,255,0.09); --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
     --hero-a: #15233a; --hero-b: #2e1c14;
+    --claude: #d4714f; --codex: #10a37f; --copilot: #8534f3;
     --blue: #3987e5; --orange: #e0662f; --aqua: #1fae7c; --yellow: #d9a01e; --violet: #9085e9; --green: #2fb36b;
     --tint: 0.16;
   }
@@ -130,6 +133,9 @@
   .card.feature .body { display: flex; flex-direction: column; gap: 4px; }
   .card.feature b { font-size: 17px; }
 
+  /* Agent brand colours (same as the dashboard): Claude clay, Cursor ink (black/white logo),
+     Codex OpenAI green, GitHub Copilot purple. */
+  .c-claude { --c: var(--claude); } .c-cursor { --c: var(--text-primary); } .c-codex { --c: var(--codex); } .c-copilot { --c: var(--copilot); }
   .c-blue { --c: var(--blue); } .c-orange { --c: var(--orange); } .c-aqua { --c: var(--aqua); }
   .c-yellow { --c: var(--yellow); } .c-violet { --c: var(--violet); } .c-green { --c: var(--green); }
 
@@ -156,10 +162,10 @@
     <h1>Disciplined working modes<br>for coding agents</h1>
     <p class="lead">pai-orbit gives your coding agent focused modes, skills and agents, and keeps every decision in versioned docs instead of lost chat.</p>
     <div class="agents" aria-label="Supported coding agents">
-      <span class="chip"><i class="dot" style="background:var(--blue)"></i>Claude Code</span>
-      <span class="chip"><i class="dot" style="background:var(--yellow)"></i>Cursor</span>
-      <span class="chip"><i class="dot" style="background:var(--orange)"></i>Codex</span>
-      <span class="chip"><i class="dot" style="background:var(--aqua)"></i>GitHub Copilot</span>
+      <span class="chip"><i class="dot" style="background:var(--claude)"></i>Claude Code</span>
+      <span class="chip"><i class="dot" style="background:var(--text-primary)"></i>Cursor</span>
+      <span class="chip"><i class="dot" style="background:var(--codex)"></i>Codex</span>
+      <span class="chip"><i class="dot" style="background:var(--copilot)"></i>GitHub Copilot</span>
     </div>
     <div class="ctas">
       <a class="btn primary" href="{{REPO_URL}}/blob/main/docs/getting-started.md#install-pai-orbit">Get started →</a>
@@ -188,19 +194,19 @@
   <section aria-labelledby="s-install">
     <div class="sec-head"><h2 id="s-install">Install guides</h2><p>Pick your coding agent</p></div>
     <div class="grid">
-      <a class="card c-blue" href="{{REPO_URL}}/blob/main/docs/getting-started.md#claude-code-recommended">
+      <a class="card c-claude" href="{{REPO_URL}}/blob/main/docs/getting-started.md#claude-code-recommended">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17l6-6-6-6M12 19h8"/></svg></div>
         <b>Claude Code</b><span>Install from the plugin marketplace.</span><span class="go">Install →</span>
       </a>
-      <a class="card c-yellow" href="{{REPO_URL}}/blob/main/docs/cursor-plugin-install-and-usage.md">
+      <a class="card c-cursor" href="{{REPO_URL}}/blob/main/docs/cursor-plugin-install-and-usage.md">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l14 8-6 2-2 6z"/></svg></div>
         <b>Cursor</b><span>Plugin install and usage.</span><span class="go">Install →</span>
       </a>
-      <a class="card c-orange" href="{{REPO_URL}}/blob/main/docs/codex-install-and-usage.md">
+      <a class="card c-codex" href="{{REPO_URL}}/blob/main/docs/codex-install-and-usage.md">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg></div>
         <b>Codex</b><span>One <code>npx</code> command, full parity.</span><span class="go">Install →</span>
       </a>
-      <a class="card c-aqua" href="{{REPO_URL}}/blob/main/docs/copilot-install-and-usage.md">
+      <a class="card c-copilot" href="{{REPO_URL}}/blob/main/docs/copilot-install-and-usage.md">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.5 5.5L20 11l-5.5 2.5L12 19l-2.5-5.5L4 11l5.5-2.5z"/></svg></div>
         <b>GitHub Copilot</b><span>One <code>npx</code> command for VS Code.</span><span class="go">Install →</span>
       </a>

@@ -20,10 +20,13 @@
     --grid: #e1e0d9;
     --axis: #c3c2b7;
     --border: rgba(11,11,11,0.10);
-    --s-claude: #2a78d6;   /* slot 1 blue   — Claude Code */
-    --s-codex:  #eb6834;   /* slot 2 orange — Codex */
-    --s-copilot:#1baf7a;   /* slot 3 aqua   — Copilot */
-    --s-cursor: #eda100;   /* slot 4 yellow — Cursor (repo clones) */
+    /* Agent colours follow each brand (validated colour-blind safe with labels + tables):
+       Claude clay, OpenAI green for Codex (OpenAI brand is black), Copilot purple,
+       Cursor = ink (its logo is black/white; its orange accent is too close to Claude clay). */
+    --s-claude: #d97757;   /* Claude Code — brand clay */
+    --s-codex:  #10a37f;   /* Codex — OpenAI green */
+    --s-copilot:#8534f3;   /* GitHub Copilot — brand purple */
+    --s-cursor: var(--text-primary); /* Cursor — ink, like its logo */
     --on-fill: #ffffff;
     --on-yellow: #0b0b0b;
     --hover-wash: rgba(11,11,11,0.05);
@@ -34,7 +37,7 @@
       --page: #0d0d0d; --surface: #1a1a19;
       --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #898781;
       --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
-      --s-claude: #3987e5; --s-codex: #d95926; --s-copilot: #199e70; --s-cursor: #c98500;
+      --s-claude: #d4714f; --s-codex: #10a37f; --s-copilot: #8534f3; --s-cursor: var(--text-primary);
       --hover-wash: rgba(255,255,255,0.06);
     }
   }
@@ -43,7 +46,7 @@
     --page: #0d0d0d; --surface: #1a1a19;
     --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #898781;
     --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
-    --s-claude: #3987e5; --s-codex: #d95926; --s-copilot: #199e70; --s-cursor: #c98500;
+    --s-claude: #d4714f; --s-codex: #10a37f; --s-copilot: #8534f3; --s-cursor: var(--text-primary);
     --hover-wash: rgba(255,255,255,0.06);
   }
 
@@ -77,7 +80,7 @@
   }
   button:hover { background: var(--hover-wash); }
   button[aria-pressed="true"] { font-weight: 600; border-color: var(--text-muted); }
-  button:focus-visible, .hit:focus-visible { outline: 2px solid var(--s-claude); outline-offset: 2px; }
+  button:focus-visible, .hit:focus-visible { outline: 2px solid var(--text-secondary); outline-offset: 2px; }
 
   .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 24px 0; }
   .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
@@ -193,9 +196,9 @@
 
 // ---- entities: color follows the agent, never its rank -------------------
 const AGENTS = [
-  { key: "claude-code", name: "Claude Code", color: "var(--s-claude)",  ink: "var(--on-fill)" },
-  { key: "codex",       name: "Codex",       color: "var(--s-codex)",   ink: "var(--on-fill)" },
-  { key: "copilot",     name: "Copilot",     color: "var(--s-copilot)", ink: "var(--on-fill)" },
+  { key: "claude-code", name: "Claude Code", color: "var(--s-claude)",  ink: "#0b0b0b" },
+  { key: "codex",       name: "Codex",       color: "var(--s-codex)",   ink: "#0b0b0b" },
+  { key: "copilot",     name: "Copilot",     color: "var(--s-copilot)", ink: "#ffffff" },
 ];
 const CURSOR = { name: "Cursor (repo clones)", color: "var(--s-cursor)" };
 const NS = "http://www.w3.org/2000/svg";
@@ -546,16 +549,16 @@ function render() {
   const typical = cl.length >= 7 ? ests[Math.floor((ests.length - 1) / 2)] : undefined;
   legend("legend-clones", [
     { name: "Unique machines, CI removed (approx.)", color: CURSOR.color },
-    { name: "CI jobs removed (exact)", color: "var(--axis)", kind: "rect" },
+    { name: "CI jobs removed (exact)", color: "var(--text-muted)", kind: "rect" },
   ], "line");
   lineChart("chart-clones", cl.map((c) => c.date), [{ name: "unique machines, CI removed (approx.)", color: CURSOR.color, values: cl.map((c) => c.est) }], {
     height: 220, reference: typical, referenceLabel: typical !== undefined ? `Typical quiet day ~${typical}` : "",
-    bars: { values: cl.map((c) => c.ci), color: "var(--axis)" },
+    bars: { values: cl.map((c) => c.ci), color: "var(--text-muted)" },
     label: "Unique machines cloning the repo per day, CI removed, with CI jobs removed as bars",
     tipExtra: (i) => [
       { value: `${fmt(cl[i].est)}–${fmt(cl[i].hi)}`, label: "range (CI machines not identified)" },
       { value: fmt(cl[i].unique), label: "raw unique machines" },
-      { color: "var(--axis)", value: fmt(cl[i].ci), label: "CI jobs removed" },
+      { color: "var(--text-muted)", value: fmt(cl[i].ci), label: "CI jobs removed" },
       { value: fmt(cl[i].clones), label: "clones, CI removed" },
     ],
   });
