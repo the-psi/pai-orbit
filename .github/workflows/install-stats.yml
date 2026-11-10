@@ -4,9 +4,12 @@ name: install-stats
 #   docs/reports/install-stats/releases.csv  release-asset download counts (Codex, Copilot, Claude Code)
 #   docs/reports/install-stats/clones.csv    repo clones per day, minus CI checkouts (≈ Cursor + Claude Code catalog + team)
 #   docs/reports/install-stats/README.md     summary table
+# then publishes the dashboard (.github/install-stats/index.html + both CSVs)
+# to GitHub Pages: https://<owner>.github.io/<repo>/
 #
 # Deliberately has NO actions/checkout step: a checkout is a clone and would
 # inflate the very number this workflow records. Everything goes through the API.
+# Pages must be enabled once with Source = "GitHub Actions" (Settings → Pages).
 
 on:
   schedule:
@@ -137,8 +140,10 @@ jobs:
           first_snapshot = min((r[0] for r in rows), default=TODAY)
           def ago(n):
               return (datetime.date.fromisoformat(TODAY) - datetime.timedelta(days=n)).isoformat()
+          owner, name = R.split("/")
           out = ["# pai-orbit install stats", "",
                  f"_Updated {TODAY} by the `install-stats` workflow. Do not edit by hand._", "",
+                 f"📊 **Dashboard with charts:** https://{owner.lower()}.github.io/{name}/", "",
                  "## Installs per coding agent (exact)", "",
                  "Release-asset downloads, counted by GitHub. Includes updates and re-installs.", "",
                  "| Agent | Last 7 days | Last 30 days | All time |", "|---|---|---|---|"]
@@ -186,3 +191,36 @@ jobs:
           if traffic_error:
               raise SystemExit(f"traffic API failed: {traffic_error}")
           PY
+
+  # Publish the dashboard. Runs even when the stats job failed on the traffic API,
+  # so the download charts stay current. No checkout: files come via the API.
+  publish:
+    needs: stats
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Collect dashboard + data
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          mkdir -p site
+          get() { gh api -H "Accept: application/vnd.github.raw" "repos/$REPO/contents/$1?ref=$2" > "site/$3"; }
+          get .github/install-stats/index.html "${{ github.event.repository.default_branch }}" index.html
+          get docs/reports/install-stats/releases.csv stats releases.csv
+          get docs/reports/install-stats/clones.csv stats clones.csv || echo "date,clones,unique_cloners,ci_clones,est_install_clones" > site/clones.csv
+          ls -l site
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
