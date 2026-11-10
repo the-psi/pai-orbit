@@ -49,6 +49,6 @@ pai-orbit's founding rule: if it matters, it goes to a file. Session captures at
 
 1. Run `$setup` to fill in `.codex/pai-orbit-config.md`, `.codex/team.md`, and the lint hooks' `repo=` block.
 2. Run `/hooks` to review and trust the four registered hooks (`bash-guard`, `arch-drift-wrapper`, `lint-python-wrapper`, `lint-ts-wrapper`).
-3. Run `/skills` to see the 23 available skills. Type `$build`, `$design`, etc. to enter mode headspaces.
+3. Run `/skills` to see the available skills. Type `$build`, `$design`, etc. to enter mode headspaces.
 
 If the project scope for `.codex/hooks.json` doesn't load (project untrusted in Codex), user-scope `~/.codex/hooks.json` is an **additive complement** — both layers fire together when trusted, not one-or-the-other. Set up whichever fits your workflow.

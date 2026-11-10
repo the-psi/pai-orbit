@@ -154,7 +154,7 @@ function runInstall(target, { overwrite }) {
   console.log('  2. Run \`/hooks\` to review and trust the 4 registered hooks.');
   console.log('  3. Run \`$setup\` to fill in .codex/pai-orbit-config.md, .codex/team.md,');
   console.log('     and the lint hooks\' repo= configuration.');
-  console.log('  4. Run \`/skills\` to see the 23 available skills.');
+  console.log('  4. Run \`/skills\` to see the available skills.');
   console.log('');
   console.log('Docs: docs/codex-install-and-usage.md in the repo.');
 }
