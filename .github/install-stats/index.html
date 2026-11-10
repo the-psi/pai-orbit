@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>pai-orbit install stats</title>
 <meta name="description" content="Installs of pai-orbit per coding agent, from GitHub release downloads and repo clones.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     color-scheme: light;
@@ -46,8 +49,10 @@
   * { box-sizing: border-box; }
   body {
     margin: 0; background: var(--page); color: var(--text-primary);
-    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    font: 15px/1.5 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
+  h1 { font-family: "Space Grotesk", "Inter", sans-serif; letter-spacing: -0.01em; }
   main { max-width: 1120px; margin: 0 auto; padding: 32px 16px 64px; }
   header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
   h1 { font-size: 24px; font-weight: 600; margin: 0 0 4px; }
