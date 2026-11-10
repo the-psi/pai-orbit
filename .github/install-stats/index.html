@@ -160,6 +160,7 @@
       <h2>Repo clones per day: unique machines</h2>
       <span class="muted">Cursor + team + bots — trend only, not an install count</span>
     </div>
+    <div class="legend" id="legend-clones"></div>
     <div class="chart" id="chart-clones"></div>
     <p class="note" id="clones-note"></p>
     <details><summary>Show data table</summary><div id="table-clones"></div></details>
@@ -249,7 +250,7 @@ function legend(id, items, kind) {
   const box = document.getElementById(id); box.replaceChildren();
   for (const it of items) {
     const s = h("span", {}, box);
-    h("i", { class: kind === "line" ? "key-line" : "swatch", style: `background:${it.color}` }, s);
+    h("i", { class: (it.kind || kind) === "line" ? "key-line" : "swatch", style: `background:${it.color}` }, s);
     s.appendChild(document.createTextNode(it.name));
   }
 }
@@ -270,7 +271,7 @@ function tooltipFor(container) {
       h("div", { class: "t-title", text: title }, tip);
       for (const r of rows) {
         const row = h("div", { class: "t-row" }, tip);
-        if (r.color) h("i", { class: "key-line", style: `background:${r.color}` }, row);
+        h("i", { class: "key-line", style: `background:${r.color || "transparent"}` }, row); // blank key keeps rows aligned
         h("b", { text: r.value }, row);
         h("span", { text: r.label }, row);
       }
@@ -311,7 +312,13 @@ function shape(releases, clones) {
     for (const a of AGENTS) o[a.key] = latest.filter((r) => r.version === v && r.agent === a.key).reduce((s, r) => s + Number(r.download_count), 0);
     return o;
   });
-  const cl = clones.map((c) => ({ date: c.date, clones: Number(c.est_install_clones), unique: Number(c.unique_cloners), ci: Number(c.ci_clones), raw: Number(c.clones) }));
+  // est = unique machines minus CI jobs: CI job count is exact, but GitHub doesn't say
+  // which machines were CI, so the true value lies between unique - ci and unique - 1.
+  const cl = clones.map((c) => {
+    const unique = Number(c.unique_cloners), ci = Number(c.ci_clones);
+    return { date: c.date, clones: Number(c.est_install_clones), unique, ci, raw: Number(c.clones),
+             est: Math.max(0, unique - ci), hi: ci > 0 ? Math.max(0, unique - 1) : unique };
+  });
   const firstActive = cl.findIndex((c) => c.raw > 0);
   return { days, cum, today, perVersion, clones: firstActive < 0 ? [] : cl.slice(firstActive), start: snapDays[0] || today };
 }
@@ -339,8 +346,8 @@ function renderTiles(D) {
   const l = h("div", { class: "label" }, t);
   h("i", { class: "swatch", style: `background:${CURSOR.color}` }, l); l.appendChild(document.createTextNode(CURSOR.name));
   // Average per day: summing daily uniques would count the same machine every day.
-  h("div", { class: "value", text: c.length ? `~${fmt(Math.round(c.reduce((s, x) => s + x.unique, 0) / c.length))}` : "–" }, t);
-  h("div", { class: "delta", text: `unique machines per day, avg of last ${c.length || 7} days · trend only` }, t);
+  h("div", { class: "value", text: c.length ? `~${fmt(Math.round(c.reduce((s, x) => s + x.est, 0) / c.length))}` : "–" }, t);
+  h("div", { class: "delta", text: `unique machines per day, CI removed, avg of last ${c.length || 7} days · trend only` }, t);
 }
 
 // ---- line chart (cumulative) ------------------------------------------------
@@ -350,11 +357,20 @@ function lineChart(id, dates, series, opts = {}) {
   const W = Math.max(320, box.clientWidth), H = opts.height || 260;
   const m = { t: 12, r: opts.endLabels ? 96 : 16, b: 28, l: 40 };
   const pw = W - m.l - m.r, ph = H - m.t - m.b;
-  const sc = niceScale(Math.max(opts.reference || 0, ...series.flatMap((s) => s.values)));
+  const sc = niceScale(Math.max(opts.reference || 0, ...series.flatMap((s) => s.values), ...(opts.bars ? opts.bars.values : [])));
   const x = (i) => m.l + (dates.length === 1 ? pw / 2 : (i * pw) / (dates.length - 1));
   const y = (v) => m.t + ph - (v / sc.max) * ph;
   const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": opts.label || "" }, box);
   gridAndTicks(svg, sc, y, m, W);
+  if (opts.bars) {
+    // Context bars on the same count axis (same unit as the line, so one axis is honest).
+    const bw = Math.min(16, Math.max(4, (dates.length > 1 ? pw / (dates.length - 1) : pw) * 0.4));
+    opts.bars.values.forEach((v, i) => {
+      if (!v) return;
+      const x0 = Math.max(m.l, Math.min(W - m.r - bw, x(i) - bw / 2)), y1 = y(v), hgt = y(0) - y1, r = Math.min(4, hgt / 2, bw / 2);
+      el("path", { d: `M${x0},${y1 + hgt}V${y1 + r}Q${x0},${y1} ${x0 + r},${y1}H${x0 + bw - r}Q${x0 + bw},${y1} ${x0 + bw},${y1 + r}V${y1 + hgt}Z`, fill: opts.bars.color }, svg);
+    });
+  }
   const ticks = Math.min(dates.length, Math.max(2, Math.floor(pw / 90)));
   for (let k = 0; k < ticks; k++) {
     const i = ticks === 1 ? 0 : Math.round((k * (dates.length - 1)) / (ticks - 1));
@@ -502,19 +518,31 @@ function render() {
   stackedColumns("chart-ver", D.perVersion.map((v) => v.version), AGENTS.map((a) => ({ name: a.name, color: a.color, values: D.perVersion.map((v) => v[a.key]) })), { height: 200, label: "Downloads per release version" });
   table("table-ver", ["Version", ...AGENTS.map((a) => a.name)], D.perVersion.map((v) => [v.version, ...AGENTS.map((a) => fmt(v[a.key]))]));
 
-  // Clones: unique machines per day, with the typical quiet day as a reference line.
+  // Clones: unique machines with CI removed (line) + CI jobs removed (grey bars, exact),
+  // with the typical quiet day as a reference line.
   const cIdx = inRange(D.clones.map((c) => c.date)); const cl = cIdx.map((i) => D.clones[i]);
-  const uniq = cl.map((c) => c.unique).sort((a, b) => a - b);
-  const typical = cl.length >= 7 ? uniq[Math.floor((uniq.length - 1) / 2)] : undefined;
-  lineChart("chart-clones", cl.map((c) => c.date), [{ name: "Unique machines", color: CURSOR.color, values: cl.map((c) => c.unique) }], {
+  const ests = cl.map((c) => c.est).sort((a, b) => a - b);
+  const typical = cl.length >= 7 ? ests[Math.floor((ests.length - 1) / 2)] : undefined;
+  legend("legend-clones", [
+    { name: "Unique machines, CI removed (approx.)", color: CURSOR.color },
+    { name: "CI jobs removed (exact)", color: "var(--axis)", kind: "rect" },
+  ], "line");
+  lineChart("chart-clones", cl.map((c) => c.date), [{ name: "unique machines, CI removed (approx.)", color: CURSOR.color, values: cl.map((c) => c.est) }], {
     height: 220, reference: typical, referenceLabel: typical !== undefined ? `Typical quiet day ~${typical}` : "",
-    label: "Unique machines cloning the repo per day",
-    tipExtra: (i) => [{ value: fmt(cl[i].clones), label: "clones (CI removed)" }, { value: fmt(cl[i].ci), label: "CI clones removed" }],
+    bars: { values: cl.map((c) => c.ci), color: "var(--axis)" },
+    label: "Unique machines cloning the repo per day, CI removed, with CI jobs removed as bars",
+    tipExtra: (i) => [
+      { value: `${fmt(cl[i].est)}–${fmt(cl[i].hi)}`, label: "range (CI machines not identified)" },
+      { value: fmt(cl[i].unique), label: "raw unique machines" },
+      { color: "var(--axis)", value: fmt(cl[i].ci), label: "CI jobs removed" },
+      { value: fmt(cl[i].clones), label: "clones, CI removed" },
+    ],
   });
-  document.getElementById("clones-note").textContent = typical === undefined
-    ? "Typical quiet day appears once there are 7 days of data. GitHub doesn't say who cloned, so bots and team clones are included."
-    : "Days well above the typical quiet day suggest real installs. GitHub doesn't say who cloned, so bots and team clones are included.";
-  table("table-clones", ["Date", "Clones (CI removed)", "Unique machines", "CI removed"], cl.slice().reverse().map((c) => [c.date, fmt(c.clones), fmt(c.unique), fmt(c.ci)]));
+  document.getElementById("clones-note").textContent =
+    "CI job counts are exact (GitHub Actions API). GitHub doesn't say which machines were CI, so unique machines minus CI jobs is approximate; the tooltip shows the possible range. Bots and team clones are still included." +
+    (typical === undefined ? " Typical quiet day appears once there are 7 days of data." : " Days well above the typical quiet day suggest real installs.");
+  table("table-clones", ["Date", "Unique, CI removed (approx.)", "Range", "Raw unique", "CI jobs removed", "Clones, CI removed"],
+    cl.slice().reverse().map((c) => [c.date, fmt(c.est), `${fmt(c.est)}–${fmt(c.hi)}`, fmt(c.unique), fmt(c.ci), fmt(c.clones)]));
 }
 
 document.querySelectorAll("[data-range]").forEach((b) => b.addEventListener("click", () => { RANGE = Number(b.dataset.range); render(); }));
