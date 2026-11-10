@@ -6,6 +6,7 @@ name: install-stats
 #   docs/reports/install-stats/README.md     summary table
 # then publishes the project site to GitHub Pages (https://<owner>.github.io/<repo>/):
 #   /                 home page        .github/site/index.html
+#   /brand/           logo + icon      .github/site/brand/*.svg
 #   /install-stats/   dashboard        .github/install-stats/index.html + both CSVs
 # Pages replaces the whole site on every deploy, so any new page must be added
 # to this job (one workflow builds the whole site).
@@ -215,9 +216,12 @@ jobs:
           REPO: ${{ github.repository }}
           MAIN: ${{ github.event.repository.default_branch }}
         run: |
-          mkdir -p site/install-stats
+          mkdir -p site/install-stats site/brand
           get() { gh api -H "Accept: application/vnd.github.raw" "repos/$REPO/contents/$1?ref=$2" > "site/$3"; }
           get .github/site/index.html "$MAIN" index.html
+          for f in pai-orbit-logo.svg pai-orbit-logo-light.svg pai-orbit-logo-dark.svg pai-orbit-icon.svg; do
+            get ".github/site/brand/$f" "$MAIN" "brand/$f"
+          done
           get .github/install-stats/index.html "$MAIN" install-stats/index.html
           get docs/reports/install-stats/releases.csv stats install-stats/releases.csv
           get docs/reports/install-stats/clones.csv stats install-stats/clones.csv \

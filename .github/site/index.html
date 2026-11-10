@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>pai-orbit</title>
 <meta name="description" content="pai-orbit: a developer methodology harness for coding agents. Get started, install guides, install stats, releases and project docs.">
+<link rel="icon" type="image/svg+xml" href="brand/pai-orbit-icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -56,8 +57,20 @@
   }
   .hero .wrap { padding-top: 28px; padding-bottom: 48px; }
   .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
-  .brand { display: flex; align-items: center; gap: 10px; font: 600 16px "Space Grotesk", "Inter", sans-serif; }
-  .orbit { width: 28px; height: 28px; }
+  .brand { display: inline-flex; align-items: center; }
+  .logo { height: 46px; width: auto; display: block; }
+  /* Logo follows the theme (OS setting or the toggle). */
+  .logo-dark { display: none; }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .logo-light { display: none; }
+    :root:where(:not([data-theme="light"])) .logo-dark { display: block; }
+  }
+  :root[data-theme="dark"] .logo-light { display: none; }
+  :root[data-theme="dark"] .logo-dark { display: block; }
+  :root[data-theme="light"] .logo-light { display: block; }
+  :root[data-theme="light"] .logo-dark { display: none; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: var(--text-secondary); margin: 0 0 14px; }
+  .eyebrow i { width: 6px; height: 6px; border-radius: 50%; background: var(--orange); }
   .theme-btn {
     font: 500 13px "Inter", sans-serif; color: var(--text-primary); background: var(--surface);
     border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px; cursor: pointer;
@@ -132,17 +145,14 @@
 <header class="hero">
   <div class="wrap">
     <div class="topbar">
-      <div class="brand">
-        <svg class="orbit" viewBox="0 0 32 32" aria-hidden="true">
-          <ellipse cx="16" cy="16" rx="13" ry="6" fill="none" stroke="var(--blue)" stroke-width="2" transform="rotate(-25 16 16)"/>
-          <circle cx="16" cy="16" r="5" fill="var(--text-primary)"/>
-          <circle cx="27" cy="11" r="2.6" fill="var(--orange)"/>
-        </svg>
-        pai-orbit
-      </div>
+      <a class="brand" href="./" aria-label="pai orbit home">
+        <img class="logo logo-light" src="brand/pai-orbit-logo-light.svg" alt="pai orbit">
+        <img class="logo logo-dark" src="brand/pai-orbit-logo-dark.svg" alt="pai orbit">
+      </a>
       <button class="theme-btn" id="theme" type="button" aria-label="Switch light or dark theme">Theme</button>
     </div>
 
+    <p class="eyebrow"><i></i>Part of the pai family of AI software by PSI</p>
     <h1>Disciplined working modes<br>for coding agents</h1>
     <p class="lead">pai-orbit gives your coding agent focused modes, skills and agents, and keeps every decision in versioned docs instead of lost chat.</p>
     <div class="agents" aria-label="Supported coding agents">
@@ -235,7 +245,7 @@
 
   <footer>
     <span>Built from <a href="{{REPO_URL}}">{{REPO}}</a> by the <code>install-stats</code> workflow.</span>
-    <span>MIT licensed · Pratham Software (PSI)</span>
+    <span>pai-orbit is part of the pai family by Pratham Software (PSI) · MIT licensed</span>
   </footer>
 </main>
 

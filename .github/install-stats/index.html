@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>pai-orbit install stats</title>
+<link rel="icon" type="image/svg+xml" href="../brand/pai-orbit-icon.svg">
 <meta name="description" content="Installs of pai-orbit per coding agent, from GitHub release downloads and repo clones.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -53,6 +54,17 @@
     -webkit-font-smoothing: antialiased;
   }
   h1 { font-family: "Space Grotesk", "Inter", sans-serif; letter-spacing: -0.01em; }
+  .brand { display: inline-block; margin-bottom: 14px; }
+  .logo { height: 34px; width: auto; display: block; }
+  .logo-dark { display: none; }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .logo-light { display: none; }
+    :root:where(:not([data-theme="light"])) .logo-dark { display: block; }
+  }
+  :root[data-theme="dark"] .logo-light { display: none; }
+  :root[data-theme="dark"] .logo-dark { display: block; }
+  :root[data-theme="light"] .logo-light { display: block; }
+  :root[data-theme="light"] .logo-dark { display: none; }
   main { max-width: 1120px; margin: 0 auto; padding: 32px 16px 64px; }
   header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
   h1 { font-size: 24px; font-weight: 600; margin: 0 0 4px; }
@@ -116,8 +128,11 @@
 <main>
   <header>
     <div>
-      <a class="muted" href="../" style="text-decoration:none">← pai-orbit home</a>
-      <h1>pai-orbit install stats</h1>
+      <a class="brand" href="../" aria-label="pai orbit home">
+        <img class="logo logo-light" src="../brand/pai-orbit-logo-light.svg" alt="pai orbit">
+        <img class="logo logo-dark" src="../brand/pai-orbit-logo-dark.svg" alt="pai orbit">
+      </a>
+      <h1>Install stats</h1>
       <p class="sub">Installs per coding agent, counted by GitHub. No tracking code runs in the plugin.</p>
       <p class="muted" id="updated"></p>
     </div>
