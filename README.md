@@ -1,4 +1,4 @@
-# pai-orbit · v1.13.0
+# pai-orbit · v1.15.0
 
 A structured developer methodology harness for Claude Code, Cursor, GitHub Copilot, and OpenAI Codex (beta) — installed as a plugin in Claude Code and Cursor, and with one command for Copilot and Codex.
 
@@ -122,6 +122,8 @@ Workflow skills (`/git`, `/board`, `/analysis`, `/data-model`, `/process-map`, `
 > **`/groom` readiness gate** — before handing off to `/design`, `/groom` audits every open question and classifies it as a *functional gap* (what the system does — must be resolved) or a *design question* (how it does it — deferred to `/design`). The feature is not marked groomed until all functional gaps are closed. This prevents half-specified features from entering design.
 
 > **`/review security`** — the security-focused pass is a sub-mode of `/review`. Use `/review` for full code review, `/review security` for the OWASP checklist, or `/review full` for both in sequence. Critical and High findings block merge.
+
+> **v1.15.0 — install tracking per coding agent + project site.** Releases are now created automatically on every version bump, with one download file per coding agent, so GitHub counts installs for Claude Code, Codex and Copilot (Cursor is tracked by repo clones). Codex and Copilot installs download their release file (falling back to the bundled files offline), and Claude Code installs the plugin from the release zip (Claude Code 2.1.224 or later). A new project site with an install-stats dashboard is published daily to GitHub Pages. No tracking code runs in the plugin. Update pai-orbit to pick it up (see [Updating](#updating)).
 
 > **v1.13.0 — `/build` orchestrates parallel streams.** For builds over 3 files, `/build` now splits work into code, tests and docs streams run by the primary agent: dependent tasks in order, independent tasks together, changes reported and reconciled at each layer, then one verification run. Same behaviour on every adapter within the tool's agent cap. Update pai-orbit to pick it up (see [Updating](#updating)).
 

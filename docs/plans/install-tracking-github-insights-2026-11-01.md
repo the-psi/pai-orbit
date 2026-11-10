@@ -26,8 +26,8 @@ The sections below are the plan as written before testing. These points override
 5. **Cursor fetches the repo with git** (partial clone), so Cursor installs count as repo clones.
 6. **Download counters work: 1 download = 1 count, ~15 min delay.** (One unexplained +1 on the first
    test release for two assets; treat counts as approximate.)
-7. **`package.json` was 1.11.1 while `core/plugin.json` was 1.13.0 on `main`**; the PR bumps
-   `package.json` to 1.13.0, so the first automated release is v1.13.0.
+7. **`package.json` was 1.11.1 while `core/plugin.json` was 1.13.0 on `main`**, and 1.13.0 had already shipped (PR #88) and 1.14.0 is taken by PR #91. This PR bumps both
+   to **1.15.0**, so the first automated release is **v1.15.0**. Merge after #91.
 8. **Branch/tag pins now get release files.** `npx github:the-psi/pai-orbit#<branch> …` downloads the
    release asset for the version in that branch's `package.json`, not that branch's `dist/`.
    Use `PAI_ORBIT_OFFLINE=1` to install the bundled files. Alternative for the team to decide:
