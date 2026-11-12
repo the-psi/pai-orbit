@@ -62,5 +62,6 @@ After the first use on a real findings tracker. Keep the decision if all of thes
 - Every `code`-lane finding has an attack test that failed before the fix, or is marked `Not proven`.
 - `/review security` (or `security-scan-retest`) confirms the `Fixed - pending verification` items.
 - No secret value appears in any file the flow produced.
+- No PR was merged while a finding was still `Fixed - owner review required`.
 
-**Rollback:** the evidence so far is one small sample app, so this ships on probation. If any criterion fails on the first real tracker, remove the `## Security findings` section, its gate sentence and its orchestrator bullet from `core/modes/build.md` in a patch release. These are self-contained, so `/build` returns to its earlier behaviour, and this ADR is marked `superseded`.
+**Rollback:** the evidence so far is one small sample app, so this ships on probation. If any criterion fails on the first real tracker, remove the `## Security findings` section, its gate sentence, its branch-setup bullet and its orchestrator bullet from `core/modes/build.md` in a patch release. These are self-contained, so `/build` returns to its earlier behaviour, and this ADR is marked `superseded`.
