@@ -123,7 +123,7 @@ Workflow skills (`/git`, `/board`, `/analysis`, `/data-model`, `/process-map`, `
 
 > **`/review security`** — the security-focused pass is a sub-mode of `/review`. Use `/review` for full code review, `/review security` for the OWASP checklist, or `/review full` for both in sequence. Critical and High findings block merge.
 
-> **v1.14.0 — `/build` handles security findings lists.** Give `/build` a findings tracker (`.xlsx` / `.csv`) or assessment report: it triages each finding against the code, asks the owner once to confirm the plan, fixes by root-cause group with an attack test per finding, lists ops work (key rotation, history purge) in `ops-actions.md`, and writes results to a copy of the tracker. Usage: `/build Goal: fix the findings in <path>`. Update pai-orbit to pick it up (see [Updating](#updating)).
+> **v1.14.0 — `/build` handles security findings lists.** Give `/build` a findings tracker (`.xlsx` / `.csv`) or assessment report: it triages each finding against the code, asks the owner once to confirm the plan, fixes by root-cause group with an attack test per `code`-lane finding, lists ops work (key rotation, history purge) in `ops-actions.md`, and writes results to a copy of the tracker. Usage: `/build Goal: fix the findings in <path>`. Update pai-orbit to pick it up (see [Updating](#updating)).
 
 > **v1.13.0 — `/build` orchestrates parallel streams.** For builds over 3 files, `/build` now splits work into code, tests and docs streams run by the primary agent: dependent tasks in order, independent tasks together, changes reported and reconciled at each layer, then one verification run. Same behaviour on every adapter within the tool's agent cap. Update pai-orbit to pick it up (see [Updating](#updating)).
 

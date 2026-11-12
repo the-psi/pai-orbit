@@ -22,7 +22,7 @@ Teams receive security assessment results as a findings tracker (often a spreads
 
 In the context of **fixing a list of security findings**,
 facing **`/build` fixing code well but skipping triage, grouping, ops routing and tracker write-back**,
-we decided **to add a short, conditional "Security findings" section to `/build`** (intake → triage → one owner checkpoint → fix by group → attack test per finding → ops checklist → tracker copy → independent verification) that applies only when the goal points to a findings file (a tracker or assessment report with several findings),
+we decided **to add a short, conditional "Security findings" section to `/build`** (intake → triage → one owner checkpoint → fix by group → attack test per `code`-lane finding → ops checklist → tracker copy → independent verification) that applies only when the goal points to a findings file (a tracker or assessment report with several findings),
 to achieve **one familiar entry point (`/build` with the findings file as the goal) with an auditable record per finding** (`triage.md`, kept in an uncommitted working folder and given to the owner, so attack details for unfixed findings stay out of the repo),
 with guardrails: `code` lane only for local fixes that follow an existing pattern (auth-model, token-format, data-model or boundary changes go to `/design`); skips, downgrades and Won't fix always need owner confirmation, even when told not to ask; fixes that change login, access or session / token behaviour are applied but marked `Fixed - owner review required` and listed first, so the owner checks the model's lane choice before merge (holding them instead left the most important Criticals unfixed in testing); credential rotations are shown at the checkpoint; the suite runs after each fix group, and a failing group is fixed in its own code or reverted, never by editing existing tests; the work always goes through a branch and PR, whose description lists every login / access fix (whatever its status) under "Do not merge until the owner approves and the independent review passes"; under "don't ask" the owner confirms the plan in that PR review; independent verification runs in a fresh session or by a person,
 accepting **a slightly longer `/build` for every build, and triage (an owner decision) running inside an implementation mode, bounded by the single confirmation checkpoint**.
@@ -38,7 +38,7 @@ accepting **a slightly longer `/build` for every build, and triage (an owner dec
 ## Consequences
 
 **Positive:**
-- `/build Goal: fix the findings in <file>` produces triage reasons, grouped fixes, an attack test per finding, an ops checklist and an updated tracker copy.
+- `/build Goal: fix the findings in <file>` produces triage reasons, grouped fixes, an attack test per `code`-lane finding, an ops checklist and an updated tracker copy.
 - The original tracker is never overwritten; ops-only work is never marked done by code.
 - Normal feature builds are unchanged.
 
