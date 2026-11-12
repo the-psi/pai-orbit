@@ -22,9 +22,9 @@ Teams receive security assessment results as a findings tracker (often a spreads
 
 In the context of **fixing a list of security findings**,
 facing **`/build` fixing code well but skipping triage, grouping, ops routing and tracker write-back**,
-we decided **to add a short, conditional "Security findings" section to `/build`** (intake → triage → one owner checkpoint → fix by group → attack test per finding → ops checklist → tracker copy → independent verification) that applies only when the input is a findings list,
+we decided **to add a short, conditional "Security findings" section to `/build`** (intake → triage → one owner checkpoint → fix by group → attack test per finding → ops checklist → tracker copy → independent verification) that applies only when the goal points to a findings file (a tracker or assessment report with several findings),
 to achieve **one familiar entry point (`/build` with the findings file as the goal) with an auditable record per finding**,
-with guardrails: `code` lane only for local fixes that follow an existing pattern (auth-model, token-format, data-model or boundary changes go to `/design`); skips, downgrades and Won't fix always need owner confirmation, even when told not to ask; credential rotations are shown at the checkpoint,
+with guardrails: `code` lane only for local fixes that follow an existing pattern (auth-model, token-format, data-model or boundary changes go to `/design`); skips, downgrades and Won't fix always need owner confirmation, even when told not to ask; fixes that change login, access or session / token behaviour are applied but marked `Fixed - owner review required` and listed first, so the owner checks the model's lane choice before merge (holding them instead left the most important Criticals unfixed in testing); credential rotations are shown at the checkpoint; the suite runs after each fix group and a failing group is reverted,
 accepting **a slightly longer `/build` for every build, and triage (an owner decision) running inside an implementation mode, bounded by the single confirmation checkpoint**.
 
 ## Options Considered
@@ -51,7 +51,7 @@ accepting **a slightly longer `/build` for every build, and triage (an owner dec
 
 ## Related Decisions
 
-- [2026-11-03 build orchestrator streams](2026-11-03-build-orchestrator-streams.md): for findings, the order is always tests → fix → full suite (with or without the orchestrator), so each attack test is seen failing before the fix.
+- [2026-11-03 build orchestrator streams](2026-11-03-build-orchestrator-streams.md): for findings, the order per group is always attack tests → fix → full suite (with or without the orchestrator), so each attack test is seen failing before the fix; `/build` states this exception in its orchestrator rules.
 
 ## Review Date
 
@@ -62,3 +62,5 @@ After the first use on a real findings tracker. Keep the decision if all of thes
 - Every `code`-lane finding has an attack test that failed before the fix, or is marked `Not proven`.
 - `/review security` (or `security-scan-retest`) confirms the `Fixed - pending verification` items.
 - No secret value appears in any file the flow produced.
+
+**Rollback:** the evidence so far is one small sample app, so this ships on probation. If any criterion fails on the first real tracker, remove the `## Security findings` section, its gate sentence and its orchestrator bullet from `core/modes/build.md` in a patch release. These are self-contained, so `/build` returns to its earlier behaviour, and this ADR is marked `superseded`.
