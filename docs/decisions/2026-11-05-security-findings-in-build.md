@@ -1,6 +1,7 @@
 ---
-status: accepted
+status: accepted-provisional
 date: 2026-11-05
+last-updated: 2026-11-13
 deciders: [Chetan Sharma]
 scope: system
 supersedes: ""
@@ -22,7 +23,7 @@ Teams receive security assessment results as a findings tracker (often a spreads
 
 In the context of **fixing a list of security findings**,
 facing **`/build` fixing code well but skipping triage, grouping, ops routing and tracker write-back**,
-we decided **to add a short, conditional "Security findings" section to `/build`** (intake → triage → one owner checkpoint → fix by group → attack test per `code`-lane finding → ops checklist → tracker copy → independent verification) that applies only when the goal points to a findings file (a tracker or assessment report with several findings),
+we decided **to add a conditional "Security findings" flow to `/build`, kept in `core/reference/security-findings.md` with a short pointer in `build.md`** (intake → triage → one owner checkpoint → fix by group → attack test per `code`-lane finding → ops checklist → tracker copy → independent verification) that applies only when the goal points to a findings file (a tracker or assessment report),
 to achieve **one familiar entry point (`/build` with the findings file as the goal) with an auditable record per finding** (`triage.md`, kept in an uncommitted working folder and given to the owner, so attack details for unfixed findings stay out of the repo),
 with guardrails: `code` lane only for local fixes that follow an existing pattern (auth-model, token-format, data-model or boundary changes go to `/design`); skips, downgrades and Won't fix always need owner confirmation, even when told not to ask; fixes that change login, access or session / token behaviour are applied but marked `Fixed - owner review required` and listed first, so the owner checks the model's lane choice before merge (holding them instead left the most important Criticals unfixed in testing); credential rotations are shown at the checkpoint; the suite runs after each fix group, and a failing group is fixed in its own code or reverted, never by editing existing tests; the work always goes through a branch and PR, whose description lists every login / access fix (whatever its status) under "Do not merge until the owner approves and the independent review passes"; under "don't ask" the owner confirms the plan in that PR review; independent verification runs in a fresh session or by a person,
 accepting **a slightly longer `/build` for every build, and triage (an owner decision) running inside an implementation mode, bounded by the single confirmation checkpoint**.
@@ -31,7 +32,7 @@ accepting **a slightly longer `/build` for every build, and triage (an owner dec
 
 | Option | Pros | Cons |
 |--------|------|------|
-| **(chosen) Conditional section in `/build`** | Users already reach for `/build`; nothing new to discover; no new skill or adapter counts; no conflict with other skill PRs | `/build` grows for every build; relies on `/build` recognising a findings list (if it misses, behaviour falls back to plain `/build`: correct fixes without triage or write-back) |
+| **(chosen) Conditional flow in `/build`, kept in a reference file** | Users already reach for `/build`; nothing new to discover; no new skill or adapter counts; no conflict with other skill PRs | `/build` carries a short pointer (Codex and Copilot inline the full file); relies on `/build` recognising a findings list (if it misses, behaviour falls back to plain `/build`: correct fixes without triage or write-back) |
 | Separate `security-fix` skill wrapping `/build` | Clean mode separation; `/build` unchanged | Users must know it exists; adds a skill and count changes to every adapter |
 | Do nothing | Zero work; fixes were already correct | No triage, no record of "won't fix" decisions, ops work can look closed, tracker left stale |
 
@@ -43,7 +44,7 @@ accepting **a slightly longer `/build` for every build, and triage (an owner dec
 - Normal feature builds are unchanged.
 
 **Negative / trade-offs:**
-- Every `/build` session carries the extra section.
+- Every `/build` carries a short pointer; Codex and Copilot inline the full reference as an appendix.
 - Reading `.xlsx` depends on spreadsheet tooling in the target environment; falls back to asking for CSV.
 
 **Neutral:**
@@ -55,7 +56,7 @@ accepting **a slightly longer `/build` for every build, and triage (an owner dec
 
 ## Review Date
 
-After the first use on a real findings tracker. Keep the decision if all of these hold; otherwise revisit:
+At the first use on a real findings tracker or on 2027-01-31, whichever comes first. Owner: Chetan Sharma. Keep the decision (and change the status to `accepted`) if all of these hold; otherwise revisit:
 
 - Every source row appears in `triage.md` and the tracker copy (none lost).
 - No skip, downgrade or Won't fix was applied without owner confirmation.
@@ -64,4 +65,4 @@ After the first use on a real findings tracker. Keep the decision if all of thes
 - No secret value appears in any file the flow produced.
 - No PR was merged while a finding was still `Fixed - owner review required`.
 
-**Rollback:** the evidence so far is one small sample app, so this ships on probation. If any criterion fails on the first real tracker, remove the `## Security findings` section, its gate sentence, its branch-setup bullet and its orchestrator bullet from `core/modes/build.md` in a patch release. These are self-contained, so `/build` returns to its earlier behaviour, and this ADR is marked `superseded`.
+**Rollback:** the evidence so far is one small sample app, so this ships on probation. If any criterion fails on the first real tracker, delete `core/reference/security-findings.md` and remove its pointers from `core/modes/build.md` (the `## Security findings` section, the gate sentence, the branch-setup bullet, the tests note and the orchestrator bullet) in a patch release. These are self-contained, so `/build` returns to its earlier behaviour, and this ADR is marked `superseded`.
