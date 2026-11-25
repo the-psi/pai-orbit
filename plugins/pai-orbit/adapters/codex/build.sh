@@ -218,8 +218,10 @@ for skill_dir in "$CORE_DIR"/skills/*/; do
   # switch-out targets — those must become $orbit-plan, $orbit-review on Codex).
   while IFS= read -r -d '' f; do
     rewrite_paths_in_place "$f"
-    rewrite_slash_cross_refs "$f"
     append_reference_appendix "$f"
+    # After the appendix, so inlined reference text gets the same
+    # /plan → $orbit-plan and /review → $orbit-review rewrite.
+    rewrite_slash_cross_refs "$f"
   done < <(find "$dest_dir" \( -name '*.md' -o -name '*.mdc' -o -name '*.template' \) -print0)
 done
 
@@ -269,8 +271,9 @@ YAML
 
   # Standard path rewrites + cross-reference rewrites on every mode body
   rewrite_paths_in_place "$skill_md"
-  rewrite_slash_cross_refs "$skill_md"
   append_reference_appendix "$skill_md"
+  # After the appendix, so inlined reference text is rewritten too.
+  rewrite_slash_cross_refs "$skill_md"
 }
 
 # Emit all 15 mode skills. plan → orbit-plan; review → orbit-review.

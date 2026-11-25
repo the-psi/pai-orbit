@@ -35,6 +35,7 @@ REFERENCE=(
   "reference/architecture-decomposition.md"
   "reference/architecture-styles.md"
   "reference/docs-path-resolution.md"
+  "reference/security-findings.md"
 )
 
 echo "pai-orbit: installing Cursor rules from ${REPO}@${REF} ..."
