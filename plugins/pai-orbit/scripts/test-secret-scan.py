@@ -420,6 +420,13 @@ os.environ["SS_FORMURL"] = "FAKE pw*(x)9"; SECRETS.append("FAKE pw*(x)9")
 w(Y + "/formurl.md", "body: password=FAKE+pw*%28x%299\n")
 run("form-encoded copy (space as +, * kept)", ["--env", "SS_FORMURL", Y + "/formurl.md"], 1, ["formurl.md:1 key=SS_FORMURL form=url-plus"])
 run("URL forms add no false match on a clean file", ["--env", "SS_JSURL", "--env", "SS_FORMURL", Y + "/pem-clean.md"], 0)
+os.environ["SS_NETURL"] = "FakeDb/Pw!2026"; SECRETS.append("FakeDb/Pw!2026")
+w(Y + "/neturl.md", "evidence: pwd=FakeDb%2fPw!2026\n")
+run("HttpUtility.UrlEncode-style copy (lower hex, ! kept)", ["--env", "SS_NETURL", Y + "/neturl.md"], 1, ["neturl.md:1 key=SS_NETURL form=url-net-lower"])
+os.environ["SS_TILDE"] = "Fake~Tok2026"; SECRETS.append("Fake~Tok2026")
+w(Y + "/tilde.md", "token=Fake%7ETok2026\n")
+run("WebUtility-style copy (~ as %7E)", ["--env", "SS_TILDE", Y + "/tilde.md"], 1, ["tilde.md:1 key=SS_TILDE form=url-net"])
+run(".NET forms add no false match on a clean file", ["--env", "SS_NETURL", "--env", "SS_TILDE", Y + "/pem-clean.md"], 0)
 
 # ---------- report ----------
 ok = sum(1 for r in results if r[1])
