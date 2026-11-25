@@ -27,7 +27,7 @@ Switch out when:
 Before starting:
 - **Related open-story gate (first gate, before branch changes or edits):** For ticketed work, run the board skill's Related open-story check. Skip when no ticket is in scope.
 - **Branch setup (first repository action after the related-story gate, before file edits):** Read `.cursor/pai-orbit-config.md → ## Git` to determine the branching model. Then:
-  - **Security findings list (overrides the bullets below):** always a branch and PR, even trunk-based. If already on a branch created for this findings work, reuse it; on any other branch (including an unrelated feature branch), create a new branch from the main branch. Under "don't ask", state the branch name and create it without waiting for confirmation (see `reference/security-findings.md`).
+  - **Security findings list (overrides the bullets below):** always a branch and PR, even trunk-based. If already on a branch created for this findings work, reuse it; otherwise, whatever branch you are on, create a new branch from the branch new work starts from under the git model (`develop` under GitFlow, otherwise the main branch), never carrying uncommitted changes into it. Under "don't ask", state the branch name and create it without waiting for confirmation (see `reference/security-findings.md`).
   - **GitHub Flow / GitFlow, currently on `main`/`master`/`develop`:** derive the branch name from the linked board issue title (kebab-case the title, prefix with `feature/`, `fix/`, or `hotfix/` as appropriate). If no board issue is linked, ask the user for the slug. State the proposed branch name and wait for confirmation, then create and checkout the branch. Do not write any code until the branch is confirmed.
   - **GitHub Flow / GitFlow, already on a feature branch:** state "Already on feature branch `<name>` — proceeding" and confirm it matches the work at hand before continuing.
   - **Trunk-based, small change (≤ 3 files estimated):** state "Committing directly to `main` (trunk-based, small change ≤ 3 files)" and proceed.
@@ -62,7 +62,7 @@ During build:
 
 ## Security findings
 
-When the goal points to a security findings file (a security assessment report, or a tracker whose rows are security findings), read `reference/security-findings.md` in full and follow it: intake, triage, one owner checkpoint, fixes by group with an attack test per finding, an ops list, a tracker copy and independent verification. Where it differs from the general rules above, it wins.
+When the goal points to a security findings file (a security assessment report, or a tracker whose rows are security findings), read `reference/security-findings.md` in full and follow it: intake, triage, one owner checkpoint, fixes by group with an attack test per finding, an ops list, a tracker copy and independent verification. Where it differs from the other rules in this mode (including closing the board item under After shipping), it wins.
 
 ## After shipping
 
