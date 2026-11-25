@@ -235,7 +235,7 @@ paths (files or folders); --staged (added lines of `git diff --cached`, and the
 whole staged copy of each binary file).
 Checks the literal value plus JSON-escaped, CSV-quoted, base64 and base64url
 (at any byte offset, so user:password in a Basic header is found), URL-encoded
-and hex (both cases) forms, and a 16-character fragment for values of 24+
+(Python, JS/.NET and form styles) and hex (both cases) forms, and a 16-character fragment for values of 24+
 characters (not for a connection string whose secret parts are searched).
 Zip, gzip, bzip2 and xz files (.xlsx, .docx, .pptx, found by content) are
 unpacked and every part is read, including hidden sheets and comments. Text is
@@ -497,7 +497,9 @@ def forms(value, fragment=True):
     hx = binascii.hexlify(raw).decode()
     url = urllib.parse.quote(value, safe="")
     out = [("literal", value), ("json", json.dumps(value)[1:-1]), ("csv", value.replace('"', '""')), ("url", url),
-           ("url-lower", re.sub(r"%[0-9A-F]{2}", lambda m: m.group().lower(), url)), ("hex", hx), ("HEX", hx.upper())]
+           ("url-lower", re.sub(r"%[0-9A-F]{2}", lambda m: m.group().lower(), url)),
+           ("url-js", urllib.parse.quote(value, safe="!*'()")), ("url-plus", urllib.parse.quote_plus(value, safe="*")),
+           ("hex", hx), ("HEX", hx.upper())]
     for k in (0, 1, 2):  # the value may start at any byte of a base64 block
         full = (k + len(raw)) // 3 * 4
         for name, enc in (("base64", base64.b64encode), ("base64url", base64.urlsafe_b64encode)):

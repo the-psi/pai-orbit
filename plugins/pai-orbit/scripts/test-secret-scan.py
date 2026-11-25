@@ -412,6 +412,15 @@ w(Y + "/over.md", "commit msg FAKEover88\n")
 run("over-reading regex across cells: trimmed lines found", ["--source", T + "/overread.xlsx", "--pattern", r'Password=([^;"]+)', Y + "/over.md"], 1, ["form=literal"])
 run("PEM with Zw== line still exit 0 when clean", ["--source", "certs/server.key", "--pattern", PEMPAT, Y + "/pem-clean.md"], 0, None, ["SHORT", "SPACES"])
 
+# ---------- final review cases: JS/.NET and form URL encoding ----------
+os.environ["SS_JSURL"] = "FakeDbP@ss!2026"; SECRETS.append("FakeDbP@ss!2026")
+w(Y + "/jsurl.md", "evidence: pwd=FakeDbP%40ss!2026&x=1\n")
+run("encodeURIComponent-style copy (! kept)", ["--env", "SS_JSURL", Y + "/jsurl.md"], 1, ["jsurl.md:1 key=SS_JSURL form=url-js"])
+os.environ["SS_FORMURL"] = "FAKE pw*(x)9"; SECRETS.append("FAKE pw*(x)9")
+w(Y + "/formurl.md", "body: password=FAKE+pw*%28x%299\n")
+run("form-encoded copy (space as +, * kept)", ["--env", "SS_FORMURL", Y + "/formurl.md"], 1, ["formurl.md:1 key=SS_FORMURL form=url-plus"])
+run("URL forms add no false match on a clean file", ["--env", "SS_JSURL", "--env", "SS_FORMURL", Y + "/pem-clean.md"], 0)
+
 # ---------- report ----------
 ok = sum(1 for r in results if r[1])
 for name, passed, code, problems, out in results:
