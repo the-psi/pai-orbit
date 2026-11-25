@@ -1256,6 +1256,29 @@ for ref in "$CORE_DIR"/reference/*.md; do
   done
 done
 
+# Skill-local references/ (e.g. security-scan/references/*.md): same flat-file
+# constraint, so inline each file into its OWN skill's prompt only. The
+# verify-dist.sh check fails the build if a prompt points at a references/ file
+# that has no appendix.
+for ref in "$CORE_DIR"/skills/*/references/*.md; do
+  [ -f "$ref" ] || continue
+  ref_name="$(basename "$ref")"
+  skill_name="$(basename "$(dirname "$(dirname "$ref")")")"
+  f="$DIST_DIR/.github/prompts/${skill_name}.prompt.md"
+  [ -f "$f" ] || continue
+  ref_title="$(head -n 1 "$ref" | sed 's/^# *//' | tr '[:upper:]' '[:lower:]')"
+  {
+    echo ""
+    echo "---"
+    echo ""
+    echo "## Appendix: $ref_title"
+    echo ""
+    echo "Referenced above as \`references/$ref_name\` — inlined here since Copilot prompts are flat files with no sibling-file lookup:"
+    echo ""
+    rewrite_paths < "$ref"
+  } >> "$f"
+done
+
 emit_skill_instructions
 emit_decisions_instructions
 emit_arch_drift_instructions

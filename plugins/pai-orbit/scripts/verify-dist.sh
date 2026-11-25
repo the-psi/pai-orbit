@@ -225,6 +225,13 @@ prompt_count=0
 for f in "$DIST_DIR"/.github/prompts/*.prompt.md; do
   verify_prompt_file "$f"
   prompt_count=$((prompt_count + 1))
+  # Skill-local references/<file>.md pointers must be inlined as appendices —
+  # Copilot prompts are flat files, so a bare pointer would dangle.
+  for ref in $(grep -oE 'references/[A-Za-z0-9_.-]+\.md' "$f" | sort -u); do
+    if ! grep -qF "Referenced above as \`$ref\`" "$f"; then
+      fail "${f#"$DIST_DIR"/}: points at '$ref' but no inlined appendix for it exists"
+    fi
+  done
 done
 
 instructions_count=0
