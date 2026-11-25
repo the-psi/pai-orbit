@@ -225,10 +225,10 @@ Values are read from where they live, by key name only:
   --pattern REGEX        regex whose (first) group is a value, applied to every
                          --source (for values with no key name) (repeatable);
                          stop the group at the value's end, e.g.
-                         ([^\s;"'<>]+); a value with spaces or tabs gives
-                         SPACES (exit 2); a value is also searched without the
-                         punctuation and symbols around it (quotes, brackets,
-                         commas, smart quotes, backticks)
+                         ([^\s;"'<>]+); a value with spaces gives SPACES
+                         (exit 2); each line of a value is also searched
+                         without the punctuation and symbols around it
+                         (quotes, brackets, commas, smart quotes, backticks)
   --env VAR              environment variable holding a value (repeatable)
 A value with line breaks (e.g. a PEM key) is searched line by line. Targets:
 paths (files or folders); --staged (added lines of `git diff --cached`, and the
@@ -606,13 +606,18 @@ def main():
             vals = [v.strip() for v in vals if v.strip()]
             if not vals:
                 sc.note("NOVALUE pattern=%d source=%s" % (i, src))
-            if any(re.search(r"[ \t]", line) for v in vals for line in v.splitlines()):
+            if any(re.search(r"\s", line) for v in vals for line in v.splitlines()):
                 sc.note("SPACES pattern=%d source=%s (a value has spaces: make the group stop at the value)" % (i, src))
             for v in vals:  # prose may wrap the value in punctuation: also search it without
                 secrets.append(("pattern%d" % i, v))
-                bare = trim(v)
-                if "\n" not in v and bare != v and len(bare) >= 4:
-                    secrets.append(("pattern%d" % i, bare))
+                lines = v.splitlines()
+                for line in lines:
+                    bare = trim(line.strip())
+                    if bare and bare != line.strip():
+                        if len(bare) >= 4:
+                            secrets.append(("pattern%d" % i, bare))
+                        elif len(lines) == 1:  # a short value in quotes; a PEM line like Zw== is not one
+                            sc.note("SHORT pattern=%d (value under 4 characters, not searched)" % i)
     for e in a.env:
         if os.environ.get(e, "").strip():
             secrets.append((e, os.environ[e].strip()))
