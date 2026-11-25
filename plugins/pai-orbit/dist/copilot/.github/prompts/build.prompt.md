@@ -502,6 +502,7 @@ def forms(value, fragment=True):
            ("url-js", urllib.parse.quote(value, safe="!*'()")), ("url-plus", urllib.parse.quote_plus(value, safe="*")),
            ("url-net", net), ("url-net-lower", re.sub(r"%[0-9A-F]{2}", lambda m: m.group().lower(), net)),
            ("url-form", urllib.parse.quote_plus(value, safe="*").replace("~", "%7E")),
+           ("url-py-plus", urllib.parse.quote_plus(value)),
            ("hex", hx), ("HEX", hx.upper())]
     for k in (0, 1, 2):  # the value may start at any byte of a base64 block
         full = (k + len(raw)) // 3 * 4

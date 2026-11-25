@@ -427,6 +427,10 @@ os.environ["SS_TILDE"] = "Fake~Tok2026"; SECRETS.append("Fake~Tok2026")
 w(Y + "/tilde.md", "token=Fake%7ETok2026\n")
 run("WebUtility-style copy (~ as %7E)", ["--env", "SS_TILDE", Y + "/tilde.md"], 1, ["tilde.md:1 key=SS_TILDE form=url-net"])
 run(".NET forms add no false match on a clean file", ["--env", "SS_NETURL", "--env", "SS_TILDE", Y + "/pem-clean.md"], 0)
+os.environ["SS_PYPLUS"] = "FAKE pw*x9"; SECRETS.append("FAKE pw*x9")
+w(Y + "/pyplus.md", "body: p=FAKE+pw%2Ax9\n")
+run("Python urlencode-style copy (space as +, * as %2A)", ["--env", "SS_PYPLUS", Y + "/pyplus.md"], 1, ["pyplus.md:1 key=SS_PYPLUS form=url-py-plus"])
+run("url-py-plus adds no false match on a clean file", ["--env", "SS_PYPLUS", Y + "/pem-clean.md"], 0)
 
 # ---------- report ----------
 ok = sum(1 for r in results if r[1])
