@@ -457,7 +457,7 @@ The rename is preventive: \`/plan\` and \`\\\$plan\` live in different namespace
 
 ## Multi-agent primitives (Codex-native)
 
-Codex enables five collaboration tools via \`features.multi_agent\` (stable, default true): \`spawn_agent\`, \`send_input\`, \`resume_agent\`, \`wait_agent\`, \`close_agent\`. The primary agent orchestrates subagents through these tools; use \`/agent\` to switch active agent threads. pai-orbit ships \`docs-writer\` and \`cross-repo-impact\` as native Codex subagents in \`.codex/agents/\`.
+Codex enables five collaboration tools via \`features.multi_agent\` (stable, default true): \`spawn_agent\`, \`send_input\`, \`resume_agent\`, \`wait_agent\`, \`close_agent\`. The primary agent orchestrates subagents through these tools; use \`/agent\` to switch active agent threads. pai-orbit ships \`docs-writer\` and \`cross-repo-impact\` as native Codex subagents in \`.codex/agents/\`. /build splits work into code, tests and docs streams that the primary agent spawns directly (subagents never spawn children). Codex caps open agent threads and \`spawn_agent\` errors at the cap instead of queueing, so the orchestrator keeps open agents within the cap, closes finished ones with \`close_agent\`, and holds excess tasks until a slot frees.
 
 ## Hooks
 

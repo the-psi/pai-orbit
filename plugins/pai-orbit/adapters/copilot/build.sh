@@ -1175,6 +1175,7 @@ bash plugins/pai-orbit/build.sh
 ## Honest limitations vs Claude Code
 
 - No runtime hook system in Copilot Chat. `bash-guard` intent lives as advisory text in `.github/copilot-instructions.md` — Copilot usually obeys, no guarantee. The opt-in `.husky/pre-commit` adds real enforcement at commit time (lint + weak secret regex) but cannot block `git push --force`, `git add -A`, or shell `rm -rf` — those need Claude Code's PreToolUse, a pre-push hook, or server-side branch protection.
+- /build parallel streams: the orchestrator spawns task agents within the tool's agent cap; where parallel agents are unavailable (e.g. Free tier) it runs the same code, tests, docs layer order sequentially.
 - Agent runtime parity is tier-dependent. `mode: agent` prompts run agentically on Copilot Pro/Business; on Free they degrade to regular prompts that still give correct manual guidance.
 - No editor-specific files (D33). VS Code users follow the 4-line lint-on-save recipe in the adoption page.
 
