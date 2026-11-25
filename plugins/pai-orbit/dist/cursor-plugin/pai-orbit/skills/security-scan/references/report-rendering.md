@@ -12,17 +12,18 @@ Produce the full HTML+PDF pipeline when any of these hold:
   for its extended sections (extended tier spawned, the user asked for a "thorough"/"complete"
   assessment, or ≥15 confirmed findings).
 - There's an existing project convention for it — a prior `report.html`/`report.pdf` already in
-  the repo, or a `security-assessment/` folder pattern already present.
+  the repo, or a `reports/security-assessment/` folder already present in the docs root.
 
 For a narrow single-dimension answer ("any CVEs?", "any hardcoded secrets?"), a plain findings
 list is sufficient — don't over-produce a rendered report nobody asked for.
 
 ## File layout convention
 
-These are project deliverables, so they land in the target project itself, not the scratchpad:
+These are project deliverables, so they land in the docs root (`<docs root>/reports/security-assessment/`, resolved per
+`reference/docs-path-resolution.md`), not the scratchpad:
 
 ```
-security-assessment/
+<docs root>/reports/security-assessment/
   FINDINGS.md        # markdown source of truth — structured per report-format.md
   report.html        # rendered version of FINDINGS.md
   report.pdf         # printed from report.html

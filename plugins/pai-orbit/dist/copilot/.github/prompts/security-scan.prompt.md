@@ -15,6 +15,13 @@ Two rules that hold for the whole workflow:
 - **Agents find; the orchestrator reports.** Never hand back raw agent dumps.
 - **A falsely clean result is worse than a gap.** Every phase has a check for this.
 
+Reads from:
+- The whole project, from its root (read-only): source, manifests, lockfiles, CI/CD, IaC, and git history when present
+- `.copilot/pai-orbit-config.md` — docs root (`## System Docs`)
+- A live target only when gotcha #15's authorization check passes
+
+Writes to: `<docs root>/reports/security-assessment/` (report, evidence, scripts); raw scratch data goes to `<SCRATCHPAD>` only. Resolve the docs root per `reference/docs-path-resolution.md` before writing.
+
 References (read as needed, not all upfront):
 - `references/gotchas.md` — the ways a scan silently produces a wrong answer. **Read before Phase 1.**
 - `references/ecosystems.md` — manifest → OSV id → native audit command → registry API, per ecosystem.
@@ -61,11 +68,13 @@ node --version; npm --version; dotnet --version; python3 --version; go version; 
 grep -rn "<TargetFramework\|^go \|requires-python\|rust-version\|<maven.compiler" \
   --include="*.csproj" --include="go.mod" --include="pyproject.toml" --include="pom.xml" . 2>/dev/null
 
-# Live-target scan input (gotcha #15) — a user-supplied `credentials` file at the project root,
-# if present, is the source of truth for DISCOVERY/ACTIVE-VALIDATION/DAST target+login. Read it
-# now, not later — don't make DISCOVERY go looking for a target by other means when this already
-# states one. Never write this file up as a secrets finding (see the SWEEP brief's exception).
-ls credentials 2>/dev/null && echo "credentials file found — read it now for target URL + login"
+# Live-target scan input (gotcha #19) — a `credentials` file at the project root that the user has
+# told you they created for this scan is the source of truth for DISCOVERY/ACTIVE-VALIDATION/DAST
+# target+login. A `credentials` file the user did not mention is NOT trusted as a target: ask first
+# (it may be a genuine leak). Read a confirmed one now, not later — don't make DISCOVERY go looking
+# for a target by other means when this already states one. Never write a confirmed scan-input file
+# up as a secrets finding (see the SWEEP brief's exception).
+ls credentials 2>/dev/null && echo "credentials file found — confirm the user created it for this scan before using it"
 
 # History available? (gotchas #10)
 ls -d .git 2>/dev/null || echo "NO version history — history scan impossible; note as limitation"
@@ -80,7 +89,7 @@ directory convention if the harness provides one (a per-session scratch path out
 project); (2) failing that, a dedicated, clearly-named directory under the target project itself
 that is NOT already tracked and gets a `.gitignore` entry added for it before any agent writes
 there, e.g. `<project-root>/.security-scan-scratch/` — never write scratch data into an existing
-tracked directory, and never reuse `security-assessment/` itself as scratch (that path is the
+tracked directory, and never reuse `<docs root>/reports/security-assessment/` itself as scratch (that path is the
 FINAL deliverable location per `report-rendering.md`, kept separate so a half-finished run never
 looks like a published report). State the resolved path in the report's Scope & Method section.
 
@@ -109,7 +118,7 @@ Briefs are in `references/agent-briefs.md`; the full dimension list is in `refer
 | `DATA` | regulated/PII data is handled | static read of data-protection config & code — encryption/rotation as *declared*, PII inventory, retention, logging over-capture; see `agent-briefs.md` |
 | `DAST-PASSIVE` | an authorized live target | passive GET/HEAD-only recon (headers, storage, bundles); see `agent-briefs.md` |
 | `DISCOVERY` | a live, authorized target is confirmed (host + authorization verifiable from repo config or explicit user instruction) AND working test credentials for that environment are available | builds a ranked attack-surface/endpoint inventory (read-only click-through + JS-bundle grep) ranked by likely OWASP Top 10 category (IDOR/BFLA, injection, auth); see `agent-briefs.md`. Run before `ACTIVE-VALIDATION` whenever both are in scope. |
-| `ACTIVE-VALIDATION` | a live, authorized target is confirmed (host + authorization verifiable from repo config or explicit user instruction) AND at least one static finding is a good candidate for a fixed-payload, non-destructive live proof, AND ideally after a DISCOVERY pass has produced a ranked candidate list, when one is in scope | upgrades specific findings from CONFIRMED-in-code to LIVE-VALIDATED; see `agent-briefs.md` and gotchas #15–17. Never spawn this speculatively — it targets specific findings from the other agents, so run it after (or interleaved late in) Phase 1, not as a first-wave dimension. |
+| `ACTIVE-VALIDATION` | a live, authorized target is confirmed (host + authorization verifiable from repo config or explicit user instruction) AND at least one static finding is a good candidate for a fixed-payload, non-destructive live proof, AND ideally after a DISCOVERY pass has produced a ranked candidate list, when one is in scope | upgrades specific findings from CONFIRMED-in-code to LIVE-VALIDATED; see `agent-briefs.md` and gotchas #15 and #18. Never spawn this speculatively — it targets specific findings from the other agents, so run it after (or interleaved late in) Phase 1, not as a first-wave dimension. |
 
 Mark extended findings **CONFIRMED-in-code** or **NEEDS-DYNAMIC** — never assert an exploit the
 source doesn't establish. Whatever is not run becomes an explicit scope-limitation line. When
@@ -119,6 +128,8 @@ the specific endpoints the discovery pass ranked as high-value, not guessed ones
 Sizing: aim for 4–8 agents in the baseline tier; the extended tier is additive when scoped. Below 3, run sequentially — the fan-out overhead is not worth it.
 Above 8, merge the smallest dimensions rather than splitting further. For a very large
 ecosystem (a large monorepo workspace set), split `DEP-<eco>` by workspace instead of by task.
+If the tool you are running in cannot launch subagents in parallel, run the same dimensions one
+after another yourself; the OWNS / DOES NOT OWN boundaries still apply.
 
 Shared files need one owner: `docker-compose*.yml` goes to `CICD` for build/secret concerns and
 `IAC` for runtime posture — state which agent covered which axis. Everything else follows the
@@ -289,7 +300,7 @@ Rules when narrowing:
 
 ## Critical gotchas — selected highlights, numbered to match `references/gotchas.md`
 
-Not a sequential 1–18 walkthrough — these are the ones that bite most often, each tagged with its
+Not a sequential 1–19 walkthrough — these are the ones that bite most often, each tagged with its
 real number in the reference file so a citation elsewhere (e.g. "gotcha #9") always means the same
 thing wherever it's read. Gotchas #13 (duplicate lockfiles) and #14 (report what passed) aren't
 excerpted here but apply just as fully — see the full file.
@@ -322,15 +333,17 @@ excerpted here but apply just as fully — see the full file.
 - **#12 Committed security-assessment evidence** — prior scan output, HAR files and debug dumps
   routinely contain captured live tokens, cookies and credentials.
 - **#15 Live/active DAST is passive-first and consent-gated.** Verify the target host and
-  authorization from the repo's own config; decline active testing against an unverifiable
-  third-party host and validate from source instead. Passive (headers/TLS/bundle) before active;
-  active auth/injection probes use throwaway identifiers only, never real accounts or state
-  changes. If the harness refuses an active request as a third-party attack, that is correct —
-  do not route around it; confirm at source and hand the user the exact command to run.
+  authorization from the repo's own config or the user's explicit instruction; a local instance
+  the user started counts, and is the preferred first target. Decline active testing against an
+  unverifiable third-party host and validate from source instead. Passive (headers/TLS/bundle)
+  before active; active auth/injection probes use throwaway identifiers only, never real accounts
+  or state changes. If the harness refuses an active request as a third-party attack, that
+  refusal is final: do not retry, re-encode, or route around it, and do not hand the user the
+  command to run instead — confirm at source and report the block.
 - **#18 Authorized test-data creation is a separate, narrower exception** from #15 — every live
   dimension creates nothing by default; a minimal, disposable, explicitly-authorized write is the
   exception, not the default posture, and always triggers the report's test-data disclosure list.
-  (Full list — 18 gotchas — in `references/gotchas.md`.)
+  (Full list — 19 gotchas — in `references/gotchas.md`.)
 
 
 ## Output style
@@ -354,6 +367,40 @@ reader can verify each one independently without rerunning the scan.
 
 ---
 
+## Appendix: docs path resolution
+
+Referenced above as `reference/docs-path-resolution.md` — inlined here since Copilot prompts are flat files with no sibling-file lookup:
+
+# Docs path resolution
+
+Shared by every mode, skill, and agent that reads or writes project docs. Resolve once per session, reuse for every read and write in that session.
+
+## Config
+
+Read `.copilot/pai-orbit-config.md`. If a `## System Docs` section is present, it defines `system_docs_repo` and `system_docs_path` (default `.`).
+
+## Resolve the docs root
+
+- No `## System Docs` section → docs root is local `docs/`.
+- `system_docs_repo` is a relative path → check whether `<system_docs_repo>/<system_docs_path>` exists **and** contains at least one of the expected subdirectories (`architecture/`, `decisions/`, `domain/`, `processes/`, `features/`, `plans/`, `wip/`, `backlog/`, `reports/`, `epics/`, `ops/`). A directory that exists but holds none of these is a stale pointer, not a docs root.
+  - Passes → docs root is `<system_docs_repo>/<system_docs_path>`.
+  - Fails → warn once ("System docs path unreachable — continuing with local docs only") and docs root is local `docs/`.
+- `system_docs_repo` is a git URL → same check against a local clone at a resolvable path. Passes → docs root is `<clone-path>/<system_docs_path>`. Fails → warn once and docs root is local `docs/`.
+
+## Reads
+
+Add the resolved docs root to the doc read set before starting the session.
+
+## Writes
+
+Every write targets `<docs root>/<relative path>` — never a hardcoded `docs/…` literal, and never with an extra interpolated `docs/` segment. The docs root already *is* the docs directory, local or remote.
+
+Examples: `<docs root>/backlog/feature-ideas.md`, `<docs root>/features/<feature>/design.md`, `<docs root>/decisions/YYYY-MM-DD-<slug>.md`, `<docs root>/wip/session-capture-<date>.md`.
+
+When `system_docs_path: .` (a docs repo flattened to its root), `<docs root>` is the repo root itself — writes land at `<system_docs_repo>/decisions/…`, not `<system_docs_repo>/docs/decisions/…`.
+
+---
+
 ## Appendix: active dast methodology — full-coverage authenticated script
 
 Referenced above as `references/active-dast-methodology.md` — inlined here since Copilot prompts are flat files with no sibling-file lookup:
@@ -364,8 +411,8 @@ A standalone pattern for when the ask is comprehensive DAST across an entire API
 findings upgraded to LIVE. Built once per engagement as a script the user runs (and re-runs) themselves,
 it resolves and tests EVERY safe endpoint in the target's API surface — hundreds, not a handful —
 and emits one structured JSON evidence file that becomes the backbone of the report's live-validation
-section. All non-destructive/authorization ground rules are unchanged from gotchas #15–17; this file
-only adds the engineering pattern for doing that at full-API scale. Read gotchas #15–17 first.
+section. All non-destructive/authorization ground rules are unchanged from gotchas #15 and #18; this file
+only adds the engineering pattern for doing that at full-API scale. Read gotchas #15 and #18 first.
 
 ## 0. Where this fits in the orchestrator's parallel-agent workflow
 
@@ -469,7 +516,7 @@ Accept, in this preference order:
 
 ## 2. Core safety invariants — script-level restatement
 
-These are the same rules as gotchas #15–17, applied at script-construction time rather than
+These are the same rules as gotchas #15 and #18, applied at script-construction time rather than
 per-request time. Do not restate the reasoning here beyond what's needed to build the script;
 cross-reference gotchas for the "why."
 
@@ -698,8 +745,7 @@ concurrent agents never audit the same file twice.
 > You are one of several parallel security-scan agents. Stay strictly inside the scope
 > boundary below; other agents own everything else and duplicated work wastes the run.
 > Read this skill's `references/gotchas.md` before starting (resolve the path from wherever this
-> skill is installed — global `~/.copilot/skills/` or a project-local `.copilot/skills/`, never
-> assume one or the other), plus `references/api-recipes.md` and `references/ecosystems.md` if
+> skill is installed — never assume a fixed location), plus `references/api-recipes.md` and `references/ecosystems.md` if
 > you query advisories.
 > Rules: quote every glob argument; redact all secrets (first 4 + last 2 chars, JWTs as decoded
 > claims only); cite `file:line` on every finding; separate CONFIRMED from PLAUSIBLE; report
@@ -834,7 +880,7 @@ committed prior-assessment evidence. Re-verifies nothing another agent already o
    output actually excluded from version control?
 4. Committed prior security-assessment evidence (gotchas #12).
    **Exception:** a file named exactly `credentials` (no extension) at the project root is this
-   skill's own scan-input convention (gotcha #15), not a finding — exclude it here, but confirm
+   skill's own scan-input convention (gotcha #19), not a finding — exclude it here, but confirm
    with the user first if you're not already aware they created it for this purpose.
 5. History: is a version-control directory present? If not, state that history scanning is
    impossible and recommend a history scan against origin; note that rotation, not deletion,
@@ -1002,7 +1048,7 @@ short; secret-pattern-scan every one), cookie flags (`httpOnly`/`secure`/`sameSi
 `window` globals matching `config|token|auth|user|env|key|secret|jwt|bearer`, every loaded JS
 bundle (secret-pattern-scanned, checked for an exposed `sourceMappingURL`), and nav links for a
 lightweight sitemap — all from ONE login. This is a single authorized login (using credentials the
-user supplied for this purpose), not a loop, and stays fully within gotchas #15–17's
+user supplied for this purpose), not a loop, and stays fully within gotchas #15 and #18's
 non-destructive/passive-first rules. Mask every secret on write, including in scratch files, per
 the one canonical redaction format in gotcha #9 (first 4 + last 2 characters only) — never the raw
 value. If no headless-browser tool is available, fall back to `curl` for the GET/HEAD-only subset
@@ -1058,7 +1104,7 @@ to source-only confirmation, not a workaround):
   environment."
 - If the harness itself refuses a request as a third-party attack, treat that as correct, not an
   obstacle — do not retry, re-encode, or route around it; fall back to source-only confirmation
-  and hand the user the exact command to run themselves if they want to proceed.
+  and report the block. The user decides whether to grant broader permission.
 Report each attempt as its own line: request sent (redact secrets), response observed, and
 which finding ID it upgrades to LIVE-VALIDATED (or which static claim it corrected).
 
@@ -1494,28 +1540,22 @@ A findings-only report gives the reader no way to tell a thorough scan from a sh
 no credit for controls that are already correct. Explicitly list the checks performed that came
 back clean, alongside the coverage limitations that bound them.
 
-## 15. A user-supplied `credentials` file at the project root is scan input, not a finding
-Gotcha #15 says to confirm the live target and authorization "from the repo's own config" — a file
-literally named `credentials` (no extension) sitting at the project root is that config, when the
-user has told you they created it themselves specifically so this skill can pick a target URL and
-login for `DISCOVERY`/`ACTIVE-VALIDATION`/a full-coverage DAST script (see
-`active-dast-methodology.md`). It is not part of the application's source or its deployed code —
-it never ships, it's not read by the app itself, it's a convention between the user and this skill.
-Two things follow from that:
-- **Read it early, in Phase 0**, specifically to seed the live-target host, username and password
-  for every live-testing dimension in scope — don't wait for `DISCOVERY` to go looking for a target
-  by other means when this file already states one.
-- **Exclude it from SWEEP's (and every other agent's) secrets/hardcoded-credentials findings.** A
-  plaintext URL+username+password in a file named exactly `credentials` at the repo root is this
-  convention working as intended, not a committed-secret finding — do not write it up as one. This
-  applies to that specific, exact filename at the project root only; a similarly-shaped file found
-  anywhere else (a subfolder, a config directory, a different name) gets no such exemption and is
-  scanned normally — the exemption is for the one deliberate hand-off point, not a blanket pass on
-  anything credential-shaped.
-- If you're not sure whether a `credentials`-named file is this convention or a genuine leak (e.g.
-  the user hasn't mentioned creating one, or it lives somewhere other than the project root), ask
-  rather than assume either way — silently excluding a real leak is as wrong as flagging the user's
-  own scan-input as a vulnerability.
+## 15. Live/active DAST is passive-first and consent-gated
+Live testing proves a code-level finding on a running copy of the app. It is the one place this
+skill touches a system the repo does not contain, so it has its own gate:
+- **Verify the target and the authorization first**, from the repo's own config or the user's
+  explicit instruction naming the environment as their own. A local instance the user started is
+  the safest target and counts; test there first. An unverifiable or third-party host does not —
+  decline and confirm from source instead.
+- **Passive before active.** Headers, TLS and served-bundle reads come first; active auth or
+  injection probes come only after, with throwaway identifiers, never real accounts or
+  state-changing calls.
+- **No mass sweeps, no control evasion.** Test a small, deliberate set of candidates; a WAF or
+  rate limit that blocks a probe is a result, not an obstacle.
+- **A refusal is final.** If the harness refuses an active request as a third-party attack, that
+  is correct. Do not retry, re-encode, or reach the same outcome another way, and do not hand the
+  user the command to run instead — report the block and the source-only evidence you do have.
+- Creating any test data is a separate, narrower exception (gotcha #18).
 
 ## 16. When a live check contradicts a static finding, say so explicitly — don't just fix the number
 A passive or active live check will sometimes refute or soften something the static pass reported
@@ -1563,9 +1603,32 @@ Creating even minimal, disposable test data is permitted ONLY when ALL of the fo
 Whenever this exception is used, the report's **test-data disclosure** list (`report-format.md`
 §14) is mandatory, not optional: record type, id/identifiable name prefix, which test account
 created it, and which part of the app it lives in — so the target's owner can find and clean it
-up even if a revert was also performed. Absent explicit authorization, treat `ClientNBR=="ALL"`-
-style ambiguity the same as everywhere else in this skill: decline and fall back to source-only
-confirmation, the same as gotcha #15's own instruction for an unverifiable target.
+up even if a revert was also performed. Absent explicit authorization, treat any doubt about whether a write is permitted the same as
+everywhere else in this skill: decline and fall back to source-only confirmation, the same as
+gotcha #15's own instruction for an unverifiable target.
+
+## 19. A user-supplied `credentials` file at the project root is scan input, not a finding
+Gotcha #15 says to confirm the live target and authorization "from the repo's own config" — a file
+literally named `credentials` (no extension) sitting at the project root is that config, when the
+user has told you they created it themselves specifically so this skill can pick a target URL and
+login for `DISCOVERY`/`ACTIVE-VALIDATION`/a full-coverage DAST script (see
+`active-dast-methodology.md`). It is not part of the application's source or its deployed code —
+it never ships, it's not read by the app itself, it's a convention between the user and this skill.
+Two things follow from that:
+- **Read it early, in Phase 0**, specifically to seed the live-target host, username and password
+  for every live-testing dimension in scope — don't wait for `DISCOVERY` to go looking for a target
+  by other means when this file already states one.
+- **Exclude it from SWEEP's (and every other agent's) secrets/hardcoded-credentials findings.** A
+  plaintext URL+username+password in a file named exactly `credentials` at the repo root is this
+  convention working as intended, not a committed-secret finding — do not write it up as one. This
+  applies to that specific, exact filename at the project root only; a similarly-shaped file found
+  anywhere else (a subfolder, a config directory, a different name) gets no such exemption and is
+  scanned normally — the exemption is for the one deliberate hand-off point, not a blanket pass on
+  anything credential-shaped.
+- If you're not sure whether a `credentials`-named file is this convention or a genuine leak (e.g.
+  the user hasn't mentioned creating one, or it lives somewhere other than the project root), ask
+  rather than assume either way — silently excluding a real leak is as wrong as flagging the user's
+  own scan-input as a vulnerability.
 
 ---
 
@@ -1884,17 +1947,18 @@ Produce the full HTML+PDF pipeline when any of these hold:
   for its extended sections (extended tier spawned, the user asked for a "thorough"/"complete"
   assessment, or ≥15 confirmed findings).
 - There's an existing project convention for it — a prior `report.html`/`report.pdf` already in
-  the repo, or a `security-assessment/` folder pattern already present.
+  the repo, or a `reports/security-assessment/` folder already present in the docs root.
 
 For a narrow single-dimension answer ("any CVEs?", "any hardcoded secrets?"), a plain findings
 list is sufficient — don't over-produce a rendered report nobody asked for.
 
 ## File layout convention
 
-These are project deliverables, so they land in the target project itself, not the scratchpad:
+These are project deliverables, so they land in the docs root (`<docs root>/reports/security-assessment/`, resolved per
+`reference/docs-path-resolution.md`), not the scratchpad:
 
 ```
-security-assessment/
+<docs root>/reports/security-assessment/
   FINDINGS.md        # markdown source of truth — structured per report-format.md
   report.html        # rendered version of FINDINGS.md
   report.pdf         # printed from report.html

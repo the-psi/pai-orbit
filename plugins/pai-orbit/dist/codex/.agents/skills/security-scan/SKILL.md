@@ -13,6 +13,13 @@ Two rules that hold for the whole workflow:
 - **Agents find; the orchestrator reports.** Never hand back raw agent dumps.
 - **A falsely clean result is worse than a gap.** Every phase has a check for this.
 
+Reads from:
+- The whole project, from its root (read-only): source, manifests, lockfiles, CI/CD, IaC, and git history when present
+- `.codex/pai-orbit-config.md` — docs root (`## System Docs`)
+- A live target only when gotcha #15's authorization check passes
+
+Writes to: `<docs root>/reports/security-assessment/` (report, evidence, scripts); raw scratch data goes to `<SCRATCHPAD>` only. Resolve the docs root per `reference/docs-path-resolution.md` before writing.
+
 References (read as needed, not all upfront):
 - `references/gotchas.md` — the ways a scan silently produces a wrong answer. **Read before Phase 1.**
 - `references/ecosystems.md` — manifest → OSV id → native audit command → registry API, per ecosystem.
@@ -60,11 +67,13 @@ node --version; npm --version; dotnet --version; python3 --version; go version; 
 grep -rn "<TargetFramework\|^go \|requires-python\|rust-version\|<maven.compiler" \
   --include="*.csproj" --include="go.mod" --include="pyproject.toml" --include="pom.xml" . 2>/dev/null
 
-# Live-target scan input (gotcha #15) — a user-supplied `credentials` file at the project root,
-# if present, is the source of truth for DISCOVERY/ACTIVE-VALIDATION/DAST target+login. Read it
-# now, not later — don't make DISCOVERY go looking for a target by other means when this already
-# states one. Never write this file up as a secrets finding (see the SWEEP brief's exception).
-ls credentials 2>/dev/null && echo "credentials file found — read it now for target URL + login"
+# Live-target scan input (gotcha #19) — a `credentials` file at the project root that the user has
+# told you they created for this scan is the source of truth for DISCOVERY/ACTIVE-VALIDATION/DAST
+# target+login. A `credentials` file the user did not mention is NOT trusted as a target: ask first
+# (it may be a genuine leak). Read a confirmed one now, not later — don't make DISCOVERY go looking
+# for a target by other means when this already states one. Never write a confirmed scan-input file
+# up as a secrets finding (see the SWEEP brief's exception).
+ls credentials 2>/dev/null && echo "credentials file found — confirm the user created it for this scan before using it"
 
 # History available? (gotchas #10)
 ls -d .git 2>/dev/null || echo "NO version history — history scan impossible; note as limitation"
@@ -79,7 +88,7 @@ directory convention if the harness provides one (a per-session scratch path out
 project); (2) failing that, a dedicated, clearly-named directory under the target project itself
 that is NOT already tracked and gets a `.gitignore` entry added for it before any agent writes
 there, e.g. `<project-root>/.security-scan-scratch/` — never write scratch data into an existing
-tracked directory, and never reuse `security-assessment/` itself as scratch (that path is the
+tracked directory, and never reuse `<docs root>/reports/security-assessment/` itself as scratch (that path is the
 FINAL deliverable location per `report-rendering.md`, kept separate so a half-finished run never
 looks like a published report). State the resolved path in the report's Scope & Method section.
 
@@ -108,7 +117,7 @@ Briefs are in `references/agent-briefs.md`; the full dimension list is in `refer
 | `DATA` | regulated/PII data is handled | static read of data-protection config & code — encryption/rotation as *declared*, PII inventory, retention, logging over-capture; see `agent-briefs.md` |
 | `DAST-PASSIVE` | an authorized live target | passive GET/HEAD-only recon (headers, storage, bundles); see `agent-briefs.md` |
 | `DISCOVERY` | a live, authorized target is confirmed (host + authorization verifiable from repo config or explicit user instruction) AND working test credentials for that environment are available | builds a ranked attack-surface/endpoint inventory (read-only click-through + JS-bundle grep) ranked by likely OWASP Top 10 category (IDOR/BFLA, injection, auth); see `agent-briefs.md`. Run before `ACTIVE-VALIDATION` whenever both are in scope. |
-| `ACTIVE-VALIDATION` | a live, authorized target is confirmed (host + authorization verifiable from repo config or explicit user instruction) AND at least one static finding is a good candidate for a fixed-payload, non-destructive live proof, AND ideally after a DISCOVERY pass has produced a ranked candidate list, when one is in scope | upgrades specific findings from CONFIRMED-in-code to LIVE-VALIDATED; see `agent-briefs.md` and gotchas #15–17. Never spawn this speculatively — it targets specific findings from the other agents, so run it after (or interleaved late in) Phase 1, not as a first-wave dimension. |
+| `ACTIVE-VALIDATION` | a live, authorized target is confirmed (host + authorization verifiable from repo config or explicit user instruction) AND at least one static finding is a good candidate for a fixed-payload, non-destructive live proof, AND ideally after a DISCOVERY pass has produced a ranked candidate list, when one is in scope | upgrades specific findings from CONFIRMED-in-code to LIVE-VALIDATED; see `agent-briefs.md` and gotchas #15 and #18. Never spawn this speculatively — it targets specific findings from the other agents, so run it after (or interleaved late in) Phase 1, not as a first-wave dimension. |
 
 Mark extended findings **CONFIRMED-in-code** or **NEEDS-DYNAMIC** — never assert an exploit the
 source doesn't establish. Whatever is not run becomes an explicit scope-limitation line. When
@@ -118,6 +127,8 @@ the specific endpoints the discovery pass ranked as high-value, not guessed ones
 Sizing: aim for 4–8 agents in the baseline tier; the extended tier is additive when scoped. Below 3, run sequentially — the fan-out overhead is not worth it.
 Above 8, merge the smallest dimensions rather than splitting further. For a very large
 ecosystem (a large monorepo workspace set), split `DEP-<eco>` by workspace instead of by task.
+If the tool you are running in cannot launch subagents in parallel, run the same dimensions one
+after another yourself; the OWNS / DOES NOT OWN boundaries still apply.
 
 Shared files need one owner: `docker-compose*.yml` goes to `CICD` for build/secret concerns and
 `IAC` for runtime posture — state which agent covered which axis. Everything else follows the
@@ -292,7 +303,7 @@ Rules when narrowing:
 
 ## Critical gotchas — selected highlights, numbered to match `references/gotchas.md`
 
-Not a sequential 1–18 walkthrough — these are the ones that bite most often, each tagged with its
+Not a sequential 1–19 walkthrough — these are the ones that bite most often, each tagged with its
 real number in the reference file so a citation elsewhere (e.g. "gotcha #9") always means the same
 thing wherever it's read. Gotchas #13 (duplicate lockfiles) and #14 (report what passed) aren't
 excerpted here but apply just as fully — see the full file.
@@ -325,15 +336,17 @@ excerpted here but apply just as fully — see the full file.
 - **#12 Committed security-assessment evidence** — prior scan output, HAR files and debug dumps
   routinely contain captured live tokens, cookies and credentials.
 - **#15 Live/active DAST is passive-first and consent-gated.** Verify the target host and
-  authorization from the repo's own config; decline active testing against an unverifiable
-  third-party host and validate from source instead. Passive (headers/TLS/bundle) before active;
-  active auth/injection probes use throwaway identifiers only, never real accounts or state
-  changes. If the harness refuses an active request as a third-party attack, that is correct —
-  do not route around it; confirm at source and hand the user the exact command to run.
+  authorization from the repo's own config or the user's explicit instruction; a local instance
+  the user started counts, and is the preferred first target. Decline active testing against an
+  unverifiable third-party host and validate from source instead. Passive (headers/TLS/bundle)
+  before active; active auth/injection probes use throwaway identifiers only, never real accounts
+  or state changes. If the harness refuses an active request as a third-party attack, that
+  refusal is final: do not retry, re-encode, or route around it, and do not hand the user the
+  command to run instead — confirm at source and report the block.
 - **#18 Authorized test-data creation is a separate, narrower exception** from #15 — every live
   dimension creates nothing by default; a minimal, disposable, explicitly-authorized write is the
   exception, not the default posture, and always triggers the report's test-data disclosure list.
-  (Full list — 18 gotchas — in `references/gotchas.md`.)
+  (Full list — 19 gotchas — in `references/gotchas.md`.)
 
 ---
 
@@ -355,3 +368,37 @@ The **orchestrator** consolidates — per-agent output is raw material, not the 
 Deduplicate across agents, reconcile severity disagreements, renumber into the family ID scheme,
 and cite upstream advisory URLs (GitHub Advisory / NVD) for every dependency finding so the
 reader can verify each one independently without rerunning the scan.
+
+---
+
+## Appendix: docs path resolution
+
+Referenced above as `reference/docs-path-resolution.md` — inlined here since Codex skills are flat files with no sibling-file lookup:
+
+# Docs path resolution
+
+Shared by every mode, skill, and agent that reads or writes project docs. Resolve once per session, reuse for every read and write in that session.
+
+## Config
+
+Read `.codex/pai-orbit-config.md`. If a `## System Docs` section is present, it defines `system_docs_repo` and `system_docs_path` (default `.`).
+
+## Resolve the docs root
+
+- No `## System Docs` section → docs root is local `docs/`.
+- `system_docs_repo` is a relative path → check whether `<system_docs_repo>/<system_docs_path>` exists **and** contains at least one of the expected subdirectories (`architecture/`, `decisions/`, `domain/`, `processes/`, `features/`, `plans/`, `wip/`, `backlog/`, `reports/`, `epics/`, `ops/`). A directory that exists but holds none of these is a stale pointer, not a docs root.
+  - Passes → docs root is `<system_docs_repo>/<system_docs_path>`.
+  - Fails → warn once ("System docs path unreachable — continuing with local docs only") and docs root is local `docs/`.
+- `system_docs_repo` is a git URL → same check against a local clone at a resolvable path. Passes → docs root is `<clone-path>/<system_docs_path>`. Fails → warn once and docs root is local `docs/`.
+
+## Reads
+
+Add the resolved docs root to the doc read set before starting the session.
+
+## Writes
+
+Every write targets `<docs root>/<relative path>` — never a hardcoded `docs/…` literal, and never with an extra interpolated `docs/` segment. The docs root already *is* the docs directory, local or remote.
+
+Examples: `<docs root>/backlog/feature-ideas.md`, `<docs root>/features/<feature>/design.md`, `<docs root>/decisions/YYYY-MM-DD-<slug>.md`, `<docs root>/wip/session-capture-<date>.md`.
+
+When `system_docs_path: .` (a docs repo flattened to its root), `<docs root>` is the repo root itself — writes land at `<system_docs_repo>/decisions/…`, not `<system_docs_repo>/docs/decisions/…`.

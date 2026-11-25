@@ -120,28 +120,22 @@ A findings-only report gives the reader no way to tell a thorough scan from a sh
 no credit for controls that are already correct. Explicitly list the checks performed that came
 back clean, alongside the coverage limitations that bound them.
 
-## 15. A user-supplied `credentials` file at the project root is scan input, not a finding
-Gotcha #15 says to confirm the live target and authorization "from the repo's own config" — a file
-literally named `credentials` (no extension) sitting at the project root is that config, when the
-user has told you they created it themselves specifically so this skill can pick a target URL and
-login for `DISCOVERY`/`ACTIVE-VALIDATION`/a full-coverage DAST script (see
-`active-dast-methodology.md`). It is not part of the application's source or its deployed code —
-it never ships, it's not read by the app itself, it's a convention between the user and this skill.
-Two things follow from that:
-- **Read it early, in Phase 0**, specifically to seed the live-target host, username and password
-  for every live-testing dimension in scope — don't wait for `DISCOVERY` to go looking for a target
-  by other means when this file already states one.
-- **Exclude it from SWEEP's (and every other agent's) secrets/hardcoded-credentials findings.** A
-  plaintext URL+username+password in a file named exactly `credentials` at the repo root is this
-  convention working as intended, not a committed-secret finding — do not write it up as one. This
-  applies to that specific, exact filename at the project root only; a similarly-shaped file found
-  anywhere else (a subfolder, a config directory, a different name) gets no such exemption and is
-  scanned normally — the exemption is for the one deliberate hand-off point, not a blanket pass on
-  anything credential-shaped.
-- If you're not sure whether a `credentials`-named file is this convention or a genuine leak (e.g.
-  the user hasn't mentioned creating one, or it lives somewhere other than the project root), ask
-  rather than assume either way — silently excluding a real leak is as wrong as flagging the user's
-  own scan-input as a vulnerability.
+## 15. Live/active DAST is passive-first and consent-gated
+Live testing proves a code-level finding on a running copy of the app. It is the one place this
+skill touches a system the repo does not contain, so it has its own gate:
+- **Verify the target and the authorization first**, from the repo's own config or the user's
+  explicit instruction naming the environment as their own. A local instance the user started is
+  the safest target and counts; test there first. An unverifiable or third-party host does not —
+  decline and confirm from source instead.
+- **Passive before active.** Headers, TLS and served-bundle reads come first; active auth or
+  injection probes come only after, with throwaway identifiers, never real accounts or
+  state-changing calls.
+- **No mass sweeps, no control evasion.** Test a small, deliberate set of candidates; a WAF or
+  rate limit that blocks a probe is a result, not an obstacle.
+- **A refusal is final.** If the harness refuses an active request as a third-party attack, that
+  is correct. Do not retry, re-encode, or reach the same outcome another way, and do not hand the
+  user the command to run instead — report the block and the source-only evidence you do have.
+- Creating any test data is a separate, narrower exception (gotcha #18).
 
 ## 16. When a live check contradicts a static finding, say so explicitly — don't just fix the number
 A passive or active live check will sometimes refute or soften something the static pass reported
@@ -189,6 +183,29 @@ Creating even minimal, disposable test data is permitted ONLY when ALL of the fo
 Whenever this exception is used, the report's **test-data disclosure** list (`report-format.md`
 §14) is mandatory, not optional: record type, id/identifiable name prefix, which test account
 created it, and which part of the app it lives in — so the target's owner can find and clean it
-up even if a revert was also performed. Absent explicit authorization, treat `ClientNBR=="ALL"`-
-style ambiguity the same as everywhere else in this skill: decline and fall back to source-only
-confirmation, the same as gotcha #15's own instruction for an unverifiable target.
+up even if a revert was also performed. Absent explicit authorization, treat any doubt about whether a write is permitted the same as
+everywhere else in this skill: decline and fall back to source-only confirmation, the same as
+gotcha #15's own instruction for an unverifiable target.
+
+## 19. A user-supplied `credentials` file at the project root is scan input, not a finding
+Gotcha #15 says to confirm the live target and authorization "from the repo's own config" — a file
+literally named `credentials` (no extension) sitting at the project root is that config, when the
+user has told you they created it themselves specifically so this skill can pick a target URL and
+login for `DISCOVERY`/`ACTIVE-VALIDATION`/a full-coverage DAST script (see
+`active-dast-methodology.md`). It is not part of the application's source or its deployed code —
+it never ships, it's not read by the app itself, it's a convention between the user and this skill.
+Two things follow from that:
+- **Read it early, in Phase 0**, specifically to seed the live-target host, username and password
+  for every live-testing dimension in scope — don't wait for `DISCOVERY` to go looking for a target
+  by other means when this file already states one.
+- **Exclude it from SWEEP's (and every other agent's) secrets/hardcoded-credentials findings.** A
+  plaintext URL+username+password in a file named exactly `credentials` at the repo root is this
+  convention working as intended, not a committed-secret finding — do not write it up as one. This
+  applies to that specific, exact filename at the project root only; a similarly-shaped file found
+  anywhere else (a subfolder, a config directory, a different name) gets no such exemption and is
+  scanned normally — the exemption is for the one deliberate hand-off point, not a blanket pass on
+  anything credential-shaped.
+- If you're not sure whether a `credentials`-named file is this convention or a genuine leak (e.g.
+  the user hasn't mentioned creating one, or it lives somewhere other than the project root), ask
+  rather than assume either way — silently excluding a real leak is as wrong as flagging the user's
+  own scan-input as a vulnerability.

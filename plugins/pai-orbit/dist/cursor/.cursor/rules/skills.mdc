@@ -753,28 +753,35 @@ python3 <docs root>/processes/_render/swimlane.py index <docs root>/processes
 
 ---
 name: security-scan-retest
-description: Validates whether a client's fix tracker (dev team's "Completed and Deployed" claims) actually closed the findings from a prior security assessment, by cross-checking the fixed-issues tracker against the original report's exact citations, reading the current codebase, and non-destructively re-testing live where safe. Use when asked to re-validate/retest security fixes, check a fix tracker against a security report, cross-check a dev team's "resolved" claims, or produce a remediation-validation report for a new release/codebase drop of a project that already had a security assessment done against it.
+description: Validates whether a dev team's fix tracker (its "Completed and Deployed" claims) actually closed the findings from a prior security assessment, by cross-checking the fixed-issues tracker against the original report's exact citations, reading the current codebase, and non-destructively re-testing live where safe. Use when asked to re-validate/retest security fixes, check a fix tracker against a security report, cross-check a dev team's "resolved" claims, or produce a remediation-validation report for a new release/codebase drop of a project that already had a security assessment done against it.
 ---
 
 # Security Fix Retesting / Remediation Validation
 
-Re-run this whenever a client/dev team claims a prior security assessment's findings are fixed,
+Re-run this whenever a dev team claims a prior security assessment's findings are fixed,
 and you need to prove — not assume — whether that's true. The core discipline: **never accept
 "fixed" on anyone's word, including your own prior pass's.** Every verdict needs either a live
 HTTP observation or a direct, quoted read of the current source — not a paraphrase, not an
 inference from a tracker's prose.
 
+Reads from:
+- The original assessment report and the fix tracker (user-supplied inputs, see §0)
+- The current codebase — read-only
+- `.claude/pai-orbit-config.md` — docs root (`## System Docs`)
+- A test environment (UAT/staging, or a local instance the user started) only after the user confirms authorization
+
+Writes to: `<docs root>/reports/security-retest/` — the validation reports (PDF and the HTML they are built from), the plain-English and rebuttal versions, and the stakeholder email text. Resolve the docs root per `reference/docs-path-resolution.md` before writing.
+
 ## 0. Inputs — get these before starting, don't guess
 
 - The **original security assessment report** (PDF/HTML) — the one with the numbered findings
   (F1, S1, I1, C1, D1... or whatever scheme it uses). If not in the repo root, ask or search for
-  it (often named `security-review-report.pdf` or similar, or in an `ProjectDocumentation`/
-  `fixedIssues`-style folder).
-- The **fix tracker** (usually a client-maintained spreadsheet, e.g. `*_High_Critical_Findings.xlsx`)
+  it (wherever the team keeps its assessment reports).
+- The **fix tracker** (usually a team-maintained spreadsheet or issue-tracker export)
   with columns like Finding/Severity/Our Action/Status. This is the thing you're validating, not
   trusting.
-- **Test environment access**: a UAT/staging URL and a dedicated low-privilege test account's
-  credentials (often in a `User creds.txt`/`usercred.txt`-style file, or ask). Never use prod
+- **Test environment access**: a UAT/staging URL (or a local instance the user started) and a dedicated low-privilege test account's
+  credentials (supplied by the user, or ask). Never use prod
   creds or a real customer account.
 - Confirm with the user **before any live testing**: is destructive testing acceptable in this
   environment (data loss doesn't matter), or must everything be strictly read-only/non-destructive?
@@ -809,7 +816,7 @@ For each finding, in the **current** codebase:
   accept "removed" as proof of a fix** when the vulnerable logic lives in a database stored
   procedure, Lambda, or anything not fully checked into source. A migration-script folder being
   edited or deleted does NOT prove what's deployed to the live database. Mark these explicitly as
-  needing live verification or direct DBA review (`sp_helptext` or equivalent), not "fixed."
+  needing live verification or direct DBA review (for example `sp_helptext` on SQL Server), not "fixed."
 - When checking "is X still present/absent," run an **exhaustive, repo-wide** search (every
   extension, every folder, case-insensitive) and show the exact command + exact output in your
   evidence — not a spot check of the folder you expect it in. A prior pass in this exact workflow
@@ -939,7 +946,7 @@ For every dispute:
 
 ## 7. Deliverables
 
-Produce these as PDFs (build HTML, render with `wkhtmltopdf` — check what's actually installed in
+Write them to `<docs root>/reports/security-retest/`. Produce these as PDFs (build HTML, render with `wkhtmltopdf` — check what's actually installed in
 this environment first, don't assume):
 
 1. **Full technical validation report**: cover + executive summary table (verdict counts) +
@@ -969,8 +976,8 @@ this environment first, don't assume):
 Keep it short. Default format: a verdict breakdown (Fixed / Partial / Still Open), one line per
 finding with its name, a numbered action list, and a pointer to the attached report(s) for detail
 — never inline the full evidence into the email body. Adjust length/format on request (e.g. "just
-list what's fixed/open, one-liners," "give me Outlook-paste-friendly text" → drop markdown tables
-for plain indented text, since Outlook doesn't render markdown pipe-tables).
+list what's fixed/open, one-liners," "give me paste-friendly text for an email client" → drop markdown tables
+for plain indented text, since many email clients don't render markdown pipe-tables).
 
 ## 9. Hard-won gotchas from prior runs
 
@@ -1007,6 +1014,13 @@ exist in this repo, and only those are launched.
 Two rules that hold for the whole workflow:
 - **Agents find; the orchestrator reports.** Never hand back raw agent dumps.
 - **A falsely clean result is worse than a gap.** Every phase has a check for this.
+
+Reads from:
+- The whole project, from its root (read-only): source, manifests, lockfiles, CI/CD, IaC, and git history when present
+- `.claude/pai-orbit-config.md` — docs root (`## System Docs`)
+- A live target only when gotcha #15's authorization check passes
+
+Writes to: `<docs root>/reports/security-assessment/` (report, evidence, scripts); raw scratch data goes to `<SCRATCHPAD>` only. Resolve the docs root per `reference/docs-path-resolution.md` before writing.
 
 References (read as needed, not all upfront):
 - `references/gotchas.md` — the ways a scan silently produces a wrong answer. **Read before Phase 1.**
@@ -1055,11 +1069,13 @@ node --version; npm --version; dotnet --version; python3 --version; go version; 
 grep -rn "<TargetFramework\|^go \|requires-python\|rust-version\|<maven.compiler" \
   --include="*.csproj" --include="go.mod" --include="pyproject.toml" --include="pom.xml" . 2>/dev/null
 
-# Live-target scan input (gotcha #15) — a user-supplied `credentials` file at the project root,
-# if present, is the source of truth for DISCOVERY/ACTIVE-VALIDATION/DAST target+login. Read it
-# now, not later — don't make DISCOVERY go looking for a target by other means when this already
-# states one. Never write this file up as a secrets finding (see the SWEEP brief's exception).
-ls credentials 2>/dev/null && echo "credentials file found — read it now for target URL + login"
+# Live-target scan input (gotcha #19) — a `credentials` file at the project root that the user has
+# told you they created for this scan is the source of truth for DISCOVERY/ACTIVE-VALIDATION/DAST
+# target+login. A `credentials` file the user did not mention is NOT trusted as a target: ask first
+# (it may be a genuine leak). Read a confirmed one now, not later — don't make DISCOVERY go looking
+# for a target by other means when this already states one. Never write a confirmed scan-input file
+# up as a secrets finding (see the SWEEP brief's exception).
+ls credentials 2>/dev/null && echo "credentials file found — confirm the user created it for this scan before using it"
 
 # History available? (gotchas #10)
 ls -d .git 2>/dev/null || echo "NO version history — history scan impossible; note as limitation"
@@ -1074,7 +1090,7 @@ directory convention if the harness provides one (a per-session scratch path out
 project); (2) failing that, a dedicated, clearly-named directory under the target project itself
 that is NOT already tracked and gets a `.gitignore` entry added for it before any agent writes
 there, e.g. `<project-root>/.security-scan-scratch/` — never write scratch data into an existing
-tracked directory, and never reuse `security-assessment/` itself as scratch (that path is the
+tracked directory, and never reuse `<docs root>/reports/security-assessment/` itself as scratch (that path is the
 FINAL deliverable location per `report-rendering.md`, kept separate so a half-finished run never
 looks like a published report). State the resolved path in the report's Scope & Method section.
 
@@ -1103,7 +1119,7 @@ Briefs are in `references/agent-briefs.md`; the full dimension list is in `refer
 | `DATA` | regulated/PII data is handled | static read of data-protection config & code — encryption/rotation as *declared*, PII inventory, retention, logging over-capture; see `agent-briefs.md` |
 | `DAST-PASSIVE` | an authorized live target | passive GET/HEAD-only recon (headers, storage, bundles); see `agent-briefs.md` |
 | `DISCOVERY` | a live, authorized target is confirmed (host + authorization verifiable from repo config or explicit user instruction) AND working test credentials for that environment are available | builds a ranked attack-surface/endpoint inventory (read-only click-through + JS-bundle grep) ranked by likely OWASP Top 10 category (IDOR/BFLA, injection, auth); see `agent-briefs.md`. Run before `ACTIVE-VALIDATION` whenever both are in scope. |
-| `ACTIVE-VALIDATION` | a live, authorized target is confirmed (host + authorization verifiable from repo config or explicit user instruction) AND at least one static finding is a good candidate for a fixed-payload, non-destructive live proof, AND ideally after a DISCOVERY pass has produced a ranked candidate list, when one is in scope | upgrades specific findings from CONFIRMED-in-code to LIVE-VALIDATED; see `agent-briefs.md` and gotchas #15–17. Never spawn this speculatively — it targets specific findings from the other agents, so run it after (or interleaved late in) Phase 1, not as a first-wave dimension. |
+| `ACTIVE-VALIDATION` | a live, authorized target is confirmed (host + authorization verifiable from repo config or explicit user instruction) AND at least one static finding is a good candidate for a fixed-payload, non-destructive live proof, AND ideally after a DISCOVERY pass has produced a ranked candidate list, when one is in scope | upgrades specific findings from CONFIRMED-in-code to LIVE-VALIDATED; see `agent-briefs.md` and gotchas #15 and #18. Never spawn this speculatively — it targets specific findings from the other agents, so run it after (or interleaved late in) Phase 1, not as a first-wave dimension. |
 
 Mark extended findings **CONFIRMED-in-code** or **NEEDS-DYNAMIC** — never assert an exploit the
 source doesn't establish. Whatever is not run becomes an explicit scope-limitation line. When
@@ -1113,6 +1129,8 @@ the specific endpoints the discovery pass ranked as high-value, not guessed ones
 Sizing: aim for 4–8 agents in the baseline tier; the extended tier is additive when scoped. Below 3, run sequentially — the fan-out overhead is not worth it.
 Above 8, merge the smallest dimensions rather than splitting further. For a very large
 ecosystem (a large monorepo workspace set), split `DEP-<eco>` by workspace instead of by task.
+If the tool you are running in cannot launch subagents in parallel, run the same dimensions one
+after another yourself; the OWNS / DOES NOT OWN boundaries still apply.
 
 Shared files need one owner: `docker-compose*.yml` goes to `CICD` for build/secret concerns and
 `IAC` for runtime posture — state which agent covered which axis. Everything else follows the
@@ -1287,7 +1305,7 @@ Rules when narrowing:
 
 ## Critical gotchas — selected highlights, numbered to match `references/gotchas.md`
 
-Not a sequential 1–18 walkthrough — these are the ones that bite most often, each tagged with its
+Not a sequential 1–19 walkthrough — these are the ones that bite most often, each tagged with its
 real number in the reference file so a citation elsewhere (e.g. "gotcha #9") always means the same
 thing wherever it's read. Gotchas #13 (duplicate lockfiles) and #14 (report what passed) aren't
 excerpted here but apply just as fully — see the full file.
@@ -1320,15 +1338,17 @@ excerpted here but apply just as fully — see the full file.
 - **#12 Committed security-assessment evidence** — prior scan output, HAR files and debug dumps
   routinely contain captured live tokens, cookies and credentials.
 - **#15 Live/active DAST is passive-first and consent-gated.** Verify the target host and
-  authorization from the repo's own config; decline active testing against an unverifiable
-  third-party host and validate from source instead. Passive (headers/TLS/bundle) before active;
-  active auth/injection probes use throwaway identifiers only, never real accounts or state
-  changes. If the harness refuses an active request as a third-party attack, that is correct —
-  do not route around it; confirm at source and hand the user the exact command to run.
+  authorization from the repo's own config or the user's explicit instruction; a local instance
+  the user started counts, and is the preferred first target. Decline active testing against an
+  unverifiable third-party host and validate from source instead. Passive (headers/TLS/bundle)
+  before active; active auth/injection probes use throwaway identifiers only, never real accounts
+  or state changes. If the harness refuses an active request as a third-party attack, that
+  refusal is final: do not retry, re-encode, or route around it, and do not hand the user the
+  command to run instead — confirm at source and report the block.
 - **#18 Authorized test-data creation is a separate, narrower exception** from #15 — every live
   dimension creates nothing by default; a minimal, disposable, explicitly-authorized write is the
   exception, not the default posture, and always triggers the report's test-data disclosure list.
-  (Full list — 18 gotchas — in `references/gotchas.md`.)
+  (Full list — 19 gotchas — in `references/gotchas.md`.)
 
 ---
 

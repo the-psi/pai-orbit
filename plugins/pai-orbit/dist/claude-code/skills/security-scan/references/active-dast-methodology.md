@@ -4,8 +4,8 @@ A standalone pattern for when the ask is comprehensive DAST across an entire API
 findings upgraded to LIVE. Built once per engagement as a script the user runs (and re-runs) themselves,
 it resolves and tests EVERY safe endpoint in the target's API surface — hundreds, not a handful —
 and emits one structured JSON evidence file that becomes the backbone of the report's live-validation
-section. All non-destructive/authorization ground rules are unchanged from gotchas #15–17; this file
-only adds the engineering pattern for doing that at full-API scale. Read gotchas #15–17 first.
+section. All non-destructive/authorization ground rules are unchanged from gotchas #15 and #18; this file
+only adds the engineering pattern for doing that at full-API scale. Read gotchas #15 and #18 first.
 
 ## 0. Where this fits in the orchestrator's parallel-agent workflow
 
@@ -109,7 +109,7 @@ Accept, in this preference order:
 
 ## 2. Core safety invariants — script-level restatement
 
-These are the same rules as gotchas #15–17, applied at script-construction time rather than
+These are the same rules as gotchas #15 and #18, applied at script-construction time rather than
 per-request time. Do not restate the reasoning here beyond what's needed to build the script;
 cross-reference gotchas for the "why."
 

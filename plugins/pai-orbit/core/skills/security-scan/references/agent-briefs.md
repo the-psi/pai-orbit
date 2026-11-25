@@ -8,8 +8,7 @@ concurrent agents never audit the same file twice.
 > You are one of several parallel security-scan agents. Stay strictly inside the scope
 > boundary below; other agents own everything else and duplicated work wastes the run.
 > Read this skill's `references/gotchas.md` before starting (resolve the path from wherever this
-> skill is installed — global `~/.claude/skills/` or a project-local `.claude/skills/`, never
-> assume one or the other), plus `references/api-recipes.md` and `references/ecosystems.md` if
+> skill is installed — never assume a fixed location), plus `references/api-recipes.md` and `references/ecosystems.md` if
 > you query advisories.
 > Rules: quote every glob argument; redact all secrets (first 4 + last 2 chars, JWTs as decoded
 > claims only); cite `file:line` on every finding; separate CONFIRMED from PLAUSIBLE; report
@@ -144,7 +143,7 @@ committed prior-assessment evidence. Re-verifies nothing another agent already o
    output actually excluded from version control?
 4. Committed prior security-assessment evidence (gotchas #12).
    **Exception:** a file named exactly `credentials` (no extension) at the project root is this
-   skill's own scan-input convention (gotcha #15), not a finding — exclude it here, but confirm
+   skill's own scan-input convention (gotcha #19), not a finding — exclude it here, but confirm
    with the user first if you're not already aware they created it for this purpose.
 5. History: is a version-control directory present? If not, state that history scanning is
    impossible and recommend a history scan against origin; note that rotation, not deletion,
@@ -312,7 +311,7 @@ short; secret-pattern-scan every one), cookie flags (`httpOnly`/`secure`/`sameSi
 `window` globals matching `config|token|auth|user|env|key|secret|jwt|bearer`, every loaded JS
 bundle (secret-pattern-scanned, checked for an exposed `sourceMappingURL`), and nav links for a
 lightweight sitemap — all from ONE login. This is a single authorized login (using credentials the
-user supplied for this purpose), not a loop, and stays fully within gotchas #15–17's
+user supplied for this purpose), not a loop, and stays fully within gotchas #15 and #18's
 non-destructive/passive-first rules. Mask every secret on write, including in scratch files, per
 the one canonical redaction format in gotcha #9 (first 4 + last 2 characters only) — never the raw
 value. If no headless-browser tool is available, fall back to `curl` for the GET/HEAD-only subset
@@ -368,7 +367,7 @@ to source-only confirmation, not a workaround):
   environment."
 - If the harness itself refuses a request as a third-party attack, treat that as correct, not an
   obstacle — do not retry, re-encode, or route around it; fall back to source-only confirmation
-  and hand the user the exact command to run themselves if they want to proceed.
+  and report the block. The user decides whether to grant broader permission.
 Report each attempt as its own line: request sent (redact secrets), response observed, and
 which finding ID it upgrades to LIVE-VALIDATED (or which static claim it corrected).
 

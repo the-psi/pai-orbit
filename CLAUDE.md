@@ -29,7 +29,7 @@ pai-orbit/                          # repo = marketplace
 │       ├── core/                   # tool-agnostic source of truth
 │       │   ├── plugin.json
 │       │   ├── modes/              # /arch, /build, /catchup, /design, /domain, /groom, /plan, /playwright, /ux, /data
-│       │   ├── skills/             # analysis, board, data-model, epic, git, process-map, simplify
+│       │   ├── skills/             # analysis, board, data-model, epic, git, process-map, security-scan, security-scan-retest, simplify
 │       │   ├── agents/             # docs-writer, cross-repo-impact
 │       │   ├── hooks/              # bash-guard, lint-python, lint-ts, arch-drift-guard
 │       │   ├── reference/          # shared instruction fragments read by modes/skills/agents at runtime
@@ -107,7 +107,7 @@ Each `/command` locks Claude into a distinct headspace. Modes do not bleed into 
 
 Skills are multi-step procedures callable from any mode. Each skill lives in `plugins/pai-orbit/core/skills/<name>/`.
 
-Key skills: `/git`, `/board`, `/analysis`, `/data-model`, `/epic`, `/process-map`, `/simplify`.
+Key skills: `/git`, `/board`, `/analysis`, `/data-model`, `/epic`, `/process-map`, `/security-scan`, `/security-scan-retest`, `/simplify`.
 
 ### Agents
 

@@ -1,27 +1,34 @@
 ---
 name: security-scan-retest
-description: Validates whether a client's fix tracker (dev team's "Completed and Deployed" claims) actually closed the findings from a prior security assessment, by cross-checking the fixed-issues tracker against the original report's exact citations, reading the current codebase, and non-destructively re-testing live where safe. Use when asked to re-validate/retest security fixes, check a fix tracker against a security report, cross-check a dev team's "resolved" claims, or produce a remediation-validation report for a new release/codebase drop of a project that already had a security assessment done against it.
+description: Validates whether a dev team's fix tracker (its "Completed and Deployed" claims) actually closed the findings from a prior security assessment, by cross-checking the fixed-issues tracker against the original report's exact citations, reading the current codebase, and non-destructively re-testing live where safe. Use when asked to re-validate/retest security fixes, check a fix tracker against a security report, cross-check a dev team's "resolved" claims, or produce a remediation-validation report for a new release/codebase drop of a project that already had a security assessment done against it.
 ---
 
 # Security Fix Retesting / Remediation Validation
 
-Re-run this whenever a client/dev team claims a prior security assessment's findings are fixed,
+Re-run this whenever a dev team claims a prior security assessment's findings are fixed,
 and you need to prove — not assume — whether that's true. The core discipline: **never accept
 "fixed" on anyone's word, including your own prior pass's.** Every verdict needs either a live
 HTTP observation or a direct, quoted read of the current source — not a paraphrase, not an
 inference from a tracker's prose.
 
+Reads from:
+- The original assessment report and the fix tracker (user-supplied inputs, see §0)
+- The current codebase — read-only
+- `.claude/pai-orbit-config.md` — docs root (`## System Docs`)
+- A test environment (UAT/staging, or a local instance the user started) only after the user confirms authorization
+
+Writes to: `<docs root>/reports/security-retest/` — the validation reports (PDF and the HTML they are built from), the plain-English and rebuttal versions, and the stakeholder email text. Resolve the docs root per `reference/docs-path-resolution.md` before writing.
+
 ## 0. Inputs — get these before starting, don't guess
 
 - The **original security assessment report** (PDF/HTML) — the one with the numbered findings
   (F1, S1, I1, C1, D1... or whatever scheme it uses). If not in the repo root, ask or search for
-  it (often named `security-review-report.pdf` or similar, or in an `ProjectDocumentation`/
-  `fixedIssues`-style folder).
-- The **fix tracker** (usually a client-maintained spreadsheet, e.g. `*_High_Critical_Findings.xlsx`)
+  it (wherever the team keeps its assessment reports).
+- The **fix tracker** (usually a team-maintained spreadsheet or issue-tracker export)
   with columns like Finding/Severity/Our Action/Status. This is the thing you're validating, not
   trusting.
-- **Test environment access**: a UAT/staging URL and a dedicated low-privilege test account's
-  credentials (often in a `User creds.txt`/`usercred.txt`-style file, or ask). Never use prod
+- **Test environment access**: a UAT/staging URL (or a local instance the user started) and a dedicated low-privilege test account's
+  credentials (supplied by the user, or ask). Never use prod
   creds or a real customer account.
 - Confirm with the user **before any live testing**: is destructive testing acceptable in this
   environment (data loss doesn't matter), or must everything be strictly read-only/non-destructive?
@@ -56,7 +63,7 @@ For each finding, in the **current** codebase:
   accept "removed" as proof of a fix** when the vulnerable logic lives in a database stored
   procedure, Lambda, or anything not fully checked into source. A migration-script folder being
   edited or deleted does NOT prove what's deployed to the live database. Mark these explicitly as
-  needing live verification or direct DBA review (`sp_helptext` or equivalent), not "fixed."
+  needing live verification or direct DBA review (for example `sp_helptext` on SQL Server), not "fixed."
 - When checking "is X still present/absent," run an **exhaustive, repo-wide** search (every
   extension, every folder, case-insensitive) and show the exact command + exact output in your
   evidence — not a spot check of the folder you expect it in. A prior pass in this exact workflow
@@ -186,7 +193,7 @@ For every dispute:
 
 ## 7. Deliverables
 
-Produce these as PDFs (build HTML, render with `wkhtmltopdf` — check what's actually installed in
+Write them to `<docs root>/reports/security-retest/`. Produce these as PDFs (build HTML, render with `wkhtmltopdf` — check what's actually installed in
 this environment first, don't assume):
 
 1. **Full technical validation report**: cover + executive summary table (verdict counts) +
@@ -216,8 +223,8 @@ this environment first, don't assume):
 Keep it short. Default format: a verdict breakdown (Fixed / Partial / Still Open), one line per
 finding with its name, a numbered action list, and a pointer to the attached report(s) for detail
 — never inline the full evidence into the email body. Adjust length/format on request (e.g. "just
-list what's fixed/open, one-liners," "give me Outlook-paste-friendly text" → drop markdown tables
-for plain indented text, since Outlook doesn't render markdown pipe-tables).
+list what's fixed/open, one-liners," "give me paste-friendly text for an email client" → drop markdown tables
+for plain indented text, since many email clients don't render markdown pipe-tables).
 
 ## 9. Hard-won gotchas from prior runs
 
