@@ -190,7 +190,7 @@ Referenced above as `reference/security-findings.md` — inlined here since Copi
 
 # Security findings
 
-Use this path only when the goal points to a **security findings file**: a security assessment or pen-test report (any format; its tracker copy is a `.csv`), or a findings tracker (`.xlsx` / `.csv`) whose rows are security findings (a severity column and security categories such as auth, injection or secrets). If it is unclear whether a file is a security findings list (for example a QA bug list, or an accessibility or performance audit), ask the user before taking this path; under "don't ask", use the normal build path instead. A finding pasted in chat, findings from `/review security`, or a feature ticket with a security checklist is fixed the normal way, through the build-readiness gate. Always work on a branch and open a PR for this path, whatever the branching model (never commit findings fixes straight to the main branch). If already on a branch created for this findings work, reuse it; otherwise, whatever branch you are on (including an unrelated feature branch), create a new branch from the branch new work starts from under the project's git model (`develop` under GitFlow, otherwise the main branch). Never carry uncommitted changes into it: if the working tree has changes not made for this work, ask the owner; under "don't ask", leave them where they are and do the work in a new git worktree on the new branch. Under "don't ask", state the branch name and create it without waiting for confirmation. Write all working files to `<docs root>/wip/security-fix-<date>/`. **Never write a secret's value into anything you produce**: docs, working files, the tracker copy, attack tests, fixtures, or finding text copied from the source (redact it in what you produce; never edit the source tracker). Refer to a secret by its config key or name, and give tests their own fake values.
+Use this path only when the goal points to a **security findings file**: a security assessment or pen-test report (any format; its tracker copy is a `.csv`), or a findings tracker (`.xlsx` / `.csv`) whose rows are security findings (a severity column and security categories such as auth, injection or secrets). If it is unclear whether a file is a security findings list (for example a QA bug list, or an accessibility or performance audit), ask the user before taking this path; under "don't ask", use the normal build path instead. A finding pasted in chat, findings from `/review security`, or a feature ticket with a security checklist is fixed the normal way, through the build-readiness gate. Always work on a branch and open a PR for this path, whatever the branching model (never commit findings fixes straight to the main branch). If already on a branch created for this findings work, reuse it; otherwise, whatever branch you are on (including an unrelated feature branch), create a new branch from the branch new work starts from under the project's git model (`develop` under GitFlow, otherwise the main branch). Never carry uncommitted changes into it: if the working tree has changes not made for this work, ask the owner; under "don't ask", leave them where they are and do the work in a new git worktree on the new branch. Under "don't ask", state the branch name and create it without waiting for confirmation. Write all working files to `<docs root>/wip/security-fix-<date>/`. **Never write a secret's value into anything you produce**: docs, working files, the tracker copy, attack tests, fixtures, or finding text copied from the source (redact it in what you produce; never edit, stage or commit the source tracker). Refer to a secret by its config key or name, and give tests their own fake values.
 
 1. **Intake:** run the full test suite once on the unchanged branch and record any tests that already fail, with each failure message, in `triage.md` (this baseline is required on this path). Read every row (ID, severity, location, finding, recommended action, existing status). Read `.xlsx` with available tooling; if there is none, ask for a CSV export. Rows already marked in progress elsewhere are not worked unless told otherwise, but are counted and carried through unchanged. If the full suite cannot run here (it needs services you don't have), say so at the checkpoint and run what can run; findings whose tests could not run are `Not proven`. Before triage, confirm the rows you read (worked + carried through) match the number of finding rows in the source, counted across every sheet, including hidden sheets and hidden rows; for `.xlsx`, count them a second way that walks every worksheet, not only with the reader you used.
 2. **Triage against the code:** for each finding, record in `triage.md`: present? (`file:line`), really High/Critical? (with a reason), root-cause group (auth, token, IDOR, business logic, secrets, dependencies, password storage, injection, CI/CD), lane (`code` / `design` / `ops` / `skip`), fix decision with a reason, and the attack (request or input → result expected once fixed). **Lane rules:** `code` is only for a local fix that follows a pattern already in the repo. A fix that changes the auth model, token format, data model or service boundaries, or needs a new pattern, is `design`.
@@ -198,15 +198,15 @@ Use this path only when the goal points to a **security findings file**: a secur
 4. **Fix by group, in order:** secrets → auth → tokens → ownership / IDOR → business logic → injection → password storage → dependencies → CI/CD. Fix a shared root cause once. **Password storage:** leave no existing row on the weak scheme. Reversible encryption: decrypt and re-hash every row. One-way hashes (e.g. unsalted MD5): wrap each old hash in the new KDF now and upgrade it on next login, or force a reset. Rows neither path can handle go to `ops` or `design`. Ship the row conversion as a migration script the owner runs (or a startup step that runs only when a flag the owner sets is on); never run it against a live or shared database yourself. If anything outside this change still reads the old values (another app, portal or job), the migration is `design`, not `code`.
 5. **Prove each fix:** for each group the order is attack tests → fix → full suite, with or without the orchestrator. Write one attack test per `code`-lane finding in the group, named with its ID, in its own file (with any helper or fixture it needs; never edit a shared helper file for an attack test) so it can be left out of a commit on its own, and see it fail on its attack assertion against unchanged code; record that failure message in `triage.md`, with any secret value in it redacted. A compile or setup failure, or a failure produced by temporarily changing code, does not count. If an earlier group's fix already blocks the attack, run the test against the branch's base commit (e.g. in a temporary worktree) and record that failure; if you cannot, mark the finding `Not proven`. `Not proven` wins over `Fixed - owner review required`: such a finding stays `Not proven` (still listed under the PR's do-not-merge heading) and never becomes `Fixed - verified`. Then fix; then run the full suite before starting the next group. A failing suite means a test fails that was not in the intake baseline, or a baseline test now fails with a different failure message (compare with the messages recorded at intake after each group). Before treating a failure as caused by the group, run each newly failing test at least 3 times against the base commit, in a temporary worktree with the same dependencies and services as your test runs, and 3 times with the group's change. Record it in `triage.md` as pre-existing or flaky, and carry on, only if it also fails on the base commit with the same failure message and fails no more often with the change than on the base; a test that fails only after the group's change, or more often than on the base, even intermittently, is the group's failure. If you cannot run the base commit, treat the failure as the group's (below); do not record it as pre-existing. This applies only to tests that existed at the base commit; an attack test written on this path that fails after its fix or a later group is always a failure of the current group. If the suite still fails, fix the group's own code, or revert the group's fix, keep its attack tests but mark them skipped with the finding ID, and mark its findings `Design required`; never start the next group on a failing suite. Never edit or delete existing tests to make the suite pass. If an existing test asserts the insecure behaviour, leave it, revert as above, and propose the test change as `Proposed - owner to confirm`. Attack tests are required even when told not to ask. Where there is no behaviour to attack (dependencies, CI/CD, secrets in config), a test asserting the fixed version or config counts as the attack test; for a secret, assert it is read from the environment or secret store, never by matching the old value. If the repo has no test harness, add a minimal one when it fits the stack without new architecture; otherwise say so and mark those findings `Not proven` with the reason.
 6. **Ops lane:** write `ops-actions.md` (rotate exposed credentials, purge history only with owner approval, review logs). List rotations first: until a removed secret is rotated, its old value is readable in the PR diff. Removing a secret from code never closes its finding: it stays `Ops action required` until the owner confirms the rotation, then becomes `Fixed - pending verification` if it needed no code change or its code fix is in and proven (a `Fixed - owner review required` finding keeps that status); otherwise it keeps its step 5 status.
-7. **Write back:** update `triage.md` with each outcome, and write an updated **copy** of the tracker in the working folder as `<original name>-updated-<date>.<ext>` (never overwrite the original). Keep the original's sheets, columns and formatting; fill its own columns by meaning, and add a column only when none fits. For `.xlsx`, copy the file and change only cell values in the copy (e.g. openpyxl `load_workbook` on the copy, then save); never rebuild the workbook from a dataframe, which drops formulas, validation and conditional formatting. openpyxl also drops charts, images and pivot tables (and macros unless `keep_vba=True`) without warning, so before saving check the original file (a zip) for `xl/charts/`, `xl/drawings/`, `xl/pivotTables/` and `vbaProject.bin`, and say if any are there. Redact any secret value the copied cells quote, in the copy and any `.csv`. Before saving, also check the original for `<extLst>` entries (x14 conditional formatting and data validation) and `xl/threadedComments/`, which openpyxl drops silently, and report any. After saving, compare the copy with the original by script: sheet names, column headers, each cell's value outside the columns you filled and the cells you redacted, each cell's formula and number format, merged ranges, defined names, and per sheet the counts of `ws.conditional_formatting` and `ws.data_validations.dataValidation`; tell the owner that openpyxl drops cached formula results, so formula cells show blank until Excel recalculates; if anything was lost, also write a `.csv` with the same columns and report what was lost. Then check the copy has every source row plus the new rows, and search the copy and any `.csv` (including comments and hidden sheets), `triage.md`, `ops-actions.md` and the attack tests, and (before each commit and before opening the PR) the added lines of the staged diff, the commit message and the PR description, for each known secret value; report any difference or match. Do the secret search only with the script under **secret_scan.py** below: save it as `secret_scan.py` in the working folder and run it with each config source and full key path, e.g. `python secret_scan.py --source <base>:<config file> --key Jwt:Key <paths>`, and with `--staged` before each commit, always from the code repository's root. Once a value has been removed from the working tree, read it from the base commit (`--source <base>:<file>`). For a value with no key name, use `--pattern` with a regex whose first group is the value (e.g. `--pattern "Password=([^;\"]+)"`), also for a value that appears only in the source tracker (`--source <tracker>.xlsx --pattern ...`). For a connection string key (e.g. `ConnectionStrings:Default`), the script also searches its password, key, secret and token parts on their own. Pass the files you produced, not folders holding build output. Write the commit message and the PR description to files in the working folder and scan those too. Exit 2 means the scan did not fully run (a key with no value, a value under 4 characters, a missing path, a skipped file or folder, no targets, or an error): fix the arguments and run it again; never treat it as clean. Exit 1 means a match: redact the value in that file (or remove it from the staged change, commit message or PR description) and run the scan again until it exits 0; nothing with a match goes to the owner, into a commit or into the PR. If Python 3 is not available, stop and ask the owner; never hand-roll a search that could echo values. The script reads the values itself (from the working tree, a git revision or `--env`), checks literal, base64, URL-encoded, hex and fragment forms, reads every part of zip files such as `.xlsx`, `.docx` and `.pptx` (hidden sheets, comments) and the whole staged copy of binary files, and prints only file, line, key name and form. Never put a secret value in a command, message or log. Statuses: `Fixed - verified` (only after step 8), `Fixed - pending verification`, `Fixed - owner review required`, `Ops action required`, `Design required`, `Proposed - owner to confirm`, `Won't fix - <reason>` (owner-confirmed only), `In progress elsewhere`, `Not proven`. Add issues found along the way as new rows.
-8. **Verify independently:** recommend `/review security` (or `security-scan-retest` if installed) in a fresh session or by a person; never run it in the same session that made the fixes. Nothing moves past "pending verification" until that passes. `Fixed - owner review required` clears only when the owner approves that fix and the independent review passes; the PR must not merge while any finding still has it. In the PR description, list every finding whose fix changes login, access or session / token behaviour (whatever its status, including `Not proven`), and, if the plan was only stated, one line saying the plan in `triage.md` awaits the owner's confirmation, and the IDs of findings still waiting on a credential rotation, with a pointer to `ops-actions.md` (no key names), under **Do not merge until the owner approves and the independent review passes**, and for each fixed finding give its attack test name and that it failed before the fix. In the PR description, commit messages, board items and anything else committed (including `product-capabilities.md`, ADRs and session captures), every finding whose status does not start with `Fixed -` counts as not fixed, and is named only by ID and status: never say where its weakness or an unrotated secret still is (no file, location or "still in source"); board items for findings that are not fixed give only the ID, status and a pointer to `triage.md`. An attack test for a `Not proven` finding whose fix is in is committed with that fix; only tests for reverted or unapplied fixes are kept out. The working folder is not committed unless the owner says so; give the owner `triage.md` directly. Commit a group only after its suite passes; never commit an attack test before its fix is in. Close the findings board item only after the PR merges and every finding is `Fixed - verified`, an owner-confirmed `Won't fix - <reason>`, or `In progress elsewhere`; if any other finding is left when the PR merges, open a board item for each one (ID, status and a pointer to `triage.md` only) before closing the findings item. Board pointers say `triage.md` is held by the owner. Skipped attack tests for findings that are not fixed are also kept out of the commit unless the owner says otherwise (never commit a file that holds one), and the PR and commit messages give findings that are not fixed only by ID and status, never their attack details. After approval and review, set only the `Fixed - owner review required` and `Fixed - pending verification` findings that passed to `Fixed - verified` in the tracker copy; `Not proven` and `Design required` keep their status (the owner asks `/build` to, or `security-scan-retest` does it if installed).
+7. **Write back:** update `triage.md` with each outcome, and write an updated **copy** of the tracker in the working folder as `<original name>-updated-<date>.<ext>` (never overwrite the original). Keep the original's sheets, columns and formatting; fill its own columns by meaning, and add a column only when none fits. For `.xlsx`, copy the file and change only cell values in the copy (e.g. openpyxl `load_workbook` on the copy, then save); never rebuild the workbook from a dataframe, which drops formulas, validation and conditional formatting. openpyxl also drops charts, images and pivot tables (and macros unless `keep_vba=True`) without warning, so before saving check the original file (a zip) for `xl/charts/`, `xl/drawings/`, `xl/pivotTables/` and `vbaProject.bin`, and say if any are there. Redact any secret value the copied cells quote, in the copy and any `.csv`. Before saving, also check the original for `<extLst>` entries (x14 conditional formatting and data validation) and `xl/threadedComments/`, which openpyxl drops silently, and report any. After saving, compare the copy with the original by script: sheet names, column headers, each cell's value outside the columns you filled and the cells you redacted, each cell's formula and number format, merged ranges, defined names, and per sheet the counts of `ws.conditional_formatting` and `ws.data_validations.dataValidation`; tell the owner that openpyxl drops cached formula results, so formula cells show blank until Excel recalculates; if anything was lost, also write a `.csv` with the same columns and report what was lost. Then check the copy has every source row plus the new rows, and search the copy and any `.csv` (including comments and hidden sheets), `triage.md`, `ops-actions.md` and the attack tests, and (before each commit and before opening the PR) the added lines of the staged diff, the commit message and the PR description, for each known secret value; report any difference or match. Do the secret search only with the script under **secret_scan.py** below: save it as `secret_scan.py` in the working folder and run it with each config source and full key path, e.g. `python secret_scan.py --source <base>:<config file> --key Jwt:Key <paths>`, and with `--staged` before each commit, always from the code repository's root. Once a value has been removed from the working tree, read it from the base commit (`--source <base>:<file>`). For a value with no key name, use `--pattern` with a regex whose first group is the value and stops at line ends (e.g. `--pattern "Password=([^;\"\r\n]+)"`), also for a value that appears only in the source tracker (`--source <tracker>.xlsx --pattern ...`). For a connection string key (e.g. `ConnectionStrings:Default`), the script also searches its password, key, secret and token parts on their own; a value with line breaks (e.g. a PEM key) is searched line by line. Pass the files you produced, not folders holding build output. Write the commit message and the PR description to files in the working folder and scan those too. Exit 2 means the scan did not fully run (a key with no value, a value under 4 characters, a pattern with no group, a missing path, a skipped file or folder, content it could not fully read such as a PDF, no targets, or an error): fix the arguments and run it again; never treat it as clean. Exit 1 means a match: redact the value in that file (or remove it from the staged change, commit message or PR description) and run the scan again until it exits 0; nothing with a match goes to the owner, into a commit or into the PR. If exit 0 cannot be reached because a match is not a copy of the secret (the value is a common word, or a part that is not secret) or a value is too short or a file cannot be fully read, never edit ordinary text just to get exit 0: list each such case in `triage.md` by key name and `file:line` for the owner, and treat that scan as not clean until the owner decides. If Python 3 is not available, stop and ask the owner; never hand-roll a search that could echo values. The script reads the values itself (from the working tree, a git revision or `--env`), checks literal, JSON-escaped, base64, URL-encoded, hex and fragment forms, reads every part of zip files such as `.xlsx`, `.docx` and `.pptx` (hidden sheets, comments) and the whole staged copy of binary files, and prints only file, line, key name and form. Never put a secret value in a command, message or log. Statuses: `Fixed - verified` (only after step 8), `Fixed - pending verification`, `Fixed - owner review required`, `Ops action required`, `Design required`, `Proposed - owner to confirm`, `Won't fix - <reason>` (owner-confirmed only), `In progress elsewhere`, `Not proven`. Add issues found along the way as new rows.
+8. **Verify independently:** recommend `/review security` (or `security-scan-retest` if installed) in a fresh session or by a person; never run it in the same session that made the fixes. Nothing moves past "pending verification" until that passes. `Fixed - owner review required` clears only when the owner approves that fix and the independent review passes; the PR must not merge while any finding still has it. In the PR description, list every finding whose fix changes login, access or session / token behaviour (whatever its status, including `Not proven`), and, if the plan was only stated, one line saying the plan in `triage.md` awaits the owner's confirmation, and the IDs of findings still waiting on a credential rotation, with a pointer to `ops-actions.md` (no key names), under **Do not merge until the owner approves and the independent review passes** (findings there that are not fixed, as defined next, are given by ID and status only), and for each fixed finding give its attack test name and that it failed before the fix. In the PR description, commit messages, board items and anything else committed (including `product-capabilities.md`, ADRs and session captures), every finding whose status does not start with `Fixed -` counts as not fixed, and is named only by ID and status: never say where its weakness or an unrotated secret still is (no file, location or "still in source"); board items for findings that are not fixed give only the ID, status and a pointer to `triage.md`. An attack test for a `Not proven` finding whose fix is in is committed with that fix (the test file is the one place its attack is committed; the commit message names that finding by ID and status only); only tests for reverted or unapplied fixes are kept out. The working folder is not committed unless the owner says so; give the owner `triage.md` directly. Commit a group only after its suite passes; never commit an attack test before its fix is in. Close the findings board item only after the PR merges and every finding is `Fixed - verified`, an owner-confirmed `Won't fix - <reason>`, or `In progress elsewhere`; if any other finding is left when the PR merges, open a board item for each one (ID, status and a pointer to `triage.md` only) before closing the findings item. Board pointers say `triage.md` is held by the owner. Skipped attack tests for findings that are not fixed are also kept out of the commit unless the owner says otherwise (move them into the working folder, and never commit a file that holds one), and the PR and commit messages give findings that are not fixed only by ID and status, never their attack details. After approval and review, set only the `Fixed - owner review required` and `Fixed - pending verification` findings that passed to `Fixed - verified` in the tracker copy; `Not proven` and `Design required` keep their status (the owner asks `/build` to, or `security-scan-retest` does it if installed).
 
 ## secret_scan.py
 
 Python 3 standard library only. Save it unchanged in the working folder (it is not committed).
 
 ```python
-"""Search files for known secret values without ever printing a value.
+r"""Search files for known secret values without ever printing a value.
 
 Run it from the code repository's root.
 Values are read from where they live, by key name only:
@@ -222,29 +222,37 @@ Values are read from where they live, by key name only:
                          pwd, secret, key, token and sig parts of a connection
                          string (k=v;k=v) and URL passwords are also searched
                          on their own.
-  --pattern REGEX        regex whose first group is a value, applied to every
-                         --source (for values with no key name) (repeatable)
+  --pattern REGEX        regex whose (first) group is a value, applied to every
+                         --source (for values with no key name) (repeatable);
+                         stop the group at line ends, e.g. ([^;"\r\n]+)
   --env VAR              environment variable holding a value (repeatable)
-Targets: paths (files or folders); --staged (added lines of `git diff --cached`,
-and the whole staged copy of each binary file).
-Checks the literal value plus base64 and base64url (at any byte offset, so
-user:password in a Basic header is found), URL-encoded and hex (both cases)
-forms, and a 16-character fragment for values of 24+ characters. Zip files
-(.xlsx, .docx, .pptx, found by content) are unzipped and every part is read,
-including hidden sheets and comments. UTF-16 is read with or without a BOM.
-Prints only `MATCH <file>:<line> key=<NAME> form=<form>` and status lines.
-Exit 0 = clean, 1 = match found, 2 = the scan did not fully run (a NOVALUE,
-SHORT, MISSING, SKIPPED, PRUNED, NOTARGET, NOSOURCE or NOSECRET line, or an
-error): fix the arguments and run it again; never treat 2 as clean. PRUNED
+A value with line breaks (e.g. a PEM key) is searched line by line (lines of
+16+ characters). Targets: paths (files or folders); --staged (added lines of
+`git diff --cached`, and the whole staged copy of each binary file).
+Checks the literal value plus JSON-escaped, base64 and base64url (at any byte
+offset, so user:password in a Basic header is found), URL-encoded and hex
+(both cases) forms, and a 16-character fragment for values of 24+ characters.
+Zip and gzip files (.xlsx, .docx, .pptx, found by content) are unpacked and
+every part is read, including hidden sheets and comments. Text is read as
+UTF-8, cp1252 or UTF-16 (with or without a BOM), and binary files also as
+UTF-16. Prints only `MATCH <file>:<line> key=<NAME> form=<form>` and status
+lines. Exit 0 = clean, 1 = match found, 2 = the scan did not fully run (a
+NOVALUE, SHORT, MULTILINE, NOGROUP, BADPATTERN, MISSING, SKIPPED, PARTIAL,
+PRUNED, NOTARGET, NOSOURCE or NOSECRET line, or an error): fix the arguments
+and run it again; never treat 2 as clean. PARTIAL names content that could not
+be fully read (PDF, OLE, 7z, RAR, Git LFS pointer, zip nested too deep). PRUNED
 names a folder not walked into (.git, bin, obj, node_modules, a link): pass the
 files you produced instead, or the folder itself as a path.
 """
-import argparse, base64, binascii, html, io, json, os, re, subprocess, sys, urllib.parse, zipfile
+import argparse, base64, binascii, gzip, html, io, json, os, re, subprocess, sys, urllib.parse, zipfile
 
 PRUNE = (".git", "bin", "obj", "node_modules")
 SECRET_PART = re.compile(r"pass|pwd|secret|key|token|sig", re.I)
 BLOCK_END = re.compile(r"</(?:\w+:)?(?:si|c|p|row|tr|tc|comment|is|v|f|text)>|<(?:\w+:)?br\b[^>]*>", re.I)
 TRAILING = re.compile(r"\s*[}\]]")
+LFS = "version https://git-lfs.github.com/spec/"
+UNREAD = [(b"%PDF-", "PDF"), (b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1", "OLE file"), (b"7z\xbc\xaf\x27\x1c", "7z"),
+          (b"Rar!", "RAR"), (LFS.encode(), "Git LFS pointer, the real file was not read")]
 
 def git(*args, text=True):
     out = subprocess.run(["git", "-c", "color.ui=never", "-c", "core.quotepath=off"] + list(args),
@@ -263,11 +271,21 @@ def decode(data):
             return data.decode("utf-16-le", "replace")
         if even > len(head) // 4 and odd <= even // 8:
             return data.decode("utf-16-be", "replace")
-    return data.decode("utf-8", "replace")
+    try:
+        return data.decode("utf-8")
+    except UnicodeDecodeError:
+        return data.decode("cp1252", "replace")
 
 def blobs(label, data, depth=0):
-    """(label, text, is_xml) for a file, reading every part of zip files."""
-    if depth < 3 and zipfile.is_zipfile(io.BytesIO(data)):
+    """(label, text, is_xml, unread) for a file, reading every part of zip and gzip
+    files; unread names content that could not be fully read."""
+    if data[:2] == b"\x1f\x8b" and depth < 3:
+        yield from blobs(label + "!gunzip", gzip.decompress(data), depth + 1)
+        return
+    if zipfile.is_zipfile(io.BytesIO(data)):
+        if depth >= 3:
+            yield label, decode(data), False, "zip nested too deep"
+            return
         with zipfile.ZipFile(io.BytesIO(data)) as z:
             for info in z.infolist():
                 if info.is_dir():
@@ -275,9 +293,14 @@ def blobs(label, data, depth=0):
                 if info.file_size > 1 << 30:
                     raise ValueError("zip part too large")
                 yield from blobs("%s!%s" % (label, info.filename), z.read(info), depth + 1)
-        return
+        if data[:2] == b"PK":
+            return  # otherwise also read what comes before the zip
     text = decode(data)
-    yield label, text, text.lstrip()[:1] == "<" or label.lower().endswith((".xml", ".rels", ".vml", ".config"))
+    unread = next((name for sig, name in UNREAD if data.startswith(sig)), None)
+    yield label, text, text.lstrip()[:1] == "<" or label.lower().endswith((".xml", ".rels", ".vml", ".config")), unread
+    if b"\x00" in data:  # UTF-16 strings inside binary files (.doc, .msg, OLE), at either byte offset
+        for k in (0, 1):
+            yield label, data[k:].decode("utf-16-le", "replace"), False, None
 
 def xml_text(raw):
     return html.unescape(re.sub(r"<[^>]+>", "", BLOCK_END.sub("\n", raw)))
@@ -290,9 +313,9 @@ def read_source(src):
         with open(src, "rb") as f:
             data, path = f.read(), src
     parts = list(blobs(path, data))
-    if len(parts) == 1 and parts[0][0] == path:
-        return parts[0][1], path
-    return "\n".join(xml_text(t) if x else t for _, t, x in parts), path
+    if parts and parts[0][0] == path and not any(p[0] != path for p in parts):
+        return parts[0][1], path  # a plain file (the UTF-16 views of binary data are not a source)
+    return "\n".join(xml_text(t) if x else t for _, t, x, _ in parts), path
 
 def split(key):
     return [p.strip().lower() for p in re.split(r":|__", key)]
@@ -304,7 +327,7 @@ def scalar(v, yaml=False):
     v = v.strip()
     if v[:1] == '"':
         m = re.match(r'"((?:[^"\\]|\\.)*)"', v)
-        return m.group(1) if m else v[1:].strip()
+        return re.sub(r'\\(["\\])', r"\1", m.group(1)) if m else v[1:].strip()
     if v[:1] == "'":
         m = re.match(r"'((?:[^']|'')*)'", v)
         return m.group(1).replace("''", "'") if m else v[1:].strip()
@@ -421,13 +444,21 @@ def values_for(text, key, path):
     return [v for v in dict.fromkeys(vals) if v]
 
 def expand(name, value):
-    """The value, plus secret parts of a connection string and URL passwords."""
+    """The value, plus secret parts of a connection string (k=v;k=v, or k=v,k=v
+    when there is no ;) and URL passwords. A value with line breaks becomes its
+    lines of 16+ characters (PEM header and footer lines left out)."""
+    if "\n" in value or "\r" in value:
+        lines = [l.strip() for l in value.splitlines()]
+        return [("%s[line %d]" % (name, i), l) for i, l in enumerate(lines, 1) if len(l) >= 16 and not l.startswith("-----")]
     out = [(name, value)]
-    if ";" in value and "=" in value:
-        for m in re.finditer(r'(?:^|;)[ \t]*([^=;]+?)[ \t]*=[ \t]*(?:"([^"]*)"|\'([^\']*)\'|([^;]*))', value):
+    sep = ";" if ";" in value else ","
+    if sep in value and "=" in value:
+        rx = r'(?:^|%s)[ \t]*([^=%s]+?)[ \t]*=[ \t]*(?:"([^"]*)"|\'([^\']*)\'|([^%s]*))' % (sep, sep, sep)
+        for m in re.finditer(rx, value):
             part = next(g for g in m.groups()[1:] if g is not None).strip()
-            if SECRET_PART.search(m.group(1)) and part and part != value:
-                out.append(("%s[%s]" % (name, m.group(1).strip()), part))
+            pname = m.group(1).strip()
+            if SECRET_PART.search(pname) and not pname.lower().endswith("name") and part and part != value:
+                out.append(("%s[%s]" % (name, pname), part))
     for m in re.finditer(r"[a-z][a-z0-9+.-]*://[^:/@\s]*:([^@/\s]+)@", value, re.I):
         out.append(("%s[url-password]" % name, urllib.parse.unquote(m.group(1))))
     return out
@@ -435,7 +466,9 @@ def expand(name, value):
 def forms(value):
     raw = value.encode()
     hx = binascii.hexlify(raw).decode()
-    out = [("literal", value), ("url", urllib.parse.quote(value, safe="")), ("hex", hx), ("HEX", hx.upper())]
+    url = urllib.parse.quote(value, safe="")
+    out = [("literal", value), ("json", json.dumps(value)[1:-1]), ("url", url),
+           ("url-lower", re.sub(r"%[0-9A-F]{2}", lambda m: m.group().lower(), url)), ("hex", hx), ("HEX", hx.upper())]
     for k in (0, 1, 2):  # the value may start at any byte of a base64 block
         full = (k + len(raw)) // 3 * 4
         for name, enc in (("base64", base64.b64encode), ("base64url", base64.urlsafe_b64encode)):
@@ -465,8 +498,11 @@ class Scan:
         return found
 
     def blob(self, label, data):
-        for lab, text, xml in blobs(label, data):
-            seen = set()  # an .xlsx value shows in the raw and tag-stripped text; report it once
+        seens = {}  # a value can show in several views of one part (raw and tag-stripped XML,
+        for lab, text, xml, unread in blobs(label, data):  # UTF-16 views): report it once
+            if unread:
+                self.note("PARTIAL %s (%s: not fully read)" % (lab, unread))
+            seen = seens.setdefault(lab, set())
             for variant in ([xml_text(text), text] if xml else [text]):
                 found = set()
                 for i, line in enumerate(variant.splitlines(), 1):
@@ -489,6 +525,8 @@ class Scan:
                 n = int(m.group(1)) - 1 if m else 0
             elif not header and line.startswith("+"):
                 n += 1
+                if line[1:].startswith(LFS):
+                    self.note("PARTIAL staged:%s (Git LFS pointer, the real file was not read)" % cur)
                 self.line("staged:" + cur, n, line[1:], set())
         stat = git("-C", top, "diff", *common, "--numstat", "-z", "--diff-filter=d")
         for rec in stat.split("\0"):
@@ -527,7 +565,15 @@ def main():
                 sc.note("NOVALUE key=%s source=%s" % (key, src))
             secrets += [(key, v) for v in vals]
         for i, pat in enumerate(a.pattern, 1):
-            vals = [m if isinstance(m, str) else m[0] for m in re.findall(pat, text)]
+            try:
+                rx = re.compile(pat)
+            except re.error:
+                sc.note("BADPATTERN pattern=%d (not a valid regex)" % i)
+                continue
+            if rx.groups < 1:
+                sc.note("NOGROUP pattern=%d (needs a (group) around the value)" % i)
+                continue
+            vals = [m if isinstance(m, str) else m[0] for m in rx.findall(text)]
             vals = [v.strip() for v in vals if v.strip()]
             if not vals:
                 sc.note("NOVALUE pattern=%d source=%s" % (i, src))
@@ -539,7 +585,10 @@ def main():
             sc.note("NOVALUE env=%s" % e)
     values = []
     for name, v in dict.fromkeys(secrets):
-        for name2, v2 in expand(name, v):
+        parts = expand(name, v)
+        if not parts:
+            sc.note("MULTILINE key=%s (line breaks and no line of 16+ characters, not searched)" % name)
+        for name2, v2 in parts:
             if len(v2) < 4:
                 sc.note("SHORT key=%s (value under 4 characters, not searched)" % name2)
             elif v2 not in [x for _, x in values]:
