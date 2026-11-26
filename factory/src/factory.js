@@ -379,6 +379,7 @@ class Factory {
       timeoutMs: l.hoursPerStage * HOUR,
       env: this._agentEnv(extra.envNames),
       transcriptPath: this.store.transcriptPath(run.ticketId, stageName, run.attempts[stageName]),
+      livePath: this.store.livePath(run.ticketId),
       signal: chain ? chain.abort.signal : undefined,
     });
 

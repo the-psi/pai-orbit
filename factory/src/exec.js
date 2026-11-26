@@ -10,7 +10,8 @@ const path = require('node:path');
  * Run a command to completion.
  * @param {string} command
  * @param {string[]} args
- * @param {{cwd?: string, env?: object, input?: string, timeoutMs?: number, signal?: AbortSignal}} [opts]
+ * @param {{cwd?: string, env?: object, input?: string, timeoutMs?: number, signal?: AbortSignal,
+ *          onStdout?: (chunk: string) => void}} [opts] `onStdout` sees output as it arrives
  * @returns {Promise<{code: number|null, stdout: string, stderr: string, timedOut: boolean, aborted: boolean}>}
  */
 function run(command, args, opts = {}) {
@@ -43,7 +44,10 @@ function run(command, args, opts = {}) {
       if (opts.signal.aborted) onAbort();
       else opts.signal.addEventListener('abort', onAbort, { once: true });
     }
-    child.stdout.on('data', (d) => { stdout += d; });
+    child.stdout.on('data', (d) => {
+      stdout += d;
+      if (opts.onStdout) { try { opts.onStdout(String(d)); } catch { /* a listener must not break the run */ } }
+    });
     child.stderr.on('data', (d) => { stderr += d; });
     child.on('error', (err) => {
       if (timer) clearTimeout(timer);

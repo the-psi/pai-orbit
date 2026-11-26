@@ -60,7 +60,8 @@ test('one run starts the CLI once, headless, with JSON output', async () => {
   const { command, args } = calls[0];
   assert.equal(command, 'claude');
   assert.ok(args.includes('-p'));
-  assert.equal(valueOf(args, '--output-format'), 'json');
+  assert.equal(valueOf(args, '--output-format'), 'stream-json');
+  assert.ok(args.includes('--verbose'), 'stream-json needs --verbose in print mode');
   assert.ok(args.every((a) => typeof a === 'string'), 'every argument is a string');
 });
 

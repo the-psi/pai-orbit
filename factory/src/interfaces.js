@@ -95,6 +95,7 @@
  * @property {number} timeoutMs
  * @property {object} env            the complete environment for the agent process
  * @property {string} transcriptPath where to save the raw runner output
+ * @property {string} [livePath]     where to write each step as it happens, for the status page
  * @property {AbortSignal} [signal]
  */
 

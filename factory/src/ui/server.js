@@ -44,8 +44,9 @@ function activeStage(events) {
   return null;
 }
 
-function summarise(run, events) {
+function summarise(run, events, live = []) {
   const working = run.status === 'running' ? activeStage(events) : null;
+  const steps = working ? live.filter((s) => s.stage === working.stage) : [];
   let state = 'Queued for the next stage';
   let needsPerson = false;
   if (working) state = `Working: ${working.stage}`;
@@ -65,6 +66,9 @@ function summarise(run, events) {
     state,
     needsPerson,
     workingSince: working ? working.since : '',
+    doingNow: steps.length ? steps[steps.length - 1].text : '',
+    doingNowAt: steps.length ? steps[steps.length - 1].at : '',
+    steps: steps.length,
     waitingSince: run.pending ? run.pending.since : '',
     waitingFor: run.pending ? (run.pending.kind === 'answer' ? 'answer' : `${run.pending.gate} approval`) : '',
     questions: run.pending && run.pending.questions ? run.pending.questions.map((q) => q.question) : [],
@@ -150,7 +154,7 @@ function createUiServer(opts) {
 
   function overview() {
     const control = store.control();
-    const tickets = store.all().map((run) => summarise(run, store.events(run.ticketId)));
+    const tickets = store.all().map((run) => summarise(run, store.events(run.ticketId), store.live(run.ticketId)));
     return {
       project: config.project,
       generatedAt: now().toISOString(),
@@ -206,7 +210,11 @@ function createUiServer(opts) {
         const run = store.load(id);
         if (!run) return send(res, 404, 'application/json; charset=utf-8', JSON.stringify({ error: 'No such ticket' }));
         const events = store.events(id);
-        return send(res, 200, 'application/json; charset=utf-8', JSON.stringify({ ticket: summarise(run, events), stageCost: run.stageCost || {}, timeline: timeline(events) }));
+        const live = store.live(id);
+        const ticket = summarise(run, events, live);
+        // Steps of the stage in flight only: once a stage ends, its report in the timeline replaces them.
+        const activity = ticket.workingSince ? live.filter((s) => s.stage === ticket.stage) : [];
+        return send(res, 200, 'application/json; charset=utf-8', JSON.stringify({ ticket, stageCost: run.stageCost || {}, activity, timeline: timeline(events) }));
       }
       return send(res, 404, 'text/plain; charset=utf-8', 'Not found');
     } catch (err) {

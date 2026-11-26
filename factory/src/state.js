@@ -45,6 +45,23 @@ class StateStore {
     return path.join(dir, `${stage}-${String(attempt).padStart(2, '0')}-${Date.now()}.json`);
   }
 
+  /** Where the runner writes what the agent is doing right now, one JSON object per line. */
+  livePath(ticketId) {
+    const dir = this.runDir(ticketId);
+    try { fs.mkdirSync(dir, { recursive: true }); } catch { /* read-only mount */ }
+    return path.join(dir, 'live.jsonl');
+  }
+
+  /** The most recent steps of the stage in flight, oldest first. */
+  live(ticketId, max = 40) {
+    try {
+      const lines = fs.readFileSync(this.livePath(ticketId), 'utf8').split('\n').filter(Boolean);
+      return lines.slice(-max).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
+
   _readJson(file, fallback) {
     try {
       return JSON.parse(fs.readFileSync(file, 'utf8'));

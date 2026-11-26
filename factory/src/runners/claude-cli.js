@@ -33,7 +33,8 @@ class ClaudeCliRunner {
     const o = this.opts;
     const args = [
       '-p',
-      '--output-format', 'json',
+      // The agent reports each step as it happens; the last line is the result.
+      '--output-format', 'stream-json', '--verbose',
       '--json-schema', this.schema,
       '--append-system-prompt', this.contract,
       '--plugin-dir', o.pluginDir,
@@ -66,12 +67,14 @@ class ClaudeCliRunner {
     const started = Date.now();
     const sessionId = req.sessionId || crypto.randomUUID();
     const command = resolveCommand(this.opts.command, req.env);
+    const live = liveWriter(req);
     const res = await this.exec(command, this.args(req, sessionId), {
       cwd: req.cwd,
       env: req.env,
       input: req.prompt,
       timeoutMs: req.timeoutMs,
       signal: req.signal,
+      onStdout: live,
     });
     const durationMs = Date.now() - started;
     if (req.transcriptPath) {
@@ -110,7 +113,85 @@ class ClaudeCliRunner {
   }
 }
 
-/** The CLI prints one JSON object; older or verbose modes may print an array of messages. */
+/**
+ * One line for the status page from one thing the agent did. Returns '' for steps not worth
+ * showing. Paths are shown relative to the ticket's workspace.
+ */
+function activityText(block, cwd) {
+  const input = block.input || {};
+  const rel = (p) => {
+    const file = String(p || '').replace(/\\/g, '/');
+    const base = String(cwd || '').replace(/\\/g, '/').replace(/\/+$/, '');
+    return base && file.startsWith(`${base}/`) ? file.slice(base.length + 1) : file;
+  };
+  const short = (t, n = 140) => { const x = String(t || '').replace(/\s+/g, ' ').trim(); return x.length > n ? `${x.slice(0, n - 1)}…` : x; };
+  if (block.type === 'text') return block.text && block.text.trim() ? `Says: ${short(block.text, 180)}` : '';
+  if (block.type !== 'tool_use') return '';
+  switch (block.name) {
+    case 'Read': return `Reading ${rel(input.file_path)}`;
+    case 'Write': return `Writing ${rel(input.file_path)}`;
+    case 'Edit':
+    case 'MultiEdit': return `Editing ${rel(input.file_path)}`;
+    case 'Bash': {
+      if (input.description) return `Running: ${short(input.description)}`;
+      // Drop the "cd <workspace>;" the agent often puts first, and show paths relative to it.
+      const base = String(cwd || '').split(String.fromCharCode(92)).join('/').replace(/[/]+$/, '');
+      let cmd = String(input.command || '');
+      if (base) {
+        const lead = `cd ${base}`;
+        if (cmd.startsWith(lead)) cmd = cmd.slice(lead.length).replace(/^[\s;&]+/, '');
+        cmd = cmd.split(`${base}/`).join('');
+      }
+      return `Running: ${short(cmd)}`;
+    }
+    case 'Glob': return `Looking for files: ${short(input.pattern, 80)}`;
+    case 'Grep': return `Searching the code for: ${short(input.pattern, 80)}`;
+    case 'Agent':
+    case 'Task': return `Starting a helper agent: ${short(input.description || input.prompt, 100)}`;
+    case 'Skill': return `Using the ${short(input.skill, 40)} skill`;
+    case 'TodoWrite': return 'Updating its task list';
+    case 'StructuredOutput': return 'Writing the stage result';
+    default: return `Using ${block.name}`;
+  }
+}
+
+/**
+ * Turn the agent's output stream into lines in the live activity file. Returns a function to feed
+ * with output chunks. Never throws: the status page is a convenience, the run is not.
+ */
+function liveWriter(req) {
+  if (!req.livePath) return undefined;
+  try {
+    fs.mkdirSync(path.dirname(req.livePath), { recursive: true });
+    fs.writeFileSync(req.livePath, '');
+  } catch { return undefined; }
+  let buffer = '';
+  return (chunk) => {
+    buffer += chunk;
+    let nl = buffer.indexOf('\n');
+    while (nl !== -1) {
+      const line = buffer.slice(0, nl).trim();
+      buffer = buffer.slice(nl + 1);
+      nl = buffer.indexOf('\n');
+      if (!line.startsWith('{')) continue;
+      let msg;
+      try { msg = JSON.parse(line); } catch { continue; }
+      if (msg.type !== 'assistant' || !msg.message || !Array.isArray(msg.message.content)) continue;
+      for (const block of msg.message.content) {
+        const text = activityText(block, req.cwd);
+        if (!text) continue;
+        try {
+          fs.appendFileSync(req.livePath, `${JSON.stringify({ at: new Date().toISOString(), stage: req.stage, text })}\n`);
+        } catch { /* ignore */ }
+      }
+    }
+  };
+}
+
+/**
+ * The CLI streams one JSON object per line and the last is the result. A single JSON object or
+ * an array of messages (other output modes) is read as well.
+ */
 function parseOutput(stdout) {
   const text = String(stdout || '').trim();
   if (!text) return null;
@@ -144,4 +225,4 @@ function extractResult(parsed) {
   };
 }
 
-module.exports = { ClaudeCliRunner, parseOutput, extractResult };
+module.exports = { ClaudeCliRunner, parseOutput, extractResult, activityText, liveWriter };
