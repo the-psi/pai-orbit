@@ -150,3 +150,23 @@ test('columns and event wording', () => {
   assert.equal(describe({ type: 'approved', gate: 'design', by: 'lead' }), 'Approved: design by lead');
   assert.equal(summarise({ ticketId: '9', status: 'running', stage: 'design' }, []).state, 'Queued for the next stage');
 });
+
+test('sign-in address: refuses the view-only sign-in so the browser asks again, and sends a named person back', async (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'orbit-factory-ui-'));
+  const store = new StateStore(dir);
+  const server = createUiServer({ store, config, password: 'look', users: new Map([['po', 'secret']]) });
+  t.after(() => { server.close(); fs.rmSync(dir, { recursive: true, force: true, maxRetries: 3 }); });
+  await new Promise((resolve) => { server.listen(0, '127.0.0.1', resolve); });
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const as = (name, pass) => ({ redirect: 'manual', headers: { authorization: `Basic ${Buffer.from(`${name}:${pass}`).toString('base64')}` } });
+  const viewer = await fetch(`${base}/signin`, as('whoever', 'look'));
+  assert.equal(viewer.status, 401);
+  assert.match(viewer.headers.get('www-authenticate'), /Basic/);
+  const named = await fetch(`${base}/signin?ticket=5`, as('po', 'secret'));
+  assert.equal(named.status, 302);
+  assert.equal(named.headers.get('location'), '/#review=5');
+  assert.equal((await fetch(`${base}/signin`, as('po', 'secret'))).headers.get('location'), '/');
+  assert.equal((await fetch(`${base}/signin`, as('po', 'wrong'))).status, 401);
+  // A person's own password is not accepted under someone else's name.
+  assert.equal((await fetch(`${base}/signin`, as('lead', 'secret'))).status, 401);
+});

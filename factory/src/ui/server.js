@@ -235,7 +235,7 @@ function createUiServer(opts) {
     if (p.kind === 'approval' && p.gate === 'merge' && !single) {
       return { can: false, why: `Code is approved on the pull request itself, with a review from ${who}.` };
     }
-    if (!user) return { can: false, why: `You are signed in to look only. Sign in with your own name to decide. This one is for ${who}.` };
+    if (!user) return { can: false, signIn: true, why: `You are signed in to look only. To decide, sign in with your own name. This one is for ${who}.` };
     if (!inRole(config, role, user, run.reporter)) return { can: false, why: `This decision is for ${who}. You are signed in as ${user}.` };
     return { can: true, why: '' };
   }
@@ -367,6 +367,18 @@ function createUiServer(opts) {
     if (!who.ok) {
       res.writeHead(401, { 'www-authenticate': 'Basic realm="Agentic Factory", charset="UTF-8"', 'cache-control': 'no-store' });
       return res.end('Sign in to see the factory.');
+    }
+    // "Sign in with your own name". A browser keeps using the sign-in it already has and offers
+    // no way to change it, so this address refuses the view-only sign-in, which makes the browser
+    // ask again, and sends a named person back to the page they came from.
+    if (url.pathname === '/signin') {
+      if (!who.user) {
+        res.writeHead(401, { 'www-authenticate': 'Basic realm="Agentic Factory", charset="UTF-8"', 'cache-control': 'no-store', 'content-type': 'text/plain; charset=utf-8' });
+        return res.end('Sign in with your own name and password to approve, send back or answer. Then reload this page.');
+      }
+      const back = url.searchParams.get('ticket');
+      res.writeHead(302, { location: back ? `/#review=${encodeURIComponent(back)}` : '/', 'cache-control': 'no-store' });
+      return res.end();
     }
     const decision = url.pathname.match(/^\/api\/tickets\/([^/]+)\/decision$/);
     if (req.method === 'POST' && decision) {

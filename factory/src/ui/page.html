@@ -542,6 +542,11 @@
     if (decided[t.id] && decided[t.id] === ask.since) { f.appendChild(el('div', 'note ok', 'Your decision is recorded. The factory acts on it at its next pass, usually within a minute.')); return; }
     if (!d.permission.can) {
       var n = el('div', 'note', d.permission.why);
+      if (d.permission.signIn) {
+        var si = el('a', 'btn yes', 'Sign in with your name'); si.href = '/signin?ticket=' + encodeURIComponent(t.id);
+        si.style.marginLeft = '12px'; si.style.textDecoration = 'none'; si.style.display = 'inline-block';
+        n.appendChild(si);
+      }
       if (ask.gate === 'merge') { var pr = safeLink(t.pr, ' Open the pull request'); if (pr) n.appendChild(pr); }
       f.appendChild(n); return;
     }
@@ -603,7 +608,8 @@
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (o) {
         $('project').textContent = o.project;
-        $('me').textContent = o.signedInAs ? 'Signed in as ' + o.signedInAs : 'Looking only';
+        var me = $('me'); me.textContent = o.signedInAs ? 'Signed in as ' + o.signedInAs + ' · ' : 'Looking only · ';
+        var sw = el('a', null, o.signedInAs ? 'switch' : 'sign in to decide'); sw.href = '/signin'; sw.style.color = 'var(--accent)'; me.appendChild(sw);
         $('updated').textContent = 'Updated ' + new Date(o.generatedAt).toLocaleTimeString();
         renderFacts(o); renderBanners(o); renderBoard(o);
         loadTicket();
@@ -615,6 +621,9 @@
   }
   load();
   setInterval(load, 5000);
+  // Coming back from sign-in: reopen the review the person was on.
+  var back = /^#review=(.+)$/.exec(location.hash);
+  if (back) { history.replaceState(null, '', '/'); openReview(decodeURIComponent(back[1])); }
 })();
 </script>
 </body>
