@@ -32,9 +32,15 @@ COPY --chown=factory:factory factory/ factory/
 COPY --chown=factory:factory plugins/pai-orbit/dist/claude-code/ plugins/pai-orbit/dist/claude-code/
 # A Windows checkout can leave CRLF line endings in the hook scripts, which bash cannot run.
 RUN sed -i 's/\r$//' plugins/pai-orbit/dist/claude-code/hooks/*.sh \
- && chmod +x plugins/pai-orbit/dist/claude-code/hooks/*.sh
+ && chmod +x plugins/pai-orbit/dist/claude-code/hooks/*.sh \
+ && sed -i 's/\r$//' factory/bin/factory.js \
+ && chmod +x factory/bin/factory.js \
+ && ln -s /opt/orbit/factory/bin/factory.js /usr/local/bin/orbit-factory
 
 USER factory
+# A repo mounted from the host (a local bare repo for a trial) is owned by another user, and git
+# refuses such repos by default. This container exists only to run the factory, so trust them.
+RUN git config --global --add safe.directory '*'
 ENV FACTORY_SANDBOXED=1 \
     FACTORY_DATA_DIR=/data \
     FACTORY_CONFIG=/config/factory.config.json \
