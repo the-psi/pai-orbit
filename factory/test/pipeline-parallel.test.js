@@ -88,7 +88,18 @@ describe('pipeline: parallel tickets and daily spend', { concurrency: 2 }, () =>
   });
 
   test('daily spend limit', async (t) => {
-    const handler = (req) => (req.stage === 'groom' ? { useDefault: true, costUsd: 3 } : undefined);
+    // Hold the first two grooms until both have started, so both are in flight before either
+    // reports its cost. Without this the outcome depends on how fast git clones at that moment.
+    let grooms = 0;
+    let bothStarted;
+    const barrier = new Promise((resolve) => { bothStarted = resolve; });
+    const handler = async (req) => {
+      if (req.stage !== 'groom') return undefined;
+      grooms += 1;
+      if (grooms >= 2) bothStarted();
+      await barrier;
+      return { useDefault: true, costUsd: 3 };
+    };
     const rig = makeRig({ config: { ...FAST, concurrency: 2, gates: { design: true }, limits: { costPerDayUsd: 3 } }, handler });
     t.after(rig.cleanup);
     const calls = () => rig.runner.calls.map((c) => `${ticketOf(c)}:${c.stage}`).sort();

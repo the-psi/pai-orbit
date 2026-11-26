@@ -2,10 +2,10 @@
 
 **Date:** 2026-11-26
 **Issue:** none (standalone, local only)
-**Requirements:** [requirements.md](./requirements.md) — 44 REQs, 40 ACs, 14 scenarios
+**Requirements:** [requirements.md](./requirements.md) — 48 REQs, 43 ACs, 15 scenarios
 **Design:** [design.md](./design.md)
-**Result:** 509 of 509 automated tests pass. Two real tickets were taken from "ready" to "released"
-by the actual Claude CLI on a local fixture. 31 of 40 acceptance criteria are proven, 6 are proven
+**Result:** 515 of 515 automated tests pass. Two real tickets were taken from "ready" to "released"
+by the actual Claude CLI on a local fixture. 34 of 43 acceptance criteria are proven, 6 are proven
 in part, and 3 are not yet proven (see "Coverage"). Nothing was run against GitHub.
 
 ---
@@ -30,10 +30,10 @@ network).
 | Files | Tests | What they cover |
 |---|---|---|
 | `unit-*.test.js` (10 files) | 325 | Config validation, working calendar, state store, process helper, Claude CLI arguments and result parsing, stage prompts, notifiers, preflight, operator CLI, contract and schema |
-| `pipeline-*.test.js` (10 files) | 143 | Intake, questions, gates, merge, waiting timers, failures, parallel tickets, release, control and take-over, merge conflict |
+| `pipeline-*.test.js` (11 files) | 149 | Intake, questions, gates, merge, waiting timers, failures, parallel tickets, release, control and take-over, merge conflict, already groomed tickets |
 | `github-*.test.js` (2 files) | 40 | GitHub board and code host against simulated `gh` output |
 | `smoke.test.js` | 1 | One ticket from ready to released and closed |
-| **Total** | **509** | **509 pass, 0 fail** |
+| **Total** | **515** | **515 pass, 0 fail** |
 
 The unit and scenario tests were written by sub-agents that were given the requirements and told to
 assert the required behaviour, not what the code did, and not to edit the source.
@@ -85,7 +85,7 @@ non-root user and contains Node 22, git, `gh` and the Claude CLI.
 **Proven** (automated test, and where marked ●, also seen in the real run):
 AC-1, AC-2, AC-3 ●, AC-5, AC-6 ●, AC-7 ●, AC-8 ●, AC-9 ●, AC-10, AC-11, AC-12, AC-13, AC-14, AC-15,
 AC-16, AC-18, AC-20, AC-21, AC-24, AC-25 ●, AC-26, AC-27, AC-29, AC-31, AC-33 ●, AC-34 ●,
-AC-35, AC-36, AC-37, AC-38, AC-40.
+AC-35, AC-36, AC-37, AC-38, AC-40, AC-41, AC-42, AC-43.
 
 **Proven in part:**
 
@@ -115,6 +115,9 @@ AC-35, AC-36, AC-37, AC-38, AC-40.
   `gh` output are listed in the adapter tests and are unverified. This is the first job of a pilot.
 - **Slack.** The notifier was tested with a simulated HTTP call only.
 - **Optional `/playwright` stage** with a real agent.
+- **An already groomed ticket with a real agent.** Starting at design from a person's
+  `requirements.md` is proven with the simulated agent only. The real run did exercise the real
+  `/design` reading a `requirements.md`, but one the factory's own groom stage had written.
 - **Release levels `staging` and `production`.**
 - **A real-sized codebase.** The fixture is a few files. Cost, run time and the quality of
   unattended grooming on a large project are unknown.

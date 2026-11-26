@@ -92,6 +92,26 @@ graph LR
 A stage is complete only when its output is committed and pushed on the ticket branch. That is the
 restart checkpoint (REQ-19).
 
+### Starting from an already groomed ticket
+
+A person marks a groomed ticket with a second label, `factory:groomed`, next to `factory:ready`. At
+intake the factory then looks for the requirements instead of writing them:
+
+1. a path of the form `<docs root>/features/<name>/requirements.md` in the ticket text, then
+2. the feature folder named after the ticket title.
+
+The file must be on the base branch. If one is found, the ticket's feature folder is set to that
+folder, the groom stage and the optional requirements gate are skipped, and the ticket starts at
+design. If none is found the ticket is declined with instructions. Nothing else changes: the same
+intake checks run first, and design reads the requirements exactly as it does after the factory's
+own grooming.
+
+An explicit label was chosen over detecting a requirements file automatically, because a ticket
+that merely mentions another feature's requirements must not be mistaken for a groomed one.
+
+Not included: starting later than design (for example from a person's `design.md`). Design always
+runs, so the after-design size check is never skipped.
+
 ## A ticket's life
 
 ```mermaid
@@ -240,6 +260,7 @@ every key.
 | REQ-35, 36 | Take-over detection (label removed or reassigned); factory only pushes its own branch |
 | REQ-37 | Docker image and compose file; local and server differ by environment only |
 | REQ-38 | Optional playwright stage |
+| REQ-45 – 48 | Groomed label; requirements located at intake; start at design; decline when not found |
 
 ## Known limits of the first build
 

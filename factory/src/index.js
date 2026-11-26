@@ -36,6 +36,7 @@ function createFactory(config, opts) {
     ownedLabel: config.board.ownedLabel,
     waitingLabel: config.board.waitingLabel,
     declinedLabel: config.board.declinedLabel,
+    groomedLabel: config.board.groomedLabel,
     botUser: config.board.botUser,
   };
   const localDir = path.join(dataDir, 'local');

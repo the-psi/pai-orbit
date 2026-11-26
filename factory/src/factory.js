@@ -231,8 +231,46 @@ class Factory {
       await this._decline(run, `The factory did not start this ticket because ${problem}.`);
       return false;
     }
-    await this.workspace.prepare(run.ticketId, run.branch);
-    return this._moveTo(run, 'groom');
+    const dir = await this.workspace.prepare(run.ticketId, run.branch);
+    if (!ticket.labels.includes(this.config.board.groomedLabel)) return this._moveTo(run, 'groom');
+
+    // A person already groomed this ticket: use their requirements and start at design.
+    const found = this._groomedFeatureDir(ticket, run, dir);
+    if (!found) {
+      await this._decline(run, [
+        `This ticket is labelled \`${this.config.board.groomedLabel}\`, but the factory could not find its requirements.`,
+        `Put the path in the ticket description (for example \`${featureDir(this.config, '<feature>')}/requirements.md\`)`,
+        `and make sure the file is on the \`${this.config.repo.baseBranch}\` branch, or remove the label to have the factory groom the ticket itself.`,
+      ].join(' '));
+      return false;
+    }
+    run.featureDir = found;
+    run.groomedBy = 'person';
+    this.store.save(run);
+    this.store.event(run.ticketId, 'groomed_ticket', { requirements: `${found}/requirements.md` });
+    await this._guard(run, 'groomed comment', () => this.board.comment(run.ticketId,
+      `Picked up as an already groomed ticket. Using \`${found}/requirements.md\` and starting at design.`));
+    return this._moveTo(run, 'design');
+  }
+
+  /**
+   * The feature folder of a ticket a person groomed: the requirements path named in the ticket
+   * text, or else the folder the factory would have used. '' when no requirements.md is there.
+   */
+  _groomedFeatureDir(ticket, run, dir) {
+    const base = featureDir(this.config, 'X').slice(0, -1); // "<docsRoot>/features/"
+    const text = String(ticket.body || '').replace(/\\/g, '/');
+    const candidates = [];
+    let from = 0;
+    for (;;) {
+      const at = text.indexOf(base, from);
+      if (at === -1) break;
+      const m = text.slice(at + base.length).match(/^([A-Za-z0-9._-]+)\/requirements\.md/);
+      if (m && !/^\.+$/.test(m[1])) candidates.push(base + m[1]);
+      from = at + base.length;
+    }
+    candidates.push(run.featureDir);
+    return candidates.find((c) => this.workspace.exists(dir, `${c}/requirements.md`)) || '';
   }
 
   async _moveTo(run, stageName) {

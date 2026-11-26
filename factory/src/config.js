@@ -19,9 +19,12 @@ const DEFAULTS = Object.freeze({
     ownedLabel: 'factory:owned',
     waitingLabel: 'factory:waiting',
     declinedLabel: 'factory:declined',
+    // Added next to the ready label by a person: the ticket is already groomed, so the factory
+    // starts at design and uses the existing requirements.md.
+    groomedLabel: 'factory:groomed',
     botUser: 'orbit-factory',
     // Factory stage -> board column. Moves are best-effort.
-    columns: { groom: 'In progress', pr: 'In review', done: 'Done' },
+    columns: { groom: 'In progress', design: 'In progress', pr: 'In review', done: 'Done' },
   },
   codeHost: { type: 'local', mergeMethod: 'squash' }, // local | github
   notifier: { type: 'console', webhookEnv: 'FACTORY_SLACK_WEBHOOK_URL' }, // console | slack

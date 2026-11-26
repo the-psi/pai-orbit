@@ -170,8 +170,8 @@ class GitHubBoard {
 
   /** Create the four factory labels; --force makes it safe to run again. */
   async ensureLabels() {
-    const { readyLabel, ownedLabel, waitingLabel, declinedLabel } = this.opts;
-    for (const name of [readyLabel, ownedLabel, waitingLabel, declinedLabel]) {
+    const { readyLabel, ownedLabel, waitingLabel, declinedLabel, groomedLabel } = this.opts;
+    for (const name of [readyLabel, ownedLabel, waitingLabel, declinedLabel, groomedLabel].filter(Boolean)) {
       await this._gh(['label', 'create', name, '--repo', this.repo, '--force']);
     }
   }

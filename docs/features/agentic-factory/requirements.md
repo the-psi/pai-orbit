@@ -79,6 +79,10 @@ What this does NOT include:
     same behaviour.
 14. **Playwright automation** — after the test plan is written, the factory runs `/playwright`
     unattended to write browser test automation, for projects that use it.
+15. **Already groomed ticket** — a person has groomed the ticket and its `requirements.md` is in the
+    repo; the factory skips its own grooming, uses those requirements, and starts at design. Added
+    2026-11-26 at the requester's direction, who expects this to be the main way the factory is
+    used. A ticket that is not marked as groomed is still groomed by the factory (Scenario 2).
 
 ## Consumer check
 - Signal: `interactive confirmation gates` ("wait for confirmation" / "ask the user" steps in modes
@@ -153,6 +157,8 @@ What this does NOT include:
   and test it before it goes to a server. (Scenario 13)
 - As a QA lead, I want browser test automation written as part of the run, so that tested tickets
   arrive with e2e coverage. (Scenario 14)
+- As a product owner, I want to groom a ticket myself and hand the rest to the factory, so that
+  people decide what is built and the factory builds it. (Scenario 15)
 
 ## Functional requirements
 1. REQ-1 (Scenario 1): The factory must detect tickets that carry the project's configured
@@ -261,6 +267,17 @@ What this does NOT include:
     credentials.
 44. REQ-44 (Scenarios 6, 9): The factory must enforce a spend limit per project per day, and warn
     the notified people when a ticket passes a configured share of its cost limit.
+45. REQ-45 (Scenario 15): A person must be able to mark an eligible ticket as already groomed. For
+    such a ticket the factory must not run its own groom stage and must start at design.
+46. REQ-46 (Scenario 15): For a groomed ticket the factory must use the existing `requirements.md`:
+    the one whose path is given in the ticket text, or else the one in the feature folder named
+    after the ticket. It must not rewrite that file in place of the person's work, and the optional
+    requirements gate does not apply.
+47. REQ-47 (Scenario 15): If a ticket is marked as groomed and no `requirements.md` can be found on
+    the base branch, the factory must decline it with a reason that says how to fix it, and must not
+    guess or groom it silently.
+48. REQ-48 (Scenario 15): Every intake check (sensitive area, size) applies to a groomed ticket
+    exactly as to any other.
 
 ## Non-functional requirements
 - **Security** — secrets are scoped to the minimum each run needs, are never written to documents,
@@ -315,7 +332,7 @@ per-project setting.
 
 | Setting | Default |
 |---|---|
-| Board and code host | GitHub Issues + GitHub pull requests; ticket state carried by labels (`factory:ready`, `factory:owned`, `factory:waiting`, `factory:declined`), board column moves best-effort |
+| Board and code host | GitHub Issues + GitHub pull requests; ticket state carried by labels (`factory:ready`, `factory:owned`, `factory:waiting`, `factory:declined`; a person adds `factory:groomed` for an already groomed ticket), board column moves best-effort |
 | Chat alerts | Slack incoming webhook, one channel per project, outbound only; answers and approvals are never accepted in chat |
 | Who answers questions | Ticket reporter and product owner |
 | Optional gate approvers | Requirements: product owner. Design: tech lead |
@@ -453,3 +470,9 @@ Design questions — deferred to `/design`:
   no production credential is present in any run.
 - AC-40 (Scenarios 6, 9): When a project's daily spend limit is reached, no new stage starts for that
   project until the next day or until an operator raises the limit.
+- AC-41 (Scenario 15): A ticket marked ready and groomed, whose `requirements.md` is on the base
+  branch, runs no groom stage; its first agent stage is design, in the folder that holds those
+  requirements; and the requirements file reaches the pull request unchanged by the intake.
+- AC-42 (Scenario 15): A ticket marked groomed with no `requirements.md` to be found is declined
+  before any agent runs, with the reason on the ticket.
+- AC-43 (Scenario 15): A ticket marked ready but not groomed is groomed by the factory as before.

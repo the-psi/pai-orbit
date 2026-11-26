@@ -11,9 +11,11 @@
     "ownedLabel": "factory:owned",
     "waitingLabel": "factory:waiting",
     "declinedLabel": "factory:declined",
+    "groomedLabel": "factory:groomed",
     "botUser": "orbit-factory",
     "columns": {
       "groom": "In progress",
+      "design": "In progress",
       "pr": "In review",
       "done": "Done"
     }

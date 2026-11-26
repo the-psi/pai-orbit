@@ -27,7 +27,7 @@ Control
   stop <ticket>           Stop one ticket and hand it back to people
 
 Local board (board.type "local", for trials)
-  local add --id <id> --title <t> [--body <b>|--body-file <f>] [--label <l>]... [--reporter <u>]
+  local add --id <id> --title <t> [--body <b>|--body-file <f>] [--label <l>]... [--reporter <u>] [--groomed]
   local comment <ticket> --author <u> --body <text>
   local review <pr> --author <u> --state approved|changes_requested [--body <text>]
   local show <ticket>
@@ -154,7 +154,7 @@ async function main(argv) {
         const body = flags['body-file'] ? fs.readFileSync(String(flags['body-file']), 'utf8') : (flags.body === true ? '' : flags.body || '');
         const t = await factory.board.create({
           id: need(flags.id, '--id'), title: need(flags.title, '--title'), body,
-          labels: flags.label || [config.board.readyLabel], reporter: flags.reporter === true ? '' : flags.reporter || '',
+          labels: (flags.label || [config.board.readyLabel]).concat(flags.groomed ? [config.board.groomedLabel] : []), reporter: flags.reporter === true ? '' : flags.reporter || '',
         });
         process.stdout.write(`Created ticket #${t.id} with labels: ${t.labels.join(', ')}\n`);
         return 0;
