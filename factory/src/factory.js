@@ -512,8 +512,22 @@ class Factory {
     return this._moveTo(run, 'build');
   }
 
+  /**
+   * Push the ticket branch. A code host can refuse a push for a moment (seen on GitHub when two
+   * tickets pushed at the same instant), so a failed push is tried again before it is an error.
+   */
   async _push(run, dir) {
-    await this.codeHost.push(dir, run.branch);
+    const delays = this.pushRetryDelaysMs || [2000, 6000];
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        await this.codeHost.push(dir, run.branch);
+        return;
+      } catch (err) {
+        if (attempt >= delays.length) throw err;
+        this.store.event(run.ticketId, 'push_retry', { attempt: attempt + 1, message: String(err.message).slice(0, 300) });
+        await new Promise((resolve) => { setTimeout(resolve, delays[attempt]); });
+      }
+    }
   }
 
   // ------------------------------------------------------------------ pr, merge, done
