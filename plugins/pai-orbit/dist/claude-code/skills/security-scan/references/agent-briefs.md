@@ -328,7 +328,8 @@ environment, and (b) gotchas #15's passive-first and non-destructive rules are f
 This brief is the LIGHTWEIGHT pattern: a handful of fixed-payload requests upgrading one or two
 specific static findings. When the ask is instead comprehensive DAST coverage across the entire
 API surface (hundreds of endpoints, not a handful) AND a swagger/OpenAPI doc, Postman collection,
-or equivalent machine-readable API surface description is available, use the heavier pattern in
+or equivalent machine-readable API surface description is available AND the target is a local
+instance, use the heavier pattern in
 `references/active-dast-methodology.md` instead — it's a standalone script built once and run
 repeatedly, not an inline agent task. Same authorization/non-destructive rules underneath either way.
 OWNS: nothing in the repo — it owns a short list of live HTTP requests against the already-
@@ -340,8 +341,8 @@ Safe, repeatable patterns (use these as templates, adapt payload to the actual f
   account) and confirm it is processed (e.g. reaches business logic and 500s on a null lookup)
   rather than rejected with 401/403. Proves "no auth required" without touching any real account.
 - **Self-targeted secret-disclosure check** — if a suspected finding is "endpoint returns a
-  secret/token/passcode it shouldn't," trigger the flow ONLY against a test account the assessor
-  or user owns/controls, and confirm the response body; never target a real user's account.
+  secret/token/passcode it shouldn't," trigger the flow ONLY against a throwaway test account, and confirm the response body; never
+  target a real user's account.
 - **Error-based injection differential** — for a suspected injection sink, send one benign value
   and one payload that is syntactically invalid only if it reaches an interpreter unescaped (e.g.
   a single quote for SQL, `${7*7}` for template injection) and compare responses: a stable 200 for
@@ -358,9 +359,11 @@ to source-only confirmation, not a workaround):
   or transfers anything) gets zero live invocation under this brief, full stop.
 - A handful of fixed, deterministic payloads only — no loops, no fuzzing, no brute-forcing
   parameters or identifiers.
-- Every identifier used is either the assessor's/user's own test account's real data, or an
-  explicitly-invented throwaway value that cannot belong to a real account — never a guessed or
-  scraped real user's identifier.
+- Every identifier used belongs to a throwaway account (created only for testing, holding no real
+  person's data) or is an explicitly-invented throwaway value that cannot belong to a real
+  account — never a guessed or scraped real user's identifier.
+- Full-coverage DAST (`active-dast-methodology.md`) is allowed only on a local instance, under
+  gotcha #15's exception. Against any other host, stay within this brief's small set.
 - By default this dimension creates nothing. Minimal, disposable test-data creation is only ever
   in scope under gotcha #18's own explicit-authorization rule, logged in the report's test-data
   disclosure list — never assume it's permitted because the target is "clearly a test

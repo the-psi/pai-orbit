@@ -29,7 +29,8 @@ References (read as needed, not all upfront):
   DAST-PASSIVE).
 - `references/active-dast-methodology.md` — comprehensive full-API-coverage authenticated DAST
   script pattern; reach for this instead of the lightweight ACTIVE-VALIDATION brief when the ask is
-  full DAST coverage across an entire API and a swagger/OpenAPI/Postman surface description exists.
+  full DAST coverage across an entire API, a swagger/OpenAPI/Postman surface description exists, and
+  the target is a local instance (gotcha #15's exception).
 - `references/coverage-checklist.md` — the dimensions a COMPLETE review covers; use it to decide
   the extended tier and to write an honest scope-&-limitations statement.
 - `references/report-format.md` — finding IDs, severity, OWASP map, confidence scoring.
@@ -339,10 +340,11 @@ excerpted here but apply just as fully — see the full file.
   authorization from the repo's own config or the user's explicit instruction; a local instance
   the user started counts, and is the preferred first target. Decline active testing against an
   unverifiable third-party host and validate from source instead. Passive (headers/TLS/bundle)
-  before active; active auth/injection probes use throwaway identifiers only, never real accounts
-  or state changes. If the harness refuses an active request as a third-party attack, that
-  refusal is final: do not retry, re-encode, or route around it, and do not hand the user the
-  command to run instead — confirm at source and report the block.
+  before active; active auth/injection probes use throwaway accounts only, never real accounts
+  or state changes. Remote hosts get a small set of probes; full-coverage DAST is allowed only on
+  a local instance, with the user's confirmation. If the harness refuses an active request as a
+  third-party attack, that refusal is final: do not retry, re-encode, or route around it, and do
+  not hand the user the command to run instead — confirm at source and report the block.
 - **#18 Authorized test-data creation is a separate, narrower exception** from #15 — every live
   dimension creates nothing by default; a minimal, disposable, explicitly-authorized write is the
   exception, not the default posture, and always triggers the report's test-data disclosure list.

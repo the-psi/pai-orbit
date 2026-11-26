@@ -31,7 +31,8 @@ References (read as needed, not all upfront):
   DAST-PASSIVE).
 - `references/active-dast-methodology.md` — comprehensive full-API-coverage authenticated DAST
   script pattern; reach for this instead of the lightweight ACTIVE-VALIDATION brief when the ask is
-  full DAST coverage across an entire API and a swagger/OpenAPI/Postman surface description exists.
+  full DAST coverage across an entire API, a swagger/OpenAPI/Postman surface description exists, and
+  the target is a local instance (gotcha #15's exception).
 - `references/coverage-checklist.md` — the dimensions a COMPLETE review covers; use it to decide
   the extended tier and to write an honest scope-&-limitations statement.
 - `references/report-format.md` — finding IDs, severity, OWASP map, confidence scoring.
@@ -336,10 +337,11 @@ excerpted here but apply just as fully — see the full file.
   authorization from the repo's own config or the user's explicit instruction; a local instance
   the user started counts, and is the preferred first target. Decline active testing against an
   unverifiable third-party host and validate from source instead. Passive (headers/TLS/bundle)
-  before active; active auth/injection probes use throwaway identifiers only, never real accounts
-  or state changes. If the harness refuses an active request as a third-party attack, that
-  refusal is final: do not retry, re-encode, or route around it, and do not hand the user the
-  command to run instead — confirm at source and report the block.
+  before active; active auth/injection probes use throwaway accounts only, never real accounts
+  or state changes. Remote hosts get a small set of probes; full-coverage DAST is allowed only on
+  a local instance, with the user's confirmation. If the harness refuses an active request as a
+  third-party attack, that refusal is final: do not retry, re-encode, or route around it, and do
+  not hand the user the command to run instead — confirm at source and report the block.
 - **#18 Authorized test-data creation is a separate, narrower exception** from #15 — every live
   dimension creates nothing by default; a minimal, disposable, explicitly-authorized write is the
   exception, not the default posture, and always triggers the report's test-data disclosure list.
@@ -413,6 +415,13 @@ it resolves and tests EVERY safe endpoint in the target's API surface — hundre
 and emits one structured JSON evidence file that becomes the backbone of the report's live-validation
 section. All non-destructive/authorization ground rules are unchanged from gotchas #15 and #18; this file
 only adds the engineering pattern for doing that at full-API scale. Read gotchas #15 and #18 first.
+
+**Local instance only.** This pattern is the local-instance exception in gotcha #15. It runs only
+against an instance the user started on their own machine (localhost, 127.0.0.1 or ::1), with
+throwaway accounts and synthetic data. For any remote host (staging, production, third-party), use
+the lightweight ACTIVE-VALIDATION brief instead. Wherever this file says "adjacent id", it means
+the id of a record owned by a second throwaway account, never a guessed id that could belong to a
+real person.
 
 ## 0. Where this fits in the orchestrator's parallel-agent workflow
 
@@ -494,7 +503,8 @@ plausibly a complete picture.
 
 Use THIS pattern when: the user wants comprehensive DAST coverage across an entire API (not just to
 upgrade specific findings), AND a swagger/OpenAPI doc, Postman collection, API blueprint, or
-equivalent machine-readable API surface description is available (or the user can point to one). If
+equivalent machine-readable API surface description is available (or the user can point to one), AND
+the target is a local instance the user started. If
 that description doesn't exist, don't default to crawling to build one from scratch — that's a
 DISCOVERY-dimension job (see agent-briefs.md), a different task with a different (browser-driven,
 15-minute-budget) method. This pattern assumes the surface is already known and focuses on testing it.
@@ -520,6 +530,10 @@ These are the same rules as gotchas #15 and #18, applied at script-construction 
 per-request time. Do not restate the reasoning here beyond what's needed to build the script;
 cross-reference gotchas for the "why."
 
+**Local only.** Before any request, the script checks its target host. The host must be loopback
+(localhost, 127.0.0.1 or ::1); otherwise the script prints an error and exits. There is no flag to
+override this check.
+
 **Bounded.** A hard `REQUEST_BUDGET` — a live-request counter checked before every network call, script
 aborts or halts new categories once hit. Size it from the actual math, and show that math in a code
 comment so the constant is a derivation, not a guess:
@@ -527,7 +541,8 @@ comment so the constant is a derivation, not a guess:
 ```
 N  = setup calls (login, identifier-resolution list calls)
 M  = auth-boundary checks (one unauthenticated call per candidate endpoint)
-K  = IDOR/ownership differential pairs (2 requests each: own-id, adjacent-id)
+K  = IDOR/ownership differential pairs (2 requests each: account A reads its own record, account A
+     reads account B's record; both are throwaway accounts)
 J  = injection differential pairs (2 requests each: benign, payload)
 TOTAL = N + M + 2K + 2J
 ```
@@ -555,7 +570,8 @@ candidate endpoints resolved, none silently skipped" instead of an unverifiable 
 
 **Explicit user authorization.** The script refuses to run without `LOGIN_URL`/credentials supplied
 by the user via environment variable or config — never hardcoded, never guessed — and only targets a
-host the user has explicitly identified as their own. Same verification rule as gotcha #15; this
+local instance the user has explicitly identified and confirmed (host, accounts, request budget). Same
+verification rule as gotcha #15; this
 script doesn't get a lighter version of it just because it's more automated.
 
 ## 3. Identifier resolution — the single highest-value technique here
@@ -720,9 +736,8 @@ etc.) — this section is about WHAT to keep and present, not a different redact
   genuinely inconsistent cases: an otherwise well-protected API that turns out to have one or two
   endpoints with no auth check at all.
 - When presenting cross-tenant/ownership-boundary evidence, prioritize GENUINELY DEFINITIVE cases —
-  where the adjacent-id response itself contains a field that self-identifies as belonging to a
-  different tenant (e.g. a returned record explicitly tagged with a different brand/company id than
-  the account's own). Call these out as the strongest possible evidence category: the payload proves
+  where account A's response to account B's record id itself contains a field that identifies it as
+  B's (e.g. a returned record tagged with B's tenant or owner id). Call these out as the strongest possible evidence category: the payload proves
   its own cross-boundary origin without needing external corroboration, stronger than "adjacent id
   merely returned non-empty content."
 - Feed this evidence file into the report's live-validation section per gotchas #16–17: state
@@ -1065,7 +1080,8 @@ environment, and (b) gotchas #15's passive-first and non-destructive rules are f
 This brief is the LIGHTWEIGHT pattern: a handful of fixed-payload requests upgrading one or two
 specific static findings. When the ask is instead comprehensive DAST coverage across the entire
 API surface (hundreds of endpoints, not a handful) AND a swagger/OpenAPI doc, Postman collection,
-or equivalent machine-readable API surface description is available, use the heavier pattern in
+or equivalent machine-readable API surface description is available AND the target is a local
+instance, use the heavier pattern in
 `references/active-dast-methodology.md` instead — it's a standalone script built once and run
 repeatedly, not an inline agent task. Same authorization/non-destructive rules underneath either way.
 OWNS: nothing in the repo — it owns a short list of live HTTP requests against the already-
@@ -1077,8 +1093,8 @@ Safe, repeatable patterns (use these as templates, adapt payload to the actual f
   account) and confirm it is processed (e.g. reaches business logic and 500s on a null lookup)
   rather than rejected with 401/403. Proves "no auth required" without touching any real account.
 - **Self-targeted secret-disclosure check** — if a suspected finding is "endpoint returns a
-  secret/token/passcode it shouldn't," trigger the flow ONLY against a test account the assessor
-  or user owns/controls, and confirm the response body; never target a real user's account.
+  secret/token/passcode it shouldn't," trigger the flow ONLY against a throwaway test account, and confirm the response body; never
+  target a real user's account.
 - **Error-based injection differential** — for a suspected injection sink, send one benign value
   and one payload that is syntactically invalid only if it reaches an interpreter unescaped (e.g.
   a single quote for SQL, `${7*7}` for template injection) and compare responses: a stable 200 for
@@ -1095,9 +1111,11 @@ to source-only confirmation, not a workaround):
   or transfers anything) gets zero live invocation under this brief, full stop.
 - A handful of fixed, deterministic payloads only — no loops, no fuzzing, no brute-forcing
   parameters or identifiers.
-- Every identifier used is either the assessor's/user's own test account's real data, or an
-  explicitly-invented throwaway value that cannot belong to a real account — never a guessed or
-  scraped real user's identifier.
+- Every identifier used belongs to a throwaway account (created only for testing, holding no real
+  person's data) or is an explicitly-invented throwaway value that cannot belong to a real
+  account — never a guessed or scraped real user's identifier.
+- Full-coverage DAST (`active-dast-methodology.md`) is allowed only on a local instance, under
+  gotcha #15's exception. Against any other host, stay within this brief's small set.
 - By default this dimension creates nothing. Minimal, disposable test-data creation is only ever
   in scope under gotcha #18's own explicit-authorization rule, logged in the report's test-data
   disclosure list — never assume it's permitted because the target is "clearly a test
@@ -1547,11 +1565,26 @@ skill touches a system the repo does not contain, so it has its own gate:
   explicit instruction naming the environment as their own. A local instance the user started is
   the safest target and counts; test there first. An unverifiable or third-party host does not —
   decline and confirm from source instead.
+- **Throwaway accounts only.** Every live request uses an account created only for testing, holding
+  no real person's data (or an invented value that cannot belong to a real account). Never a real
+  user's account or identifier. Ownership (IDOR) tests use two throwaway accounts: A tries to read
+  B's record. "Adjacent id" anywhere in this skill means B's id, never a guessed stranger's id.
 - **Passive before active.** Headers, TLS and served-bundle reads come first; active auth or
-  injection probes come only after, with throwaway identifiers, never real accounts or
-  state-changing calls.
-- **No mass sweeps, no control evasion.** Test a small, deliberate set of candidates; a WAF or
-  rate limit that blocks a probe is a result, not an obstacle.
+  injection probes come only after, and never with state-changing calls.
+- **Small sets by default.** Against any remote host (staging, production, third-party), test a
+  small, deliberate set of candidates: no mass sweeps. A WAF or rate limit that blocks a probe is a
+  result, not an obstacle; never evade it.
+- **Exception: full-coverage DAST on a local instance.** `active-dast-methodology.md` (hundreds of
+  requests across the whole API) is allowed only when ALL of these hold:
+  1. the target is a local instance the user started on their own machine (localhost, 127.0.0.1 or
+     ::1), holding synthetic data only;
+  2. it uses throwaway accounts, as above;
+  3. before the script is written or run, the user has confirmed the host, the accounts and the
+     request budget;
+  4. the script itself checks its target and aborts on any non-loopback host (no override flag);
+  5. it keeps its request budget, forbidden-keyword blocklist, and reads-only rule; writes stay
+     under gotcha #18.
+  The script is never produced for a remote host.
 - **A refusal is final.** If the harness refuses an active request as a third-party attack, that
   is correct. Do not retry, re-encode, or reach the same outcome another way, and do not hand the
   user the command to run instead — report the block and the source-only evidence you do have.

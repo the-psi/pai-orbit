@@ -23,7 +23,7 @@ In the context of **two security skills that need bulky reference material, a vu
 facing **the flat-file adapters, the local-first principle, and the risk of testing a host the user does not own**,
 we decided **the following three things**,
 to achieve **full-adapter parity, no silently-clean results, and live testing that stays inside the user's authorization**,
-accepting **a very large Copilot prompt, a network dependency for one skill, and refusals that stop the work instead of being worked around**.
+accepting **a very large Copilot prompt, a network dependency for one skill, refusals that stop the work instead of being worked around, and one carve-out (full-coverage DAST) that is limited to a local instance**.
 
 **1. Skill-local `references/` sub-files are allowed, wired per adapter.**
 - `claude-code`, `codex` and `cursor-plugin` ship the `references/` folder next to the skill.
@@ -37,8 +37,10 @@ accepting **a very large Copilot prompt, a network dependency for one skill, and
 
 **3. Live-target testing is consent-gated, passive-first and non-destructive.**
 - The target host and the authorization must be verifiable from the repo's own config or an explicit user instruction. An unverifiable host is validated from source only.
-- Passive checks come before active ones; active probes use throwaway identifiers only, never real accounts or state changes. Creating test data is a separate, narrower exception that must be disclosed in the report.
-- No mass sweeps and no evasion of controls. If the harness refuses a request, that refusal is final: the skill reports it and does not route around it.
+- Passive checks come before active ones. Every live request uses a throwaway account (created only for testing, holding no real person's data), never a real user's account or identifier; ownership tests use two throwaway accounts. Probes never change state. Creating test data is a separate, narrower exception that must be disclosed in the report.
+- Against any remote host, only a small, deliberate set of probes: no mass sweeps and no evasion of controls.
+- **Exception: full-coverage DAST on a local instance.** pai-orbit is a development plugin, and the point of this testing is to find problems before deployment, so a full-API script (`active-dast-methodology.md`) is allowed when the target is an instance the user started on their own machine (localhost, 127.0.0.1 or ::1) with synthetic data. Conditions: throwaway accounts only; the user confirms host, accounts and request budget first; the script itself aborts on any non-loopback host; request budget, forbidden-keyword blocklist and reads-only rule stay in force. The script is never produced for a remote host.
+- If the harness refuses a request, that refusal is final: the skill reports it and does not route around it.
 - `security-scan-retest` makes live HTTP requests itself, one at a time. It never delegates them to subagents.
 
 ## Options Considered
@@ -50,13 +52,15 @@ accepting **a very large Copilot prompt, a network dependency for one skill, and
 | Fold the references into one long `SKILL.md` in core | One file everywhere, no adapter work | Hard to maintain; large file loaded for every adapter, including those that can load on demand |
 | Skip the OSV.dev call; use native audit tools only | Fully local | Native tools miss some ecosystems and need a lockfile and a working toolchain |
 | No live testing in the skill; static only | Smallest safety surface | Cannot upgrade findings from "confirmed in code" to "live validated" |
+| (chosen) Small sets on remote hosts; full-coverage DAST only on a local instance | Catches problems before deployment where mistakes are harmless; remote hosts stay tightly bounded | A carve-out to keep consistent across four files; the script depends on its own host check |
+| Small sets everywhere, no full-coverage DAST | One simple rule | Cannot test a whole API before deployment |
 
 ## Consequences
 
 **Positive:**
 - All five adapters behave consistently for `security-scan`; the verifier stops dangling `references/` pointers in Copilot.
 - A scan that could not reach OSV.dev cannot be mistaken for a clean one.
-- Live testing has written, repeatable limits.
+- Live testing has written, repeatable limits, and a whole API can be tested locally before it is deployed.
 
 **Negative / trade-offs:**
 - The Copilot `security-scan` prompt is the largest in the bundle by about 4×; behaviour inside Copilot's context limits has not been tested.

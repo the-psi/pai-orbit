@@ -7,6 +7,13 @@ and emits one structured JSON evidence file that becomes the backbone of the rep
 section. All non-destructive/authorization ground rules are unchanged from gotchas #15 and #18; this file
 only adds the engineering pattern for doing that at full-API scale. Read gotchas #15 and #18 first.
 
+**Local instance only.** This pattern is the local-instance exception in gotcha #15. It runs only
+against an instance the user started on their own machine (localhost, 127.0.0.1 or ::1), with
+throwaway accounts and synthetic data. For any remote host (staging, production, third-party), use
+the lightweight ACTIVE-VALIDATION brief instead. Wherever this file says "adjacent id", it means
+the id of a record owned by a second throwaway account, never a guessed id that could belong to a
+real person.
+
 ## 0. Where this fits in the orchestrator's parallel-agent workflow
 
 This pattern doesn't replace the skill's own orchestrator/parallel-agent architecture (`SKILL.md`
@@ -87,7 +94,8 @@ plausibly a complete picture.
 
 Use THIS pattern when: the user wants comprehensive DAST coverage across an entire API (not just to
 upgrade specific findings), AND a swagger/OpenAPI doc, Postman collection, API blueprint, or
-equivalent machine-readable API surface description is available (or the user can point to one). If
+equivalent machine-readable API surface description is available (or the user can point to one), AND
+the target is a local instance the user started. If
 that description doesn't exist, don't default to crawling to build one from scratch — that's a
 DISCOVERY-dimension job (see agent-briefs.md), a different task with a different (browser-driven,
 15-minute-budget) method. This pattern assumes the surface is already known and focuses on testing it.
@@ -113,6 +121,10 @@ These are the same rules as gotchas #15 and #18, applied at script-construction 
 per-request time. Do not restate the reasoning here beyond what's needed to build the script;
 cross-reference gotchas for the "why."
 
+**Local only.** Before any request, the script checks its target host. The host must be loopback
+(localhost, 127.0.0.1 or ::1); otherwise the script prints an error and exits. There is no flag to
+override this check.
+
 **Bounded.** A hard `REQUEST_BUDGET` — a live-request counter checked before every network call, script
 aborts or halts new categories once hit. Size it from the actual math, and show that math in a code
 comment so the constant is a derivation, not a guess:
@@ -120,7 +132,8 @@ comment so the constant is a derivation, not a guess:
 ```
 N  = setup calls (login, identifier-resolution list calls)
 M  = auth-boundary checks (one unauthenticated call per candidate endpoint)
-K  = IDOR/ownership differential pairs (2 requests each: own-id, adjacent-id)
+K  = IDOR/ownership differential pairs (2 requests each: account A reads its own record, account A
+     reads account B's record; both are throwaway accounts)
 J  = injection differential pairs (2 requests each: benign, payload)
 TOTAL = N + M + 2K + 2J
 ```
@@ -148,7 +161,8 @@ candidate endpoints resolved, none silently skipped" instead of an unverifiable 
 
 **Explicit user authorization.** The script refuses to run without `LOGIN_URL`/credentials supplied
 by the user via environment variable or config — never hardcoded, never guessed — and only targets a
-host the user has explicitly identified as their own. Same verification rule as gotcha #15; this
+local instance the user has explicitly identified and confirmed (host, accounts, request budget). Same
+verification rule as gotcha #15; this
 script doesn't get a lighter version of it just because it's more automated.
 
 ## 3. Identifier resolution — the single highest-value technique here
@@ -313,9 +327,8 @@ etc.) — this section is about WHAT to keep and present, not a different redact
   genuinely inconsistent cases: an otherwise well-protected API that turns out to have one or two
   endpoints with no auth check at all.
 - When presenting cross-tenant/ownership-boundary evidence, prioritize GENUINELY DEFINITIVE cases —
-  where the adjacent-id response itself contains a field that self-identifies as belonging to a
-  different tenant (e.g. a returned record explicitly tagged with a different brand/company id than
-  the account's own). Call these out as the strongest possible evidence category: the payload proves
+  where account A's response to account B's record id itself contains a field that identifies it as
+  B's (e.g. a returned record tagged with B's tenant or owner id). Call these out as the strongest possible evidence category: the payload proves
   its own cross-boundary origin without needing external corroboration, stronger than "adjacent id
   merely returned non-empty content."
 - Feed this evidence file into the report's live-validation section per gotchas #16–17: state

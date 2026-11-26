@@ -127,11 +127,26 @@ skill touches a system the repo does not contain, so it has its own gate:
   explicit instruction naming the environment as their own. A local instance the user started is
   the safest target and counts; test there first. An unverifiable or third-party host does not —
   decline and confirm from source instead.
+- **Throwaway accounts only.** Every live request uses an account created only for testing, holding
+  no real person's data (or an invented value that cannot belong to a real account). Never a real
+  user's account or identifier. Ownership (IDOR) tests use two throwaway accounts: A tries to read
+  B's record. "Adjacent id" anywhere in this skill means B's id, never a guessed stranger's id.
 - **Passive before active.** Headers, TLS and served-bundle reads come first; active auth or
-  injection probes come only after, with throwaway identifiers, never real accounts or
-  state-changing calls.
-- **No mass sweeps, no control evasion.** Test a small, deliberate set of candidates; a WAF or
-  rate limit that blocks a probe is a result, not an obstacle.
+  injection probes come only after, and never with state-changing calls.
+- **Small sets by default.** Against any remote host (staging, production, third-party), test a
+  small, deliberate set of candidates: no mass sweeps. A WAF or rate limit that blocks a probe is a
+  result, not an obstacle; never evade it.
+- **Exception: full-coverage DAST on a local instance.** `active-dast-methodology.md` (hundreds of
+  requests across the whole API) is allowed only when ALL of these hold:
+  1. the target is a local instance the user started on their own machine (localhost, 127.0.0.1 or
+     ::1), holding synthetic data only;
+  2. it uses throwaway accounts, as above;
+  3. before the script is written or run, the user has confirmed the host, the accounts and the
+     request budget;
+  4. the script itself checks its target and aborts on any non-loopback host (no override flag);
+  5. it keeps its request budget, forbidden-keyword blocklist, and reads-only rule; writes stay
+     under gotcha #18.
+  The script is never produced for a remote host.
 - **A refusal is final.** If the harness refuses an active request as a third-party attack, that
   is correct. Do not retry, re-encode, or reach the same outcome another way, and do not hand the
   user the command to run instead — report the block and the source-only evidence you do have.
