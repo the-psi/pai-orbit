@@ -15,13 +15,18 @@ const DEFAULTS = Object.freeze({
   // Which implementation of each swappable part to use.
   board: {
     type: 'local', // local | github
-    readyLabel: 'factory:ready',
-    ownedLabel: 'factory:owned',
-    waitingLabel: 'factory:waiting',
-    declinedLabel: 'factory:declined',
-    // Added next to the ready label by a person: the ticket is already groomed, so the factory
-    // starts at design and uses the existing requirements.md.
-    groomedLabel: 'factory:groomed',
+    readyLabel: 'factory-ready',
+    ownedLabel: 'factory-owned',
+    waitingLabel: 'factory-waiting',
+    declinedLabel: 'factory-declined',
+    // People add exactly ONE of two start labels:
+    //   readyLabel   - a raw ticket: the factory grooms it first.
+    //   groomedLabel - a ticket a person already groomed: the factory starts at design and uses
+    //                  the existing requirements.md.
+    // Names use a hyphen so they are valid as a label or tag on GitHub, GitLab, Jira and Azure
+    // DevOps alike. Labels (tags) are the one marker every platform has; columns and workflow
+    // states differ too much to rely on.
+    groomedLabel: 'factory-groomed',
     botUser: 'orbit-factory',
     // Factory stage -> board column. Moves are best-effort.
     columns: { groom: 'In progress', design: 'In progress', pr: 'In review', done: 'Done' },

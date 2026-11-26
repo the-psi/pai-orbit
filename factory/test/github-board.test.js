@@ -38,10 +38,10 @@ function board(routes) {
   const fake = fakeExec(routes);
   const b = new GitHubBoard({
     repo: REPO,
-    readyLabel: 'factory:ready',
-    ownedLabel: 'factory:owned',
-    waitingLabel: 'factory:waiting',
-    declinedLabel: 'factory:declined',
+    readyLabel: 'factory-ready',
+    ownedLabel: 'factory-owned',
+    waitingLabel: 'factory-waiting',
+    declinedLabel: 'factory-declined',
     botUser: 'orbit-bot',
     exec: fake.exec,
     now: () => new Date('2026-03-01T10:00:00.000Z'),
@@ -54,7 +54,7 @@ function issue(number, extra = {}) {
     number,
     title: `Ticket ${number}`,
     body: 'Body',
-    labels: [{ name: 'factory:ready' }],
+    labels: [{ name: 'factory-ready' }],
     assignees: [],
     author: { login: 'alice' },
     url: `https://github.com/${REPO}/issues/${number}`,
@@ -67,7 +67,7 @@ test('listEligible asks gh for open ready issues and maps them to tickets', asyn
   const { b, calls } = board([[seq('issue', 'list'), { stdout: JSON.stringify([issue(7)]) }]]);
   const tickets = await b.listEligible();
   assert.deepEqual(calls[0].args, [
-    'issue', 'list', '--repo', REPO, '--state', 'open', '--label', 'factory:ready',
+    'issue', 'list', '--repo', REPO, '--state', 'open', '--label', 'factory-ready',
     '--limit', '100', '--json', 'number,title,body,labels,assignees,author,url,state',
   ]);
   assert.equal(calls[0].command, 'gh');
@@ -75,7 +75,7 @@ test('listEligible asks gh for open ready issues and maps them to tickets', asyn
     id: '7',
     title: 'Ticket 7',
     body: 'Body',
-    labels: ['factory:ready'],
+    labels: ['factory-ready'],
     assignees: [],
     reporter: 'alice',
     state: 'open',
@@ -86,7 +86,7 @@ test('listEligible asks gh for open ready issues and maps them to tickets', asyn
 test('listEligible drops owned tickets and tickets assigned to a human', async () => {
   const issues = [
     issue(1),
-    issue(2, { labels: [{ name: 'factory:ready' }, { name: 'factory:owned' }] }),
+    issue(2, { labels: [{ name: 'factory-ready' }, { name: 'factory-owned' }] }),
     issue(3, { assignees: [{ login: 'bob' }] }),
     issue(4, { assignees: [{ login: 'orbit-bot' }] }),
     issue(5, { assignees: [{ login: 'orbit-bot' }, { login: 'bob' }] }),
@@ -121,7 +121,7 @@ test('claim adds owned, removes ready and assigns the bot in one edit', async ()
   assert.equal(calls.length, 1);
   assert.deepEqual(calls[0].args, [
     'issue', 'edit', '7', '--repo', REPO,
-    '--add-label', 'factory:owned', '--remove-label', 'factory:ready', '--add-assignee', 'orbit-bot',
+    '--add-label', 'factory-owned', '--remove-label', 'factory-ready', '--add-assignee', 'orbit-bot',
   ]);
 });
 
@@ -131,17 +131,17 @@ test('release removes owned and waiting labels and the bot assignee', async () =
   assert.equal(calls.length, 1);
   assert.deepEqual(calls[0].args, [
     'issue', 'edit', '7', '--repo', REPO,
-    '--remove-label', 'factory:owned', '--remove-label', 'factory:waiting', '--remove-assignee', 'orbit-bot',
+    '--remove-label', 'factory-owned', '--remove-label', 'factory-waiting', '--remove-assignee', 'orbit-bot',
   ]);
-  assert.ok(!calls[0].args.includes('factory:declined'));
-  assert.ok(!calls[0].args.includes('factory:ready'), 'the ready label is not restored');
+  assert.ok(!calls[0].args.includes('factory-declined'));
+  assert.ok(!calls[0].args.includes('factory-ready'), 'the ready label is not restored');
 });
 
 test('release with declined also adds the declined label', async () => {
   const { b, calls } = board();
   await b.release('7', { declined: true });
-  assert.deepEqual(calls[0].args.slice(-2), ['--add-label', 'factory:declined']);
-  assert.ok(seq('--remove-label', 'factory:owned')('gh', calls[0].args));
+  assert.deepEqual(calls[0].args.slice(-2), ['--add-label', 'factory-declined']);
+  assert.ok(seq('--remove-label', 'factory-owned')('gh', calls[0].args));
   assert.ok(seq('--remove-assignee', 'orbit-bot')('gh', calls[0].args));
 });
 
@@ -200,8 +200,8 @@ test('setState adds or removes the waiting label', async () => {
   const { b, calls } = board();
   await b.setState('7', { waiting: true });
   await b.setState('7', { waiting: false });
-  assert.deepEqual(calls[0].args, ['issue', 'edit', '7', '--repo', REPO, '--add-label', 'factory:waiting']);
-  assert.deepEqual(calls[1].args, ['issue', 'edit', '7', '--repo', REPO, '--remove-label', 'factory:waiting']);
+  assert.deepEqual(calls[0].args, ['issue', 'edit', '7', '--repo', REPO, '--add-label', 'factory-waiting']);
+  assert.deepEqual(calls[1].args, ['issue', 'edit', '7', '--repo', REPO, '--remove-label', 'factory-waiting']);
 });
 
 test('setState ignores the column and never throws because of it', async () => {
@@ -227,10 +227,10 @@ test('ensureLabels creates the four labels with --force', async () => {
   const { b, calls } = board();
   await b.ensureLabels();
   assert.deepEqual(calls.map((c) => c.args), [
-    ['label', 'create', 'factory:ready', '--repo', REPO, '--force'],
-    ['label', 'create', 'factory:owned', '--repo', REPO, '--force'],
-    ['label', 'create', 'factory:waiting', '--repo', REPO, '--force'],
-    ['label', 'create', 'factory:declined', '--repo', REPO, '--force'],
+    ['label', 'create', 'factory-ready', '--repo', REPO, '--force'],
+    ['label', 'create', 'factory-owned', '--repo', REPO, '--force'],
+    ['label', 'create', 'factory-waiting', '--repo', REPO, '--force'],
+    ['label', 'create', 'factory-declined', '--repo', REPO, '--force'],
   ]);
 });
 
@@ -277,4 +277,45 @@ test('ids that are not issue numbers are refused before gh is called', async () 
   await assert.rejects(() => b.close('--help'), /Invalid GitHub issue number/);
   await assert.rejects(() => b.get('7; rm'), /Invalid GitHub issue number/);
   assert.equal(calls.length, 0);
+});
+
+// ---- one start label per ticket: ready (raw) or groomed (start at design)
+
+test('listEligible queries each start label and returns a ticket once', async () => {
+  const calls = [];
+  const issue = (number, labels) => ({
+    number, title: `t${number}`, body: '', labels: labels.map((name) => ({ name })),
+    assignees: [], author: { login: 'alice' }, url: `https://github.com/o/r/issues/${number}`, state: 'OPEN',
+  });
+  const exec = async (command, args) => {
+    calls.push(args);
+    const label = args[args.indexOf('--label') + 1];
+    const page = label === 'factory-ready'
+      ? [issue(1, ['factory-ready']), issue(3, ['factory-ready', 'factory-groomed'])]
+      : [issue(2, ['factory-groomed']), issue(3, ['factory-ready', 'factory-groomed'])];
+    return { code: 0, stdout: JSON.stringify(page), stderr: '', timedOut: false, aborted: false };
+  };
+  const { GitHubBoard } = require('../src/boards/github');
+  const b = new GitHubBoard({
+    repo: 'o/r', readyLabel: 'factory-ready', groomedLabel: 'factory-groomed', ownedLabel: 'factory-owned',
+    waitingLabel: 'factory-waiting', declinedLabel: 'factory-declined', botUser: 'bot', exec,
+  });
+  const tickets = await b.listEligible();
+  assert.deepEqual(tickets.map((t) => t.id).sort(), ['1', '2', '3']);
+  assert.deepEqual(calls.map((a) => a[a.indexOf('--label') + 1]), ['factory-ready', 'factory-groomed']);
+});
+
+test('claim removes both start labels', async () => {
+  const calls = [];
+  const exec = async (command, args) => { calls.push(args); return { code: 0, stdout: '', stderr: '', timedOut: false, aborted: false }; };
+  const { GitHubBoard } = require('../src/boards/github');
+  const b = new GitHubBoard({
+    repo: 'o/r', readyLabel: 'factory-ready', groomedLabel: 'factory-groomed', ownedLabel: 'factory-owned',
+    waitingLabel: 'factory-waiting', declinedLabel: 'factory-declined', botUser: 'bot', exec,
+  });
+  await b.claim('7');
+  const args = calls[0];
+  const removed = args.map((a, i) => (a === '--remove-label' ? args[i + 1] : null)).filter(Boolean);
+  assert.deepEqual(removed.sort(), ['factory-groomed', 'factory-ready']);
+  assert.equal(args[args.indexOf('--add-label') + 1], 'factory-owned');
 });

@@ -164,6 +164,8 @@ class Factory {
         title: ticket.title,
         url: ticket.url,
         reporter: ticket.reporter,
+        // Which start label the person used. Recorded now because claiming removes the label.
+        groomed: ticket.labels.includes(this.config.board.groomedLabel),
         slug,
         branch: `factory/${slugify(String(ticket.id), 20)}-${slug}`,
         featureDir: featureDir(this.config, slug),
@@ -232,15 +234,15 @@ class Factory {
       return false;
     }
     const dir = await this.workspace.prepare(run.ticketId, run.branch);
-    if (!ticket.labels.includes(this.config.board.groomedLabel)) return this._moveTo(run, 'groom');
+    if (!run.groomed) return this._moveTo(run, 'groom');
 
     // A person already groomed this ticket: use their requirements and start at design.
     const found = this._groomedFeatureDir(ticket, run, dir);
     if (!found) {
       await this._decline(run, [
-        `This ticket is labelled \`${this.config.board.groomedLabel}\`, but the factory could not find its requirements.`,
+        `This ticket was labelled \`${this.config.board.groomedLabel}\`, but the factory could not find its requirements.`,
         `Put the path in the ticket description (for example \`${featureDir(this.config, '<feature>')}/requirements.md\`)`,
-        `and make sure the file is on the \`${this.config.repo.baseBranch}\` branch, or remove the label to have the factory groom the ticket itself.`,
+        `and make sure the file is on the \`${this.config.repo.baseBranch}\` branch, then add the label again. To have the factory groom the ticket itself, use \`${this.config.board.readyLabel}\` instead.`,
       ].join(' '));
       return false;
     }

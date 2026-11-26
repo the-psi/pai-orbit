@@ -90,13 +90,17 @@ class GitHubBoard {
   }
 
   async listEligible() {
-    const { readyLabel, ownedLabel, botUser } = this.opts;
-    const out = await this._gh([
-      'issue', 'list', '--repo', this.repo, '--state', 'open', '--label', readyLabel,
-      '--limit', '100', '--json', ISSUE_FIELDS,
-    ]);
-    return this._json(out || '[]', 'issue list')
-      .map(toTicket)
+    const { readyLabel, groomedLabel, ownedLabel, botUser } = this.opts;
+    const seen = new Map();
+    // `--label a --label b` means "has both", so each start label gets its own query.
+    for (const label of [readyLabel, groomedLabel].filter(Boolean)) {
+      const out = await this._gh([
+        'issue', 'list', '--repo', this.repo, '--state', 'open', '--label', label,
+        '--limit', '100', '--json', ISSUE_FIELDS,
+      ]);
+      for (const t of this._json(out || '[]', 'issue list').map(toTicket)) seen.set(t.id, t);
+    }
+    return [...seen.values()]
       .filter((t) => !t.labels.includes(ownedLabel) && !t.assignees.some((a) => a !== botUser));
   }
 
@@ -106,11 +110,11 @@ class GitHubBoard {
   }
 
   async claim(id) {
-    const { readyLabel, ownedLabel, botUser } = this.opts;
-    await this._gh([
-      'issue', 'edit', issueNumber(id), '--repo', this.repo,
-      '--add-label', ownedLabel, '--remove-label', readyLabel, '--add-assignee', botUser,
-    ]);
+    const { readyLabel, groomedLabel, ownedLabel, botUser } = this.opts;
+    const args = ['issue', 'edit', issueNumber(id), '--repo', this.repo, '--add-label', ownedLabel, '--remove-label', readyLabel];
+    if (groomedLabel) args.push('--remove-label', groomedLabel);
+    args.push('--add-assignee', botUser);
+    await this._gh(args);
   }
 
   async release(id, opts = {}) {

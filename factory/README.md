@@ -35,26 +35,42 @@ pilot.
 
 ### Already groomed tickets
 
-If a person has run `/groom` and the ticket's `requirements.md` is merged to the base branch, add
-the `factory:groomed` label as well as `factory:ready`. The factory skips its own grooming and the
+A ticket gets exactly one start label. If a person has run `/groom` and the ticket's
+`requirements.md` is merged to the base branch, use `factory-groomed` instead of `factory-ready`.
+The factory skips its own grooming and the
 requirements gate, uses that file, and starts at design. It finds the file from a path in the ticket
 description such as `docs/features/payments-export/requirements.md`; without a path it looks in the
 folder named after the ticket title. If it finds nothing it declines the ticket and says why.
 
 On the local board: `orbit-factory local add --id 7 --title "..." --body "Requirements: docs/features/x/requirements.md" --groomed`
 
+## Labels
+
+The factory is driven by labels (called tags on some platforms), because every ticket platform has
+them. A person adds one label; the factory manages the rest.
+
+| Label | Who sets it | Meaning |
+|---|---|---|
+| `factory-ready` | a person | Raw ticket. Groom it, then build it |
+| `factory-groomed` | a person | Already groomed. Start at design |
+| `factory-owned` | the factory | The factory is working on it |
+| `factory-waiting` | the factory | The factory is waiting for a person |
+| `factory-declined` | the factory | The factory refused it; the reason is in a comment |
+
+All five names can be changed in the config.
+
 ## What people do
 
 | To | Do this |
 |---|---|
-| Give a raw ticket to the factory | Add the `factory:ready` label. The factory grooms it first |
-| Give an already groomed ticket to the factory | Add `factory:ready` **and** `factory:groomed`, and put the path to its `requirements.md` in the ticket description. The factory starts at design |
+| Give a raw ticket to the factory | Add the `factory-ready` label. The factory grooms it first |
+| Give an already groomed ticket to the factory | Add the `factory-groomed` label instead, and put the path to its `requirements.md` in the ticket description. The factory starts at design |
 | Answer a question | Reply in a comment on the ticket |
 | Approve requirements, design or release | Comment `/approve` on the ticket |
 | Send requirements or design back | Comment `/reject <what to change>` |
 | Approve the code | Submit an approving review on the pull request |
 | Send the code back | Submit a review that requests changes |
-| Take a ticket over | Assign it to yourself, or remove the `factory:owned` label |
+| Take a ticket over | Assign it to yourself, or remove the `factory-owned` label |
 
 Only people named for a role in the config are listened to. A comment or review from anyone else,
 or from the factory's own account, changes nothing.

@@ -7,11 +7,11 @@
   "docsRoot": "docs",
   "board": {
     "type": "local",
-    "readyLabel": "factory:ready",
-    "ownedLabel": "factory:owned",
-    "waitingLabel": "factory:waiting",
-    "declinedLabel": "factory:declined",
-    "groomedLabel": "factory:groomed",
+    "readyLabel": "factory-ready",
+    "ownedLabel": "factory-owned",
+    "waitingLabel": "factory-waiting",
+    "declinedLabel": "factory-declined",
+    "groomedLabel": "factory-groomed",
     "botUser": "orbit-factory",
     "columns": {
       "groom": "In progress",

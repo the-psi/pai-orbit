@@ -75,6 +75,7 @@ function makeRig(opts = {}) {
   const labels = {
     readyLabel: config.board.readyLabel, ownedLabel: config.board.ownedLabel,
     waitingLabel: config.board.waitingLabel, declinedLabel: config.board.declinedLabel,
+    groomedLabel: config.board.groomedLabel,
     botUser: config.board.botUser,
   };
   const board = new LocalBoard({ dir: path.join(dataDir, 'local'), ...labels, now: tick });

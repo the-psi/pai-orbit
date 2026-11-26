@@ -65,13 +65,14 @@ class LocalBoard {
   }
 
   async listEligible() {
-    const { readyLabel, ownedLabel, botUser } = this.opts;
+    const { readyLabel, groomedLabel, ownedLabel, botUser } = this.opts;
+    const start = [readyLabel, groomedLabel].filter(Boolean);
     const out = [];
     for (const name of fs.readdirSync(this.dir).sort()) {
       if (!name.endsWith('.json')) continue;
       const t = this._read(name.slice(0, -5));
       const humanAssignee = t.assignees.some((a) => a !== botUser);
-      if (t.state === 'open' && t.labels.includes(readyLabel) && !t.labels.includes(ownedLabel) && !humanAssignee) {
+      if (t.state === 'open' && start.some((l) => t.labels.includes(l)) && !t.labels.includes(ownedLabel) && !humanAssignee) {
         out.push(this._public(t));
       }
     }
@@ -83,9 +84,9 @@ class LocalBoard {
   }
 
   async claim(id) {
-    const { readyLabel, ownedLabel, botUser } = this.opts;
+    const { readyLabel, groomedLabel, ownedLabel, botUser } = this.opts;
     const t = this._read(id);
-    t.labels = t.labels.filter((l) => l !== readyLabel);
+    t.labels = t.labels.filter((l) => l !== readyLabel && l !== groomedLabel);
     if (!t.labels.includes(ownedLabel)) t.labels.push(ownedLabel);
     if (!t.assignees.includes(botUser)) t.assignees.push(botUser);
     this._write(t);

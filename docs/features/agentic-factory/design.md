@@ -94,8 +94,10 @@ restart checkpoint (REQ-19).
 
 ### Starting from an already groomed ticket
 
-A person marks a groomed ticket with a second label, `factory:groomed`, next to `factory:ready`. At
-intake the factory then looks for the requirements instead of writing them:
+A ticket carries exactly one start label, added by a person: `factory-ready` for a raw ticket, or
+`factory-groomed` for one a person has already groomed. Either label makes the ticket eligible, and
+claiming it removes both, so a ticket is never picked up twice. For a groomed ticket the factory
+looks for the requirements at intake instead of writing them:
 
 1. a path of the form `<docs root>/features/<name>/requirements.md` in the ticket text, then
 2. the feature folder named after the ticket title.
@@ -107,7 +109,17 @@ intake checks run first, and design reads the requirements exactly as it does af
 own grooming.
 
 An explicit label was chosen over detecting a requirements file automatically, because a ticket
-that merely mentions another feature's requirements must not be mistaken for a groomed one.
+that merely mentions another feature's requirements must not be mistaken for a groomed one. One
+label per start point was chosen over a second label added next to `factory-ready`, because two
+labels that must be used together fail quietly when one is forgotten.
+
+### Why labels, and why these names
+
+The factory must work with tickets on GitHub, GitLab, Jira and Azure DevOps. Labels (tags on Azure
+DevOps) are the one marker all four have and that a person can set in one click. Columns and
+workflow states differ on every platform and often per project, so they are never used as a
+trigger; moving a card is best-effort decoration. The label names use a hyphen, not a colon or a
+space, so the same names are valid on all four.
 
 Not included: starting later than design (for example from a person's `design.md`). Design always
 runs, so the after-design size check is never skipped.

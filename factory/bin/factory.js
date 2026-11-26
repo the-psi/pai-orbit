@@ -154,7 +154,7 @@ async function main(argv) {
         const body = flags['body-file'] ? fs.readFileSync(String(flags['body-file']), 'utf8') : (flags.body === true ? '' : flags.body || '');
         const t = await factory.board.create({
           id: need(flags.id, '--id'), title: need(flags.title, '--title'), body,
-          labels: (flags.label || [config.board.readyLabel]).concat(flags.groomed ? [config.board.groomedLabel] : []), reporter: flags.reporter === true ? '' : flags.reporter || '',
+          labels: flags.label || [flags.groomed ? config.board.groomedLabel : config.board.readyLabel], reporter: flags.reporter === true ? '' : flags.reporter || '',
         });
         process.stdout.write(`Created ticket #${t.id} with labels: ${t.labels.join(', ')}\n`);
         return 0;

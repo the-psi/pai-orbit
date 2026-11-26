@@ -61,7 +61,7 @@ test('parse: a flag with no value is true', () => {
 });
 
 test('parse: repeated --label collects a list, even when given once', () => {
-  assert.deepEqual(parse(['local', 'add', '--label', 'factory:ready', '--label', 'bug']).flags.label, ['factory:ready', 'bug']);
+  assert.deepEqual(parse(['local', 'add', '--label', 'factory-ready', '--label', 'bug']).flags.label, ['factory-ready', 'bug']);
   assert.deepEqual(parse(['local', 'add', '--label', 'one']).flags.label, ['one']);
 });
 
@@ -78,10 +78,10 @@ test('parse: positionals keep their order around flags', () => {
 test('parse: the full local add command line', () => {
   const { positional, flags } = parse([
     'local', 'add', '--id', '7', '--title', 'Add a greeting', '--body', 'As a visitor...',
-    '--label', 'factory:ready', '--label', 'ui', '--reporter', 'alice',
+    '--label', 'factory-ready', '--label', 'ui', '--reporter', 'alice',
   ]);
   assert.deepEqual(positional, ['local', 'add']);
-  assert.deepEqual(flags, { id: '7', title: 'Add a greeting', body: 'As a visitor...', label: ['factory:ready', 'ui'], reporter: 'alice' });
+  assert.deepEqual(flags, { id: '7', title: 'Add a greeting', body: 'As a visitor...', label: ['factory-ready', 'ui'], reporter: 'alice' });
 });
 
 test('parse: no arguments', () => {
@@ -308,7 +308,7 @@ test('main local add, comment and show work against the local board', async (t) 
   const r = rig(t);
   const add = await capture(() => main(r.args('local', 'add', '--id', '7', '--title', 'Add a greeting', '--body', 'As a visitor', '--reporter', 'alice')));
   assert.equal(add.code, 0);
-  assert.match(add.out, /Created ticket #7 with labels: factory:ready/);
+  assert.match(add.out, /Created ticket #7 with labels: factory-ready/);
   const comment = await capture(() => main(r.args('local', 'comment', '7', '--author', 'alice', '--body', 'The home page.')));
   assert.equal(comment.code, 0);
   const show = await capture(() => main(r.args('local', 'show', '7')));
@@ -318,7 +318,7 @@ test('main local add, comment and show work against the local board', async (t) 
   assert.equal(ticket.title, 'Add a greeting');
   assert.equal(ticket.body, 'As a visitor');
   assert.equal(ticket.reporter, 'alice');
-  assert.deepEqual(ticket.labels, ['factory:ready']);
+  assert.deepEqual(ticket.labels, ['factory-ready']);
   assert.equal(ticket.comments.length, 1);
   assert.equal(ticket.comments[0].author, 'alice');
   assert.equal(ticket.comments[0].body, 'The home page.');
@@ -328,10 +328,10 @@ test('main local add honours repeated --label and --body-file', async (t) => {
   const r = rig(t);
   const bodyFile = path.join(r.root, 'body.md');
   fs.writeFileSync(bodyFile, '# Story\n\nMulti-line body.\n');
-  await capture(() => main(r.args('local', 'add', '--id', '8', '--title', 'T', '--body-file', bodyFile, '--label', 'factory:ready', '--label', 'ui')));
+  await capture(() => main(r.args('local', 'add', '--id', '8', '--title', 'T', '--body-file', bodyFile, '--label', 'factory-ready', '--label', 'ui')));
   const show = await capture(() => main(r.args('local', 'show', '8')));
   const ticket = JSON.parse(show.out);
-  assert.deepEqual(ticket.labels, ['factory:ready', 'ui']);
+  assert.deepEqual(ticket.labels, ['factory-ready', 'ui']);
   assert.equal(ticket.body, '# Story\n\nMulti-line body.\n');
 });
 

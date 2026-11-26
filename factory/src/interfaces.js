@@ -25,11 +25,11 @@
 /**
  * @typedef {object} Board
  * @property {() => Promise<Ticket[]>} listEligible
- *   Open tickets that carry the ready label, do not carry the owned label, and are assigned to
- *   nobody other than the factory's own user.
+ *   Open tickets that carry one of the two start labels (ready or groomed), do not carry the
+ *   owned label, and are assigned to nobody other than the factory's own user.
  * @property {(id: string) => Promise<Ticket>} get
  * @property {(id: string) => Promise<void>} claim
- *   Add the owned label, remove the ready label, assign the factory's own user.
+ *   Add the owned label, remove both start labels, assign the factory's own user.
  * @property {(id: string, opts?: {declined?: boolean}) => Promise<void>} release
  *   Remove the owned and waiting labels and the factory's own assignment. With `declined`, add the
  *   declined label. The ready label is not restored.

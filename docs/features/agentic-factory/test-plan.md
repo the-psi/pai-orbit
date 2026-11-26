@@ -4,7 +4,7 @@
 **Issue:** none (standalone, local only)
 **Requirements:** [requirements.md](./requirements.md) — 48 REQs, 43 ACs, 15 scenarios
 **Design:** [design.md](./design.md)
-**Result:** 515 of 515 automated tests pass. Two real tickets were taken from "ready" to "released"
+**Result:** 519 of 519 automated tests pass. Two real tickets were taken from "ready" to "released"
 by the actual Claude CLI on a local fixture. 34 of 43 acceptance criteria are proven, 6 are proven
 in part, and 3 are not yet proven (see "Coverage"). Nothing was run against GitHub.
 
@@ -30,10 +30,10 @@ network).
 | Files | Tests | What they cover |
 |---|---|---|
 | `unit-*.test.js` (10 files) | 325 | Config validation, working calendar, state store, process helper, Claude CLI arguments and result parsing, stage prompts, notifiers, preflight, operator CLI, contract and schema |
-| `pipeline-*.test.js` (11 files) | 149 | Intake, questions, gates, merge, waiting timers, failures, parallel tickets, release, control and take-over, merge conflict, already groomed tickets |
-| `github-*.test.js` (2 files) | 40 | GitHub board and code host against simulated `gh` output |
+| `pipeline-*.test.js` (11 files) | 151 | Intake, questions, gates, merge, waiting timers, failures, parallel tickets, release, control and take-over, merge conflict, already groomed tickets |
+| `github-*.test.js` (2 files) | 42 | GitHub board and code host against simulated `gh` output |
 | `smoke.test.js` | 1 | One ticket from ready to released and closed |
-| **Total** | **515** | **515 pass, 0 fail** |
+| **Total** | **519** | **519 pass, 0 fail** |
 
 The unit and scenario tests were written by sub-agents that were given the requirements and told to
 assert the required behaviour, not what the code did, and not to edit the source.

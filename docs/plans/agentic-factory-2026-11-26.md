@@ -87,7 +87,7 @@ Goal: prove it on real work and get real numbers.
 - Tune the unattended contract where the agent asked too much or too little.
 - Add the factory tests to CI.
 
-Exit: a ticket goes from `factory:ready` to a merged pull request on GitHub with only the planned
+Exit: a ticket goes from `factory-ready` to a merged pull request on GitHub with only the planned
 human stops, on at least 10 tickets, with measured cost.
 
 ### Phase 2 — Hardening (about 4 weeks)
@@ -109,11 +109,53 @@ on a server needs no manual repair.
 
 Goal: running on the customer's project.
 
-- Adapters for whatever the customer uses if it is not GitHub and Slack. Each is one file behind an
-  existing interface; a Jira or Azure DevOps board is the likeliest.
+- Adapters for whatever the customer uses if it is not GitHub and Slack (see "Tickets on different
+  platforms"). Each is one file behind an existing interface.
 - Their roles, gates, limits and sensitive areas in a config file.
 - Start with both optional gates on and release level `tag`; relax as trust grows.
 - Hand-over: operator training and the runbook.
+
+## Tickets on different platforms
+
+Tickets may be on GitHub, GitLab, Jira or Azure DevOps, and the code may be on a different platform
+from the tickets (Jira has no code hosting). The factory is built for that: the ticket side
+("board") and the code side ("code host") are two separate adapters, chosen independently in the
+config, and the pipeline uses only what every platform has.
+
+| The factory needs | GitHub | GitLab | Jira | Azure DevOps |
+|---|---|---|---|---|
+| A marker a person sets | Label | Label | Label | Tag |
+| Questions and answers | Issue comment | Issue note | Issue comment | Work item comment |
+| "The factory has it" | Label + assignee | Label + assignee | Label + assignee | Tag + assigned to |
+| Open or closed | Issue state | Issue state | Status category | State |
+| Code review approval | Pull request review | Merge request approval | — (use the code platform) | Pull request vote |
+| Protected base branch | Branch protection | Protected branch | — | Branch policy |
+| Command line the adapter would use | `gh` | `glab` | Jira REST API | `az boards`, `az repos` |
+
+This table is from general knowledge of these platforms and from the tools orbit's own board skill
+already names. None of it has been tried from the factory; each adapter needs its own check against
+the real platform.
+
+What this means for the work:
+
+- **Built:** GitHub for both sides (untested against GitHub), plus the local file-based pair.
+- **To build, one adapter each:** GitLab board, GitLab code host, Jira board, Azure DevOps board,
+  Azure Repos code host. Each is one file implementing an existing interface, with its own tests.
+- **Order:** whichever the customer uses comes first. If unknown, Jira board with a GitHub or GitLab
+  code host is the likeliest mixed setup.
+- **Per platform, a person still does the same three things:** add one label, reply in a comment,
+  approve the review. Only the screens differ.
+
+Things that differ per platform and need a decision when each adapter is built:
+
+- **Who is who.** Roles are lists of user names, and names differ per platform. With tickets on Jira
+  and code on GitHub, the config needs each person's name on both.
+- **Jira approvals.** Jira has no code review, so the merge approval always comes from the code
+  platform. The release approval is a ticket comment, which works everywhere.
+- **Ticket ids.** Jira ids look like `PROJ-123`. The pipeline treats ids as text, but the GitHub
+  adapter accepts numbers only, which is correct for GitHub.
+- **Label rules.** The default names (`factory-ready`, `factory-groomed`, and so on) avoid colons
+  and spaces so they are valid everywhere, and all are configurable.
 
 ## Options considered for sequencing
 

@@ -339,7 +339,7 @@ Docker. It is Claude Code only. Full guide: [`factory/README.md`](../factory/REA
 simulated agents; not yet run against GitHub. See
 [`docs/features/agentic-factory/test-plan.md`](features/agentic-factory/test-plan.md).
 
-**What it does:** picks up tickets labelled `factory:ready`, then runs `/groom`, `/design`, `/build`,
+**What it does:** picks up tickets labelled `factory-ready`, then runs `/groom`, `/design`, `/build`,
 `/test`, optionally `/playwright`, and `/review`, opens a pull request, merges after a person
 approves, and runs `/release` after a person approves. When a mode would ask a question, the factory
 posts it on the ticket and waits.

@@ -267,8 +267,9 @@ What this does NOT include:
     credentials.
 44. REQ-44 (Scenarios 6, 9): The factory must enforce a spend limit per project per day, and warn
     the notified people when a ticket passes a configured share of its cost limit.
-45. REQ-45 (Scenario 15): A person must be able to mark an eligible ticket as already groomed. For
-    such a ticket the factory must not run its own groom stage and must start at design.
+45. REQ-45 (Scenario 15): A person must be able to hand over an already groomed ticket with a single
+    marker, used instead of the marker for a raw ticket. For such a ticket the factory must not run
+    its own groom stage and must start at design.
 46. REQ-46 (Scenario 15): For a groomed ticket the factory must use the existing `requirements.md`:
     the one whose path is given in the ticket text, or else the one in the feature folder named
     after the ticket. It must not rewrite that file in place of the person's work, and the optional
@@ -290,6 +291,10 @@ What this does NOT include:
 - **Portability** — identical behaviour on local Docker and on a server.
 - **Runner independence** — the pipeline does not depend on Claude-specific behaviour in a way that
   prevents adding another runner later.
+- **Platform independence** — tickets may live on GitHub, GitLab, Jira or Azure DevOps, and the
+  code on a different platform from the tickets. The pipeline may rely only on what all of them
+  have: labels or tags, comments, an assignee, and open or closed. Added 2026-11-26 at the
+  requester's direction.
 - **No regression for people** — interactive orbit on a developer's machine behaves exactly as
   before (constraints.md rule 7).
 - **Licensing** — the factory's authentication to the model provider must be of a kind the
@@ -332,7 +337,7 @@ per-project setting.
 
 | Setting | Default |
 |---|---|
-| Board and code host | GitHub Issues + GitHub pull requests; ticket state carried by labels (`factory:ready`, `factory:owned`, `factory:waiting`, `factory:declined`; a person adds `factory:groomed` for an already groomed ticket), board column moves best-effort |
+| Board and code host | GitHub Issues + GitHub pull requests; ticket state carried by labels (a person adds one of `factory-ready` or `factory-groomed`; the factory sets `factory-owned`, `factory-waiting`, `factory-declined`), board column moves best-effort |
 | Chat alerts | Slack incoming webhook, one channel per project, outbound only; answers and approvals are never accepted in chat |
 | Who answers questions | Ticket reporter and product owner |
 | Optional gate approvers | Requirements: product owner. Design: tech lead |
@@ -470,7 +475,7 @@ Design questions — deferred to `/design`:
   no production credential is present in any run.
 - AC-40 (Scenarios 6, 9): When a project's daily spend limit is reached, no new stage starts for that
   project until the next day or until an operator raises the limit.
-- AC-41 (Scenario 15): A ticket marked ready and groomed, whose `requirements.md` is on the base
+- AC-41 (Scenario 15): A ticket carrying the groomed marker alone, whose `requirements.md` is on the base
   branch, runs no groom stage; its first agent stage is design, in the folder that holds those
   requirements; and the requirements file reaches the pull request unchanged by the intake.
 - AC-42 (Scenario 15): A ticket marked groomed with no `requirements.md` to be found is declined
