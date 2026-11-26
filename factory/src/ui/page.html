@@ -498,6 +498,24 @@
     return sheet(wrap);
   }
 
+  function independentView(ir) {
+    var wrap = el('div', 'doc');
+    var head = el('div', ir.unresolved ? 'note bad' : 'note ok', ir.unresolved
+      ? 'The independent reviewer still asks for changes after ' + ir.round + ' round(s). You decide whether to approve anyway or send it back.'
+      : 'The independent reviewer approved this change' + (ir.round > 1 ? ' after ' + (ir.round - 1) + ' round(s) of fixes.' : '.'));
+    wrap.appendChild(head);
+    wrap.appendChild(el('p', 'basis', 'A second opinion from an agent that did not write the change and could not edit it (' + ir.model + '). It does not replace your approval.'));
+    if (ir.summary) wrap.appendChild(el('p', null, ir.summary));
+    if (!ir.findings.length) wrap.appendChild(el('p', null, 'It raised no findings.'));
+    ir.findings.forEach(function (f) {
+      var it = el('div', 'item');
+      it.appendChild(el('b', null, (f.severity === 'blocking' ? 'Blocking' : 'Note') + (f.file ? ' · ' + f.file : '')));
+      it.appendChild(el('div', null, f.text || ''));
+      wrap.appendChild(it);
+    });
+    return sheet(wrap);
+  }
+
   function releaseView(d) {
     var wrap = el('div', 'doc');
     wrap.appendChild(el('p', null, 'The change is merged. Approving runs the project\'s release steps up to the level "' + d.releaseLevel + '".'));
@@ -518,6 +536,10 @@
     if (ask && ask.kind === 'answer') tabs.push({ name: 'Questions (' + d.questions.length + ')', make: function () { return questionsView(d); } });
     if (d.document) tabs.push({ name: d.document.name, make: function () { return sheet(md(d.document.text), d.document.path); } });
     if (ask && ask.gate === 'merge') tabs.push({ name: 'Changed files (' + d.changes.length + ')', make: function () { return changesView(d); } });
+    if (d.independentReview) {
+      var ir = d.independentReview;
+      tabs.push({ name: 'Independent review (' + (ir.unresolved ? 'changes requested' : 'approved') + ')', make: function () { return independentView(ir); } });
+    }
     if (ask && ask.gate === 'release') tabs.push({ name: 'What will be released', make: function () { return releaseView(d); } });
     var count = 0; d.reports.forEach(function (r) { count += r.assumptions.length; });
     if (d.reports.length) tabs.push({ name: "Agent's decisions (" + count + ')', make: function () { return decisionsView(d); } });

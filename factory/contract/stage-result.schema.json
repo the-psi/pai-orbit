@@ -34,6 +34,27 @@
     },
     "artifacts": { "type": "array", "items": { "type": "string" } },
     "reason": { "type": "string" },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict", "findings"],
+      "properties": {
+        "verdict": { "type": "string", "enum": ["approve", "request_changes"] },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["severity", "text"],
+            "properties": {
+              "severity": { "type": "string", "enum": ["blocking", "note"] },
+              "file": { "type": "string" },
+              "text": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
     "size": {
       "type": "object",
       "additionalProperties": false,

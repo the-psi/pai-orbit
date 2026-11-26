@@ -51,7 +51,7 @@ test('fromObject applies every default to a minimal config', () => {
   assert.equal(cfg.notifier.type, 'console');
   assert.equal(cfg.runner.type, 'claude-cli');
   assert.equal(cfg.runner.permissionMode, 'acceptEdits');
-  assert.deepEqual(cfg.stages, { playwright: false, review: true });
+  assert.deepEqual(cfg.stages, { playwright: false, review: true, independentReview: false });
   assert.deepEqual(cfg.gates, { requirements: false, design: false });
   assert.deepEqual(cfg.roles.answer, ['@reporter']);
   assert.deepEqual(cfg.limits, { ...DEFAULTS.limits });

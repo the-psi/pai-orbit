@@ -35,8 +35,8 @@ const AGENT_STAGES = STAGES.filter((s) => s.kind === 'agent');
 
 test('the stage table runs from intake to done in the designed order', () => {
   assert.deepEqual(STAGES.map((s) => s.name),
-    ['intake', 'groom', 'design', 'build', 'test', 'playwright', 'review', 'pr', 'merge', 'release', 'done']);
-  assert.deepEqual(AGENT_STAGES.map((s) => s.name), ['groom', 'design', 'build', 'test', 'playwright', 'review', 'release']);
+    ['intake', 'groom', 'design', 'build', 'test', 'playwright', 'review', 'verify', 'pr', 'merge', 'release', 'done']);
+  assert.deepEqual(AGENT_STAGES.map((s) => s.name), ['groom', 'design', 'build', 'test', 'playwright', 'review', 'verify', 'release']);
   for (const s of AGENT_STAGES) assert.equal(typeof s.mode, 'string', `${s.name} names an orbit mode`);
 });
 

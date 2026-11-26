@@ -23,6 +23,7 @@ function defaultHandler(req) {
   if (req.stage === 'build') write['src/feature.txt'] = `built by the fake runner\n`;
   const result = { status: 'done', summary: `Fake ${req.stage} completed.`, artifacts: Object.keys(write) };
   if (req.stage === 'design') result.size = { files: 2, changedLines: 40, services: 1, paths: ['src/feature.txt'] };
+  if (req.stage === 'verify') result.review = { verdict: 'approve', findings: [] };
   return { result, write, costUsd: 0.5 };
 }
 

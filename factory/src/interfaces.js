@@ -96,6 +96,8 @@
  * @property {object} env            the complete environment for the agent process
  * @property {string} transcriptPath where to save the raw runner output
  * @property {string} [livePath]     where to write each step as it happens, for the status page
+ * @property {string} [model]        model for this run only (the independent review)
+ * @property {string[]} [denyTools]  tools denied for this run only, on top of the usual list
  * @property {AbortSignal} [signal]
  */
 

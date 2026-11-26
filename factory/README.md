@@ -23,6 +23,7 @@ made once, in `core/`, and the factory picks it up.
 | test | agent, `/test` | `test-plan.md`, tests run |
 | playwright | agent, `/playwright` | e2e tests (off unless enabled) |
 | review | agent, `/review` | Self-review; blocking findings fixed (can be switched off) |
+| independent review | a second agent, `/review` | A second opinion from an agent that did not write the change, on a different model, with no ability to edit. Blocking findings go back to build. Off unless enabled |
 | pr | factory | Branch pushed, pull request opened |
 | **merge gate** | **a person** | **An approving review on the latest commit. Cannot be switched off.** |
 | merge | factory | Pull request merged |
@@ -174,6 +175,29 @@ The cost defaults are estimates, not measurements. Reset them after the first 10
   named release approver approves.
 - Protect the base branch on the code host as a second line. `preflight` fails if GitHub reports it
   unprotected.
+
+## Independent review
+
+An optional stage between the factory's own review and the pull request. It gives the person who
+approves the merge a second opinion. It never approves a merge itself.
+
+```json
+"stages": { "independentReview": true },
+"runner": { "reviewModel": "opus" },
+"limits": { "independentReviewRounds": 2 }
+```
+
+- It starts fresh, with none of the build's context, and should use a different model
+  (`runner.reviewModel`) from the one that wrote the code.
+- It cannot edit: the edit tools are removed for this stage, and the branch is put back exactly as
+  it was afterwards, whatever the reviewer did.
+- It returns a verdict (approve or request changes) and findings, each marked blocking or note.
+- Blocking findings send the work back to build automatically, up to `independentReviewRounds`
+  times. After that the pull request goes to the person anyway, flagged as unresolved.
+- Its verdict and findings appear in the merge request comment on the ticket and in the status
+  page's review screen.
+
+It costs one more agent run per ticket (about USD 0.30 with a larger model on a small change).
 
 ## The status page
 

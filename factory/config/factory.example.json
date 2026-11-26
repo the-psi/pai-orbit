@@ -33,11 +33,13 @@
     "command": "claude",
     "model": "",
     "permissionMode": "acceptEdits",
+    "reviewModel": "",
     "envPassthrough": []
   },
   "stages": {
     "playwright": false,
-    "review": true
+    "review": true,
+    "independentReview": false
   },
   "gates": {
     "requirements": true,
@@ -60,7 +62,8 @@
     "hoursPerStage": 2,
     "reworkCyclesPerGate": 3,
     "testFixAttempts": 3,
-    "stageRetries": 1
+    "stageRetries": 1,
+    "independentReviewRounds": 2
   },
   "waiting": {
     "reminderHours": 4,

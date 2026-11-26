@@ -17,6 +17,8 @@ const STAGES = [
   { name: 'test', kind: 'agent', mode: 'test', artifact: 'test-plan.md' },
   { name: 'playwright', kind: 'agent', mode: 'playwright', optional: 'playwright' },
   { name: 'review', kind: 'agent', mode: 'review', optional: 'review' },
+  // A second opinion from an agent that did not write the change and may not edit it.
+  { name: 'verify', kind: 'agent', mode: 'review', optional: 'independentReview' },
   { name: 'pr', kind: 'orchestrator' },
   { name: 'merge', kind: 'orchestrator' },
   { name: 'release', kind: 'agent', mode: 'release' },
@@ -78,6 +80,18 @@ const INSTRUCTIONS = {
   ],
   playwright: () => [
     'Implement the Playwright automation for this ticket from `test-plan.md` in the feature folder.',
+  ],
+  verify: (c) => [
+    'You are an INDEPENDENT reviewer. You did not write this change and you must not change it.',
+    `Review the changes on this branch against \`origin/${c.base}\` (use \`git diff origin/${c.base}...HEAD\`;`,
+    'there is no pull request number yet). Judge them against `requirements.md` and `design.md` in the',
+    'feature folder: does the code do what was asked, no more and no less, and do the tests prove it?',
+    'Run the tests yourself. Do not edit, create or delete any file, do not commit, and do not write a',
+    'review document: report only through the result.',
+    'In the result, fill `review`: `verdict` is `approve` or `request_changes`, and `findings` lists',
+    'each point with `severity` (`blocking` for something that must be fixed before merge, `note`',
+    'for anything else), the `file` it concerns, and `text` a developer can act on. Use',
+    '`request_changes` only when there is at least one blocking finding.',
   ],
   review: (c) => [
     `Review the changes on this branch against \`origin/${c.base}\` (use \`git diff origin/${c.base}...HEAD\`;`,

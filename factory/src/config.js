@@ -40,6 +40,8 @@ const DEFAULTS = Object.freeze({
     pluginDir: '', // defaults to this repo's plugins/pai-orbit/dist/claude-code
     pluginName: 'pai-orbit',
     permissionMode: 'acceptEdits',
+    // Model for the independent review. Different from `model` gives a real second opinion.
+    reviewModel: '',
     // Wire orbit's bash-guard hook into every run: true | false | 'auto' (on except on Windows,
     // where the hook's bash + python3 are usually missing).
     bashGuard: 'auto',
@@ -57,7 +59,10 @@ const DEFAULTS = Object.freeze({
     // Extra environment variable names the agent process may see (model access only).
     envPassthrough: [],
   },
-  stages: { playwright: false, review: true },
+  // `independentReview`: after the factory's own review, a second agent with a fresh start and
+  // (ideally) a different model reviews the change and may not edit anything. Its verdict is
+  // shown to the person who approves the merge. It never replaces that person.
+  stages: { playwright: false, review: true, independentReview: false },
   // Optional gates. The merge and release gates are fixed and are not listed here.
   gates: { requirements: false, design: false },
   roles: {
@@ -78,6 +83,8 @@ const DEFAULTS = Object.freeze({
     reworkCyclesPerGate: 3,
     testFixAttempts: 3,
     stageRetries: 1,
+    // How many times the independent reviewer may send work back before it goes to a person anyway.
+    independentReviewRounds: 2,
   },
   waiting: { reminderHours: 4, escalationHours: 8, maxParkedDays: 5 },
   calendar: { timeZone: 'UTC', days: [1, 2, 3, 4, 5], startHour: 9, endHour: 18 },
@@ -189,6 +196,7 @@ function validate(cfg, raw = {}) {
   num('limits.reworkCyclesPerGate', cfg.limits.reworkCyclesPerGate, 0);
   num('limits.testFixAttempts', cfg.limits.testFixAttempts, 0);
   num('limits.stageRetries', cfg.limits.stageRetries, 0, 3);
+  num('limits.independentReviewRounds', cfg.limits.independentReviewRounds, 0, 5);
   num('waiting.reminderHours', cfg.waiting.reminderHours, 0);
   num('waiting.escalationHours', cfg.waiting.escalationHours, 0);
   num('waiting.maxParkedDays', cfg.waiting.maxParkedDays, 0.01);

@@ -96,3 +96,17 @@ test('the status page shows the latest step only while that stage is running', (
   assert.equal(nextStage.doingNow, '', 'steps from the previous stage are not shown for the next one');
   assert.deepEqual(new StateStore(path.join(dir, 'empty')).live('9'), []);
 });
+
+test('the independent review verdict survives result parsing, and its run gets its own model and denied tools', () => {
+  const { extractResult, ClaudeCliRunner } = require('../src/runners/claude-cli');
+  const review = { verdict: 'request_changes', findings: [{ severity: 'blocking', file: 'a.js', text: 'x' }] };
+  assert.deepEqual(extractResult({ structured_output: { status: 'done', summary: 's', review } }).review, review);
+  assert.equal(extractResult({ structured_output: { status: 'done', summary: 's' } }).review, undefined);
+  const runner = new ClaudeCliRunner({ command: 'claude', model: 'usual', pluginDir: '/p', permissionMode: 'acceptEdits', allowedTools: ['Read'], disallowedTools: ['WebFetch'] });
+  const args = runner.args({ budgetUsd: 1, model: 'second', denyTools: ['Edit', 'Write'] }, 'sid');
+  assert.equal(args[args.indexOf('--model') + 1], 'second');
+  assert.equal(args[args.indexOf('--disallowedTools') + 1], 'WebFetch,Edit,Write');
+  const usual = runner.args({ budgetUsd: 1 }, 'sid');
+  assert.equal(usual[usual.indexOf('--model') + 1], 'usual');
+  assert.equal(usual[usual.indexOf('--disallowedTools') + 1], 'WebFetch');
+});

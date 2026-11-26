@@ -43,7 +43,8 @@ class ClaudeCliRunner {
       '--max-budget-usd', String(Math.max(0.01, Math.round(req.budgetUsd * 100) / 100)),
     ];
     if (o.allowedTools && o.allowedTools.length) args.push('--allowedTools', o.allowedTools.join(','));
-    if (o.disallowedTools && o.disallowedTools.length) args.push('--disallowedTools', o.disallowedTools.join(','));
+    const denied = (o.disallowedTools || []).concat(req.denyTools || []);
+    if (denied.length) args.push('--disallowedTools', denied.join(','));
     if (o.bashGuardPath) {
       // Orbit's bash-guard hook is normally wired per project by /setup. The factory wires it for
       // every run, so it is on even in a project that was never set up.
@@ -56,7 +57,7 @@ class ClaudeCliRunner {
         },
       }));
     }
-    if (o.model) args.push('--model', o.model);
+    if (req.model || o.model) args.push('--model', req.model || o.model);
     if (req.sessionId) args.push('--resume', req.sessionId);
     else args.push('--session-id', sessionId);
     return args;
@@ -214,7 +215,7 @@ function extractResult(parsed) {
     try { out = JSON.parse(parsed.result); } catch { out = null; }
   }
   if (!out || typeof out !== 'object' || !STATUSES.includes(out.status)) return null;
-  return {
+  const result = {
     status: out.status,
     summary: String(out.summary || ''),
     questions: Array.isArray(out.questions) ? out.questions : [],
@@ -223,6 +224,9 @@ function extractResult(parsed) {
     reason: out.reason ? String(out.reason) : '',
     size: out.size && typeof out.size === 'object' ? out.size : undefined,
   };
+  // Only the independent review returns a verdict.
+  if (out.review && typeof out.review === 'object') result.review = out.review;
+  return result;
 }
 
 module.exports = { ClaudeCliRunner, parseOutput, extractResult, activityText, liveWriter };

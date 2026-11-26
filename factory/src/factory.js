@@ -370,6 +370,9 @@ class Factory {
     const budgetUsd = Math.min(l.costPerStageUsd, l.costPerTicketUsd - run.costUsd, l.costPerDayUsd - this.store.spentToday());
     run.attempts[stageName] = (run.attempts[stageName] || 0) + 1;
     const resumeId = run.resume === stageName ? run.sessions[stageName] : '';
+    // The independent reviewer must leave the work exactly as it found it.
+    const verifying = stageName === 'verify';
+    const before = verifying ? await this.workspace.headSha(dir) : '';
     this.store.save(run);
     this.store.event(run.ticketId, 'stage_start', { stage: stageName, attempt: run.attempts[stageName], resumed: Boolean(resumeId) });
 
@@ -384,7 +387,16 @@ class Factory {
       transcriptPath: this.store.transcriptPath(run.ticketId, stageName, run.attempts[stageName]),
       livePath: this.store.livePath(run.ticketId),
       signal: chain ? chain.abort.signal : undefined,
+      ...(verifying ? { model: this.config.runner.reviewModel || undefined, denyTools: ['Edit', 'Write', 'MultiEdit', 'NotebookEdit'] } : {}),
     });
+    if (verifying) {
+      // Whatever it did, the branch goes back to what it was reviewing. A reviewer that edits the
+      // work is no longer independent of it.
+      await this._guard(run, 'restore after review', async () => {
+        await this.workspace.git(['reset', '--quiet', '--hard', before], dir);
+        await this.workspace.git(['clean', '--quiet', '-fd'], dir);
+      });
+    }
 
     // While the agent ran, a person may have taken the ticket over (recorded by _poll). Keep that
     // status: record what this stage cost and do nothing else with its result (REQ-35).
@@ -456,6 +468,7 @@ class Factory {
     }
 
     // status: done
+    if (verifying) return this._afterIndependentReview(run, result);
     if (def.artifact && !this.workspace.exists(dir, path.posix.join(run.featureDir, def.artifact))) {
       return this._stageFailed(run, stageName, `it reported done but ${run.featureDir}/${def.artifact} does not exist`);
     }
@@ -494,6 +507,58 @@ class Factory {
       return false;
     }
     return this._moveTo(run, nextStage(stageName, this.config));
+  }
+
+  /**
+   * The independent reviewer's verdict. Blocking findings send the work back to build, a limited
+   * number of times; after that it goes to the person anyway, with the findings in front of them.
+   * The reviewer never approves a merge: that stays with the person at the merge gate.
+   */
+  async _afterIndependentReview(run, result) {
+    const review = result.review;
+    if (!review || !['approve', 'request_changes'].includes(review.verdict) || !Array.isArray(review.findings)) {
+      return this._stageFailed(run, 'verify', 'it reported done without a verdict');
+    }
+    const blocking = review.findings.filter((f) => f.severity === 'blocking');
+    const round = (run.rework.verify || 0) + 1;
+    const wantsChanges = review.verdict === 'request_changes' && blocking.length > 0;
+    run.independentReview = {
+      verdict: wantsChanges ? 'request_changes' : 'approve',
+      findings: review.findings,
+      summary: result.summary || '',
+      model: this.config.runner.reviewModel || 'the default model',
+      round,
+      at: this.now().toISOString(),
+      unresolved: false,
+    };
+    run.failures.verify = 0;
+    this.store.event(run.ticketId, 'independent_review', { verdict: run.independentReview.verdict, blocking: blocking.length, notes: review.findings.length - blocking.length, round });
+    if (wantsChanges && round <= this.config.limits.independentReviewRounds) {
+      run.rework.verify = round;
+      run.feedback = {
+        source: 'independent review',
+        text: blocking.map((f, i) => `${i + 1}. ${f.file ? `${f.file}: ` : ''}${f.text}`).join('\n'),
+      };
+      run.resume = '';
+      this.store.event(run.ticketId, 'rework', { gate: 'independent review', cycle: round });
+      return this._moveTo(run, 'build');
+    }
+    // Out of rounds with findings still open: a person decides, knowing that.
+    run.independentReview.unresolved = wantsChanges;
+    run.feedback = null;
+    this.store.save(run);
+    return this._moveTo(run, nextStage('verify', this.config));
+  }
+
+  /** What the independent reviewer said, as text for the ticket and the pull request. */
+  _independentReviewText(run) {
+    const r = run.independentReview;
+    if (!r) return '';
+    const head = r.unresolved
+      ? `**Independent review: changes still requested** after ${r.round} round(s). The points below were not resolved.`
+      : `**Independent review: approved**${r.round > 1 ? ` after ${r.round - 1} round(s) of fixes` : ''}.`;
+    const lines = r.findings.map((f) => `- ${f.severity === 'blocking' ? '**Blocking**' : 'Note'}${f.file ? ` (\`${f.file}\`)` : ''}: ${f.text}`);
+    return [head, r.summary, ...lines, '', 'This is a second opinion from an agent that did not write the change. It does not replace your approval.'].filter((x) => x !== '').join('\n');
   }
 
   /** After-design size and sensitivity check (REQ-23, AC-38). */
@@ -574,7 +639,8 @@ class Factory {
       this.store.event(run.ticketId, 'pr_opened', { pr: run.pr });
     }
     run.stage = 'merge';
-    await this._parkForApproval(run, 'merge', `Pull request ready for review: ${run.pr.url}`);
+    const second = this._independentReviewText(run);
+    await this._parkForApproval(run, 'merge', `Pull request ready for review: ${run.pr.url}${second ? `\n\n${second}` : ''}`);
     return false;
   }
 

@@ -85,6 +85,8 @@ Your final answer must be the structured result and nothing else. Its fields:
 - `artifacts` — repository-relative paths of the files you wrote or changed.
 - `reason` — for `declined` or `failed`.
 - `size` — when the stage instruction asks for it.
+- `review` — only when the stage instruction asks you to review as an independent reviewer:
+  `verdict` and `findings`.
 
 `done` means the stage's output exists, is committed, and you would be comfortable with a person
 reading it without you there to explain it.

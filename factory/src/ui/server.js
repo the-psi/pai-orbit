@@ -26,7 +26,7 @@ const PAGE = fs.readFileSync(path.join(__dirname, 'page.html'), 'utf8');
 const COLUMNS = ['Groom', 'Design', 'Build', 'Test and review', 'Merge', 'Release', 'Done', 'Returned to people'];
 const STAGE_COLUMN = {
   intake: 'Groom', groom: 'Groom', design: 'Design', build: 'Build', test: 'Test and review',
-  playwright: 'Test and review', review: 'Test and review', pr: 'Merge', merge: 'Merge',
+  playwright: 'Test and review', review: 'Test and review', verify: 'Test and review', pr: 'Merge', merge: 'Merge',
   release: 'Release', done: 'Done',
 };
 const GATE_COLUMN = { requirements: 'Groom', design: 'Design', merge: 'Merge', release: 'Release' };
@@ -101,6 +101,9 @@ function describe(e) {
       const how = { done: 'finished', needs_input: 'needs an answer', declined: 'declined the ticket', failed: 'could not finish' }[e.status] || e.status;
       return `Agent ${how}${stage}`;
     }
+    case 'independent_review': return e.verdict === 'approve'
+      ? `Independent review: approved${e.notes ? `, with ${e.notes} note(s)` : ''}`
+      : `Independent review: ${e.blocking} blocking finding(s), round ${e.round}`;
     case 'question': return `Asked ${e.questions ? e.questions.length : ''} question(s) on the ticket`.replace('  ', ' ');
     case 'answered': return `Answered by ${(e.by || []).join(', ')}`;
     case 'approval_needed': return `Waiting for approval: ${e.gate}`;
@@ -128,7 +131,7 @@ function describe(e) {
 const KIND = {
   stage_start: 'work', stage_end: 'work', stage: 'move', claimed: 'move', groomed_ticket: 'move',
   question: 'person', approval_needed: 'person', reminder: 'person', escalation: 'person',
-  answered: 'ok', approved: 'ok', merged: 'ok', released: 'ok', done: 'ok', pr_opened: 'ok',
+  answered: 'ok', approved: 'ok', merged: 'ok', released: 'ok', done: 'ok', pr_opened: 'ok', independent_review: 'work',
   rejected: 'warn', rework: 'warn', fix_attempt: 'warn', retry: 'warn', push_retry: 'warn', blocked: 'warn',
   declined: 'bad', handed_back: 'bad', error: 'bad', taken_over: 'warn',
 };
@@ -152,7 +155,7 @@ function timeline(events) {
 const ASK = {
   requirements: { title: 'Approve the requirements?', doc: 'requirements.md', reports: ['groom'] },
   design: { title: 'Approve the design?', doc: 'design.md', reports: ['design'] },
-  merge: { title: 'Approve the code for merge?', doc: '', reports: ['build', 'test', 'playwright', 'review'] },
+  merge: { title: 'Approve the code for merge?', doc: '', reports: ['build', 'test', 'playwright', 'review', 'verify'] },
   release: { title: 'Approve the release?', doc: '', reports: [] },
 };
 const DOCS = [
@@ -299,6 +302,7 @@ function createUiServer(opts) {
       document: doc,
       otherDocuments: docs.filter((d) => d !== doc),
       changes: p && p.kind === 'approval' && p.gate === 'merge' ? changes(run) : [],
+      independentReview: p && p.kind === 'approval' && p.gate === 'merge' && run.independentReview ? run.independentReview : null,
       ticketText: run.body || '',
       releaseLevel: config.release.level,
     };
