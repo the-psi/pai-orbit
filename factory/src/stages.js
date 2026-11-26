@@ -63,14 +63,15 @@ const INSTRUCTIONS = {
   groom: (c) => [
     'Groom this ticket and write `requirements.md` in the feature folder.',
     'The ticket text below is everything the requester said. Classify it yourself from that text.',
-    `Sensitive areas for this project (decline if the ticket falls in one): ${c.sensitive}.`,
+    'Decline only if the ticket plainly cannot be done without changing files that match one of',
+    `these protected path patterns: ${c.sensitive}.`,
   ],
-  design: (c) => [
+  design: () => [
     'Design this ticket from `requirements.md` and `decisions-log.md` in the feature folder.',
     'Write `design.md` in the feature folder and any decision records the mode requires.',
-    'In the result, fill `size` with your estimate for the build: `files` (files to add or change),',
-    '`changedLines`, `services` (deployable services touched), and `sensitiveAreas` (which of these',
-    `the change touches, empty if none): ${c.sensitive}.`,
+    'In the result, fill `size` with your estimate for the build: `files` (number of files to add or',
+    'change), `changedLines`, `services` (deployable services touched), and `paths` (the',
+    'repository-relative path of every file the build will add or change, tests and docs included).',
   ],
   build: () => [
     'Build this ticket from `requirements.md` and `design.md` in the feature folder.',
@@ -111,7 +112,7 @@ function buildPrompt(stageName, ctx) {
   const s = stage(stageName);
   const c = {
     base: config.repo.baseBranch,
-    sensitive: config.suitability.sensitivePaths.concat(config.suitability.sensitiveLabels).join(', '),
+    sensitive: config.suitability.sensitivePaths.join(', '),
     releaseLevel: config.release.level,
     releaseTickets: ctx.releaseTickets || `#${run.ticketId}`,
     approvedBy: ctx.approvedBy || 'a named release approver',

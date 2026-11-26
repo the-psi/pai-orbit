@@ -22,7 +22,7 @@ function defaultHandler(req) {
   if (ARTIFACT[req.stage]) write[`${dir}/${ARTIFACT[req.stage]}`] = `# ${req.stage} output (fake runner)\n`;
   if (req.stage === 'build') write['src/feature.txt'] = `built by the fake runner\n`;
   const result = { status: 'done', summary: `Fake ${req.stage} completed.`, artifacts: Object.keys(write) };
-  if (req.stage === 'design') result.size = { files: 2, changedLines: 40, services: 1, sensitiveAreas: [] };
+  if (req.stage === 'design') result.size = { files: 2, changedLines: 40, services: 1, paths: ['src/feature.txt'] };
   return { result, write, costUsd: 0.5 };
 }
 

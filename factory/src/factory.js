@@ -42,8 +42,9 @@ class Factory {
     /** @type {Map<string, {promise: Promise<void>, abort: AbortController, reason: string}>} */
     this.chains = new Map();
     this.releasing = null;
-    // Merges run one at a time per project: two merges racing onto the base branch can collide,
-    // and the second must see the base as the first left it (REQ-22).
+    // Everything that changes the base branch runs one at a time per project: merges, and the
+    // release. Two merges racing can collide, and a merge during a release moves the base under
+    // it (REQ-22, REQ-30).
     this.mergeQueue = Promise.resolve();
   }
 
@@ -429,11 +430,20 @@ class Factory {
       return this._stageFailed(run, stageName, `it reported done but ${run.featureDir}/${def.artifact} does not exist`);
     }
     if (stageName === 'design') {
-      if (!result.size) return this._stageFailed(run, stageName, 'it reported done without the size estimate');
+      if (!result.size || !Array.isArray(result.size.paths)) return this._stageFailed(run, stageName, 'it reported done without the size estimate and file list');
       const problem = this._sizeProblem(result.size);
       if (problem) {
         await this._push(run, dir);
         await this._decline(run, `After design, the factory stopped this ticket because ${problem}. The requirements and design are on branch \`${run.branch}\`.`);
+        return false;
+      }
+    }
+    if (stageName === 'build') {
+      // The design named the files it expected to change. Check what was actually changed.
+      const changed = await this.workspace.diffSize(dir);
+      const hits = sensitiveHits(changed.paths, this.config.suitability.sensitivePaths);
+      if (hits.length) {
+        await this._handBack(run, `The build changed files in a protected area (${hits.join(', ')}), which this project keeps with people.`);
         return false;
       }
     }
@@ -459,9 +469,10 @@ class Factory {
   /** After-design size and sensitivity check (REQ-23, AC-38). */
   _sizeProblem(size) {
     const s = this.config.suitability;
-    if (Array.isArray(size.sensitiveAreas) && size.sensitiveAreas.length) {
-      return `it touches a sensitive area (${size.sensitiveAreas.join(', ')})`;
-    }
+    // Decided here from the planned file paths, not by asking the agent whether the work is
+    // "sensitive": a billing library is not a sensitive change just because it is about billing.
+    const hits = sensitiveHits(size.paths || [], s.sensitivePaths);
+    if (hits.length) return `it would change files in a protected area (${hits.join(', ')})`;
     if (size.files > s.maxFiles) return `the design needs about ${size.files} files; the limit is ${s.maxFiles}`;
     if (size.changedLines > s.maxChangedLines) return `the design needs about ${size.changedLines} changed lines; the limit is ${s.maxChangedLines}`;
     if (size.services > s.maxServices) return `the design touches ${size.services} services; the limit is ${s.maxServices}`;
@@ -601,7 +612,9 @@ class Factory {
     if (this.releasing) return;
     const ready = this.store.active().filter((r) => r.status === 'running' && r.stage === 'release');
     if (!ready.length) return;
-    this.releasing = this._release(ready)
+    const queued = this.mergeQueue.then(() => this._release(ready));
+    this.mergeQueue = queued.catch(() => {});
+    this.releasing = queued
       .catch((err) => this.log(`release error: ${err.stack || err.message}`))
       .finally(() => { this.releasing = null; });
   }
@@ -626,7 +639,10 @@ class Factory {
       if (outcome === false) return; // a limit stopped it; _runAgentStage already handled the lead
       if (outcome.result && outcome.result.status === 'done') {
         await this.workspace.commitAll(dir, `factory(release): ${runs.map((r) => `#${r.ticketId}`).join(' ')}`);
-        await this.codeHost.push(dir, base);
+        // Push the base branch only if the release steps added commits (a version bump, say),
+        // and never by force. A release that only tags pushes just the tag.
+        const ahead = Number(await this.workspace.git(['rev-list', '--count', `origin/${base}..HEAD`], dir));
+        if (ahead > 0) await this.codeHost.push(dir, base, { shared: true });
         if (typeof this.codeHost.pushTags === 'function') await this.codeHost.pushTags(dir);
       }
     } catch (err) {
@@ -961,6 +977,31 @@ class Factory {
   }
 }
 
+/** Turn a path pattern (`**` any depth, `*` within one folder) into a regular expression. */
+function globToRegExp(glob) {
+  let re = '';
+  for (let i = 0; i < glob.length; i += 1) {
+    const ch = glob[i];
+    if (ch === '*' && glob[i + 1] === '*') {
+      i += 1;
+      if (glob[i + 1] === '/') { i += 1; re += '(?:.*/)?'; } else re += '.*';
+    } else if (ch === '*') re += '[^/]*';
+    else re += ch.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+  }
+  return new RegExp(`^${re}$`);
+}
+
+/** Which of `paths` fall under a protected pattern, as "path (pattern)". */
+function sensitiveHits(paths, patterns) {
+  const out = [];
+  for (const p of paths) {
+    const file = String(p).replace(/\\/g, '/').replace(/^\.\//, '');
+    const pattern = patterns.find((g) => globToRegExp(g).test(file));
+    if (pattern) out.push(`${file} matches ${pattern}`);
+  }
+  return out;
+}
+
 function round(n) {
   return Math.round(n * 1e6) / 1e6;
 }
@@ -969,4 +1010,4 @@ function quote(text) {
   return String(text).split('\n').map((l) => `> ${l}`).join('\n');
 }
 
-module.exports = { Factory, AGENT_ENV };
+module.exports = { Factory, AGENT_ENV, globToRegExp, sensitiveHits };

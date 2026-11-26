@@ -62,10 +62,13 @@ class GitHubCodeHost {
     }
   }
 
-  async push(dir, branch) {
+  async push(dir, branch, opts = {}) {
     const b = refName(branch, 'branch');
+    // A ticket branch belongs to the factory and may be rewritten by a rework. The base branch
+    // is shared: it is pushed plainly, so GitHub refuses if it has moved or is protected.
+    const force = opts.shared ? [] : ['--force-with-lease'];
     const res = await this.exec(
-      'git', [...this.gitAuthArgs(), 'push', '--force-with-lease', 'origin', `${b}:${b}`], { cwd: dir },
+      'git', [...this.gitAuthArgs(), 'push', ...force, 'origin', `${b}:${b}`], { cwd: dir },
     );
     if (res.code !== 0) throw this._fail(`git push origin ${b}`, res);
   }

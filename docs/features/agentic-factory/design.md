@@ -247,6 +247,14 @@ every key.
 - A stage that returns `failed`, crashes, times out, or returns no valid result is retried once.
   After that the ticket is handed back: its branch is pushed, a report is posted, the factory labels
   are removed, and it is unassigned from the factory.
+- **Protected areas are decided from file paths, not by the agent.** The design stage lists the
+  files it will change; the factory matches them against the project's protected path patterns
+  and declines on a match. After build, the files actually changed are matched again and a match
+  hands the ticket back. The agent is never asked whether work is "sensitive": in the first Docker
+  run it called an ordinary feature in a billing library "billing" and the ticket was refused.
+- A release and a merge never overlap. The base branch is pushed after a release only when the
+  release added commits, and never by force; a release that only tags pushes just the tag. Before a
+  release the workspace's tags are made identical to the remote's.
 - Merges run one at a time per project. A branch that no longer merges cleanly is sent back to the
   build stage with the conflict as feedback, and needs a fresh approval afterwards. (Added after the
   first real run, where two approved tickets merged at the same moment and collided.)

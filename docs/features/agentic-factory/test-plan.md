@@ -4,8 +4,8 @@
 **Issue:** none (standalone, local only)
 **Requirements:** [requirements.md](./requirements.md) — 48 REQs, 43 ACs, 15 scenarios
 **Design:** [design.md](./design.md)
-**Result:** 519 of 519 automated tests pass. Two real tickets were taken from "ready" to "released"
-by the actual Claude CLI on a local fixture. 34 of 43 acceptance criteria are proven, 6 are proven
+**Result:** 527 of 527 automated tests pass. Four real tickets were taken from "ready" to "released"
+by the actual Claude CLI: two on the host, and two inside the Docker container. 34 of 43 acceptance criteria are proven, 6 are proven
 in part, and 3 are not yet proven (see "Coverage"). Nothing was run against GitHub.
 
 ---
@@ -18,7 +18,8 @@ Three kinds of evidence were gathered, because no single one can prove this feat
    remote on disk. They prove the orchestrator: gates, limits, timers, hand-back, release, control.
 2. **A real run** with the Claude CLI and the unchanged pai-orbit plugin on a small fixture
    project. It proves the part the tests cannot: that the modes follow the unattended contract.
-3. **A container run** of the built Docker image with the simulated agent. It proves the packaging.
+3. **A container run** of the built Docker image, first with the simulated agent and then with the
+   real one. It proves the packaging and the "server" setup.
 
 ## How it was tested
 
@@ -29,11 +30,11 @@ network).
 
 | Files | Tests | What they cover |
 |---|---|---|
-| `unit-*.test.js` (10 files) | 325 | Config validation, working calendar, state store, process helper, Claude CLI arguments and result parsing, stage prompts, notifiers, preflight, operator CLI, contract and schema |
-| `pipeline-*.test.js` (11 files) | 151 | Intake, questions, gates, merge, waiting timers, failures, parallel tickets, release, control and take-over, merge conflict, already groomed tickets |
+| `unit-*.test.js` (11 files) | 330 | Config validation, working calendar, state store, process helper, Claude CLI arguments and result parsing, stage prompts, notifiers, preflight, operator CLI, contract and schema |
+| `pipeline-*.test.js` (12 files) | 153 | Intake, questions, gates, merge, waiting timers, failures, parallel tickets, release, control and take-over, merge conflict, already groomed tickets, release racing a merge |
 | `github-*.test.js` (2 files) | 42 | GitHub board and code host against simulated `gh` output |
-| `smoke.test.js` | 1 | One ticket from ready to released and closed |
-| **Total** | **519** | **519 pass, 0 fail** |
+| `smoke.test.js`, `workspace-tags.test.js` | 2 | One ticket from ready to released and closed; tags synced before a release |
+| **Total** | **527** | **527 pass, 0 fail** |
 
 The unit and scenario tests were written by sub-agents that were given the requirements and told to
 assert the required behaviour, not what the code did, and not to edit the source.
@@ -60,6 +61,39 @@ Checks made against the result, not taken from the agent's reports:
 
 ### 3. Container run
 
+**With the real agent (2026-11-26).** The factory and the Claude CLI (2.1.332, model
+`claude-sonnet-5-5`, the CLI's default for the credential used) ran inside the container against a
+purpose-built trial project, `invoice-calc`: a small invoice library with tests, a business-rules
+document, and one feature a person had already groomed. Its remote was a bare repo on disk mounted
+into the container; the board was the local file board. A person's part (answers, approvals) was
+played by the tester, who read each output before approving.
+
+| Ticket | Expected | What happened | Cost |
+|---|---|---|---|
+| #1 Bulk discount, already groomed (`factory-groomed`) | Skip grooming, start at design | Used the person's `requirements.md`, wrote a design, stopped at the design gate; after approval built, tested, reviewed, opened a pull request; merged after review approval; released | USD 0.59 |
+| #2 Add Germany as a tax region, raw and clear | Groom without questions | Groomed with every confirmed point tied to the ticket text; stopped at the requirements gate, then the design gate, then code review; merged; released as tag `v1.0.1`; closed | USD 0.62 |
+| #3 "Invoices should be more flexible", raw and vague | Ask or refuse, never guess | Wrote nothing and declined with the reason that the ticket could mean several unrelated features | USD 0.09 |
+| #4 Charge a saved card, labelled `payments` | Refuse before any agent runs | Declined at intake; no agent call | USD 0.00 |
+
+Checks made on the result, independently of the agent's own reports:
+
+- Ticket 1: each of the six acceptance criteria in the person's requirements was run as a direct
+  calculation against the branch and gave the exact numbers; 13 of 13 tests passed; the existing
+  test file was unchanged.
+- Ticket 2: Germany at 10000 cents gave tax 1900 and total 11900; an unlisted region was still
+  refused; 9 of 9 tests passed.
+- After both merged: a fresh clone of the base branch passed 16 of 16 tests, and a German invoice
+  large enough for the bulk discount gave the correct combined result.
+
+Ticket 1 did not go through cleanly the first time. Its path found defects 7, 8 and 9 below; after
+each fix the image was rebuilt and the stage was run again with the real agent.
+
+Ticket 3 was declined here, whereas a similar vague ticket in the host run produced questions.
+Both are allowed by the contract. Which is preferred for vague tickets is a product choice that has
+not been made.
+
+**With the simulated agent (earlier).**
+
 `docker build -f factory/Dockerfile -t orbit-factory:dev .` on Docker Desktop 29.6 (Linux engine),
 then inside the container: one ticket from ready to done with the simulated agent, `preflight`, and
 orbit's `bash-guard` hook blocking `git add -A` and allowing `git status`. The container runs as a
@@ -77,6 +111,9 @@ non-root user and contains Node 22, git, `gh` and the Claude CLI.
 | 4 | Unit tests | An unknown command reported "cannot read config" instead of "unknown command" | Command is checked first |
 | 5 | Scenario tests | A released ticket was not moved to the board column mapped to "done" | Release now goes through the same stage-change path as every other stage |
 | 6 | Code review during build | A stage that finished after a person took the ticket over overwrote the "taken over" status | The on-disk status is re-read before a stage result is recorded |
+| 7 | Docker run, real agent | A groomed ticket in a billing library was designed correctly and then refused, because the agent was asked whether the work touched a "sensitive area" and answered "billing" | The agent is no longer asked to judge. The design lists the files it will change and the factory matches them against the project's protected path patterns; the files actually changed are checked again after build |
+| 8 | Docker run, real agent | One ticket's release ran while another ticket was being merged; the release's push of the base branch was refused and a correctly released ticket was handed back | A release and a merge can no longer overlap; the base branch is pushed only when the release added commits, and never by force |
+| 9 | Docker run, real agent | A tag left in the workspace by the failed release attempt blocked the next attempt's push | Before a release the workspace's tags are made identical to the remote's |
 
 ---
 
@@ -96,7 +133,7 @@ AC-35, AC-36, AC-37, AC-38, AC-40, AC-41, AC-42, AC-43.
 | AC-19 | Sensitive labels, epic labels and too many acceptance criteria are declined before any agent call | "More than one repo" at intake is not detected; the factory works on one repo per configuration |
 | AC-22 | The audit trail survives the run; in the real run each stage's raw output was kept | Retention period and shipping to an external store are not defined |
 | AC-28 | A ticket assigned to a person is never picked up | "In progress under a person" with no assignee has no marker the factory can read |
-| AC-30 | The image builds and the full flow runs in a container on Docker Desktop | Not run on a server; the real agent has not run inside the container |
+| AC-30 | The image builds and the full flow runs in a container on Docker Desktop, with the simulated agent and with the real one | Not run on a server |
 | AC-39 | One release at a time; release credentials reach only the release stage | "No production credential present at level `tag`" depends on how the operator fills `.env`, which the factory cannot check |
 
 **Not yet proven:**
@@ -115,9 +152,6 @@ AC-35, AC-36, AC-37, AC-38, AC-40, AC-41, AC-42, AC-43.
   `gh` output are listed in the adapter tests and are unverified. This is the first job of a pilot.
 - **Slack.** The notifier was tested with a simulated HTTP call only.
 - **Optional `/playwright` stage** with a real agent.
-- **An already groomed ticket with a real agent.** Starting at design from a person's
-  `requirements.md` is proven with the simulated agent only. The real run did exercise the real
-  `/design` reading a `requirements.md`, but one the factory's own groom stage had written.
 - **Release levels `staging` and `production`.**
 - **A real-sized codebase.** The fixture is a few files. Cost, run time and the quality of
   unattended grooming on a large project are unknown.
@@ -130,7 +164,7 @@ AC-35, AC-36, AC-37, AC-38, AC-40, AC-41, AC-42, AC-43.
 ## Test cases to add in the pilot
 
 - [ ] Ten or more real tickets on a GitHub sandbox repo with a bot account
-- [ ] The real agent inside the container, with an API key
+- [ ] The real agent inside the container with an API key (done with a personal subscription token)
 - [ ] A real merge conflict resolved by the real agent
 - [ ] A restart of the container in the middle of a real stage
 - [ ] Factory-written requirements and design compared with a developer's on the same tickets

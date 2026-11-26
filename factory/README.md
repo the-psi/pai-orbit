@@ -153,7 +153,9 @@ orbit-factory stop <id>      stop one ticket and hand it back
 | `limits.costPerDayUsd` | Hard stop for the project per day | 200 |
 | `concurrency` | Tickets worked on at once | 2 |
 | `release.level` | `tag`, `staging` or `production` | `tag` |
-| `suitability.*` | Sensitive labels and size limits that make the factory decline | see example |
+| `suitability.sensitiveLabels` | Ticket labels that make the factory decline at once | see example |
+| `suitability.sensitivePaths` | Path patterns the factory will not change. Checked against the design's file list and again against the files actually changed | see example |
+| `suitability.max*` | Size limits that make the factory decline | see example |
 
 The merge and release gates are not settings. A config that tries to set `gates.merge` or
 `gates.release` is rejected.
@@ -189,7 +191,8 @@ current stage.
   container. An agent stage that runs shell commands could read a sibling ticket's directory. One
   container per ticket is planned.
 - **GitHub is the only real board and code host.** Its adapter is tested against simulated `gh`
-  output and has not yet been run against GitHub.
+  output and has not yet been run against GitHub. GitLab, Jira and Azure DevOps adapters are not
+  built.
 - **Release steps that commit to a protected base branch will be refused by the code host.** At
   release level `tag`, keep the release steps to tagging, or let the project's own pipeline do the
   rest.

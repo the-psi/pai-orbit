@@ -41,7 +41,7 @@
         "files": { "type": "integer" },
         "changedLines": { "type": "integer" },
         "services": { "type": "integer" },
-        "sensitiveAreas": { "type": "array", "items": { "type": "string" } }
+        "paths": { "type": "array", "items": { "type": "string" } }
       }
     }
   }

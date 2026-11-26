@@ -68,7 +68,7 @@ test('the schema describes every field the contract tells the agent to return', 
   }
   assert.deepEqual(schema.properties.questions.items.required, ['question', 'why']);
   assert.deepEqual(schema.properties.assumptions.items.required, ['decision', 'basis']);
-  for (const key of ['files', 'changedLines', 'services', 'sensitiveAreas']) {
+  for (const key of ['files', 'changedLines', 'services', 'paths']) {
     assert.ok(schema.properties.size.properties[key], `size has ${key}`);
   }
 });

@@ -64,7 +64,9 @@
  * @property {() => string[]} gitAuthArgs
  *   Extra `git` arguments (for example `-c credential.helper=...`) the ORCHESTRATOR passes on
  *   clone, fetch and push. Never written into the clone's config, so the agent cannot reuse them.
- * @property {(dir: string, branch: string) => Promise<void>} push
+ * @property {(dir: string, branch: string, opts?: {shared?: boolean}) => Promise<void>} push
+ *   Push a branch. A ticket branch may be force-pushed (with lease). With `shared: true` (the
+ *   base branch) the push must be plain, so the host refuses if the branch has moved.
  * @property {(pr: {branch: string, base: string, title: string, body: string}) => Promise<{id: string, url: string}>} openPr
  * @property {(id: string) => Promise<PrStatus>} prStatus
  * @property {(id: string) => Promise<void>} merge
@@ -80,7 +82,7 @@
  * @property {{decision: string, basis: string}[]} [assumptions]
  * @property {string[]} [artifacts]
  * @property {string} [reason]
- * @property {{files?: number, changedLines?: number, services?: number, sensitiveAreas?: string[]}} [size]
+ * @property {{files?: number, changedLines?: number, services?: number, paths?: string[]}} [size]
  */
 
 /**

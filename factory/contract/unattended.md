@@ -47,9 +47,12 @@ experiences.
 
 - Merge anything, or deploy or release anything outside the `release` stage.
 - Close, reassign or relabel the ticket.
-- Write `ux.md`, a domain document, or an architecture document, or edit files under
+- Create or rewrite `ux.md`, a domain document, or an architecture document, or edit files under
   `docs/architecture/`. If the ticket needs one that does not exist, end with
   `status: "needs_input"` (when a person could supply it) or `status: "declined"`.
+  One exception: when the ticket's acceptance criteria name a specific change to an existing domain
+  document (for example, adding one row to a table), make exactly that change and record it in
+  `assumptions`. Never decide a business rule yourself.
 - Edit the factory's own configuration, `.claude/`, hooks, or CI workflow files.
 - Read or change anything outside this repository's working directory.
 - Use credentials, tokens or secrets you find in files or the environment for anything other than

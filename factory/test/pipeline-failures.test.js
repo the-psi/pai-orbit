@@ -231,11 +231,11 @@ describe('pipeline: failures and declines', { concurrency: 3 }, () => {
 
   test('AC-38: the after-design size and sensitivity check', async (t) => {
     const SIZES = {
-      1: { files: 16, changedLines: 100, services: 1, sensitiveAreas: [] },
-      2: { files: 3, changedLines: 50, services: 1, sensitiveAreas: ['authentication'] },
-      3: { files: 3, changedLines: 601, services: 1, sensitiveAreas: [] },
-      4: { files: 3, changedLines: 50, services: 2, sensitiveAreas: [] },
-      5: { files: 15, changedLines: 600, services: 1, sensitiveAreas: [] }, // exactly at the thresholds
+      1: { files: 16, changedLines: 100, services: 1, paths: ['src/a.js'] },
+      2: { files: 3, changedLines: 50, services: 1, paths: ['src/app.js', 'src/auth/login.js'] },
+      3: { files: 3, changedLines: 601, services: 1, paths: ['src/a.js'] },
+      4: { files: 3, changedLines: 50, services: 2, paths: ['src/a.js'] },
+      5: { files: 15, changedLines: 600, services: 1, paths: ['src/billing-report.js'] }, // exactly at the thresholds; 'billing' in a file name is not a protected folder
     };
     const handler = (req) => {
       if (req.stage === 'design') return { useDefault: true, result: { status: 'done', summary: 'Designed.', size: SIZES[ticketOf(req)] } };
@@ -253,10 +253,10 @@ describe('pipeline: failures and declines', { concurrency: 3 }, () => {
       assert.deepEqual(stagesOf(rig, '1'), ['groom', 'design']);
       assertDeclined(rig, '1', /16 files/);
     });
-    await t.test('AC-38: a design with non-empty sensitiveAreas is declined before any build call', () => {
+    await t.test('AC-38: a design that plans to change a file in a protected folder is declined before any build call', () => {
       assert.ok(!builds.includes('2'));
       assert.deepEqual(stagesOf(rig, '2'), ['groom', 'design']);
-      assertDeclined(rig, '2', /authentication/);
+      assertDeclined(rig, '2', /src\/auth\/login\.js matches \*\*\/auth\/\*\*/);
     });
     await t.test('AC-38: a design over the changed-lines limit is declined before any build call', () => {
       assert.ok(!builds.includes('3'));

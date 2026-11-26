@@ -44,8 +44,11 @@ class LocalCodeHost {
     return out ? out.split(/\s+/)[0] : '';
   }
 
-  async push(dir, branch) {
-    await this._git(['push', '--force-with-lease', 'origin', `${branch}:${branch}`], dir);
+  async push(dir, branch, opts = {}) {
+    // A ticket branch belongs to the factory and may be rewritten by a rework. The base branch
+    // is shared: it is pushed plainly, so the host refuses if it has moved.
+    const force = opts.shared ? [] : ['--force-with-lease'];
+    await this._git(['push', ...force, 'origin', `${branch}:${branch}`], dir);
   }
 
   async pushTags(dir) {

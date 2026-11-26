@@ -103,6 +103,9 @@ class WorkspaceManager {
   async checkoutBase(dir) {
     const base = this.opts.baseBranch;
     await this.fetch(dir);
+    // Make the clone's tags exactly the remote's. A tag left behind by an earlier release attempt
+    // that never reached the remote would otherwise mislead the next release and block its push.
+    await this.git([...this._auth(), 'fetch', '--quiet', '--force', '--prune', '--prune-tags', 'origin', '+refs/tags/*:refs/tags/*'], dir);
     await this.git(['checkout', '--quiet', '-B', base, `origin/${base}`], dir);
   }
 

@@ -213,14 +213,18 @@ test('buildPrompt says so when the ticket has no description', () => {
   }
 });
 
-test('buildPrompt(groom) and buildPrompt(design) name the sensitive areas of the project', () => {
+test('buildPrompt(groom) names the protected path patterns; buildPrompt(design) asks for the planned file paths', () => {
   const c = config();
-  for (const name of ['groom', 'design']) {
-    const prompt = buildPrompt(name, ctx({ config: c }));
-    for (const label of c.suitability.sensitiveLabels) assert.ok(prompt.includes(label), `${name} names ${label}`);
-    for (const p of c.suitability.sensitivePaths) assert.ok(prompt.includes(p), `${name} names ${p}`);
-  }
-  assert.ok(buildPrompt('design', ctx()).includes('`size`'), 'design asks for the size estimate');
+  const groom = buildPrompt('groom', ctx({ config: c }));
+  for (const p of c.suitability.sensitivePaths) assert.ok(groom.includes(p), `groom names ${p}`);
+  const design = buildPrompt('design', ctx({ config: c }));
+  assert.ok(design.includes('`size`'), 'design asks for the size estimate');
+  assert.ok(design.includes('`paths`'), 'design asks for the planned file paths');
+  // The agent is never asked to judge whether work is "sensitive": the design instructions carry
+  // no protected patterns and no topic words. The factory decides from the paths.
+  const instructions = design.split('## Ticket text')[0];
+  for (const p of c.suitability.sensitivePaths) assert.ok(!instructions.includes(p), `design must not list ${p}`);
+  for (const word of ['payments', 'billing', 'pii']) assert.ok(!instructions.includes(word), `design must not ask about "${word}"`);
 });
 
 test('buildPrompt(groom|design|test) names the document each stage writes', () => {
