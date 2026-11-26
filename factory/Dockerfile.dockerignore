@@ -1,0 +1,7 @@
+# Build context is the repo root. Send only what the image copies.
+*
+!factory/
+!plugins/pai-orbit/dist/claude-code/
+factory/test/
+factory/.orbit-factory/
+factory/**/node_modules/

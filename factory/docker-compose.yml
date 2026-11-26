@@ -1,0 +1,24 @@
+# Agentic Factory — the same file runs on Docker Desktop and on a server.
+#
+#   cp config/factory.example.json factory.config.json   # then edit it
+#   cp .env.example .env                                 # then add credentials
+#   docker compose up -d --build
+#   docker compose exec factory node /opt/orbit/factory/bin/factory.js status
+#
+# Only the environment differs between a laptop and a server (REQ-37).
+services:
+  factory:
+    build:
+      context: ..
+      dockerfile: factory/Dockerfile
+    image: orbit-factory
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - factory-data:/data
+      - ./factory.config.json:/config/factory.config.json:ro
+    # A clean stop lets stages in flight finish before the container exits.
+    stop_grace_period: 2m
+
+volumes:
+  factory-data:

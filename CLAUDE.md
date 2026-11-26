@@ -43,6 +43,12 @@ pai-orbit/                          # repo = marketplace
 │       ├── dist/                   # COMMITTED build outputs (one subdir per adapter)
 │       ├── build.sh                # runs every adapter
 │       └── README.md               # plugin-level README
+├── factory/                        # Agentic Factory — runtime service that runs the modes unattended
+│   ├── bin/factory.js              # operator CLI (run, once, status, pause, stop, preflight)
+│   ├── contract/                   # unattended contract + stage-result schema (no mode text)
+│   ├── src/                        # scheduler/pipeline, boards, code hosts, runners, notifiers
+│   ├── test/                       # node:test suite (no model, no network)
+│   └── Dockerfile, docker-compose.yml
 └── docs/                           # framework documentation (this repo)
     ├── capabilities.md             # reference: every mode, skill, agent, hook
     ├── process-and-practices.md    # methodology philosophy and session flow
@@ -53,16 +59,19 @@ pai-orbit/                          # repo = marketplace
 - Modify a mode, skill, agent, hook, or template → edit `plugins/pai-orbit/core/...` and run `bash plugins/pai-orbit/build.sh`.
 - Change how a particular tool gets the plugin → edit the corresponding `plugins/pai-orbit/adapters/<tool>/build.sh`.
 - Never hand-edit `plugins/pai-orbit/dist/` — it is regenerated.
+- Change how modes run unattended → edit `factory/` (see `factory/README.md`). It reads `dist/claude-code/` only and must never contain a copy of mode text. Run `node --test factory/test/*.test.js`.
 
 ---
 
 ## Architecture
 
-pai-orbit is a static content pipeline, not a running service: `core/` is the single source of
+The pai-orbit plugin is a static content pipeline, not a running service: `core/` is the single source of
 truth for every mode, skill, agent, hook, and template; each of the 5 adapters compiles `core/`
 into its own `dist/<tool>/` bundle, which is committed to git and is what consumers actually
-install. There are no data stores, no runtime auth, and no API surface — the only "deploy" is a
-version bump + rebuild + commit. Full declaration, trust boundaries, and hard constraints
+install. The plugin has no data stores, no runtime auth, and no API surface — the only "deploy" is a
+version bump + rebuild + commit. The one runtime in this repo is the Agentic Factory (`factory/`,
+proposed): a Node service that runs the modes unattended from backlog to release by starting the
+Claude Code CLI headless with `dist/claude-code/` loaded. Full declaration, trust boundaries, and hard constraints
 (including the full-adapter-parity and `dist/` backward-compatibility rules enforced by `/build`
 and `/review`): [docs/architecture/system.md](docs/architecture/system.md),
 [docs/architecture/constraints.md](docs/architecture/constraints.md).

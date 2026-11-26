@@ -1,5 +1,5 @@
 # Architectural Constraints: pai-orbit
-Last updated: 2026-09-14
+Last updated: 2026-11-26
 
 <!-- Violations of the rules below are treated as blocking issues in /review and /build. -->
 
@@ -17,6 +17,7 @@ Last updated: 2026-09-14
         • kiro-power was removed on 2026-09-14 rather than carried as a permanent agent/hook gap — see docs/decisions/2026-09-14-remove-kiro-power-adapter.md.
         • /build sub-agent worktree isolation is claude-code-only (no per-sub-agent flag in codex, cursor-plugin, copilot) — see docs/decisions/2026-10-08-claude-code-only-build-subagent-rules.md.
         Rule 6 is met by every recommended adapter (claude-code, cursor-plugin, codex, copilot). The legacy cursor fallback and the /build worktree-isolation rule are the only documented, deliberate exceptions — see Open Questions in system.md. -->
+   Rule 6 governs content in `core/`. It does not govern the `factory/` service, which changes nothing in `core/` or `dist/` and is Claude first by design — see `docs/decisions/2026-11-26-agentic-factory-in-repo-service.md` (proposed).
 7. **`dist/` output must remain backward compatible.** A project that installed an earlier version and has not re-run `/setup` must not silently break. Any structural change to an adapter's `dist/<tool>/` output requires a version bump in `plugin.json` and a migration note (README and/or CLAUDE.md).
 
 ## Trust Boundaries
@@ -27,10 +28,12 @@ Last updated: 2026-09-14
 | top-level `build.sh` | `adapters/*/build.sh` | `dist/` directly (never writes there itself) |
 | Claude session (any mode/skill) | `core/`, `dist/`, `docs/` | Silent edits to `dist/` — must go through `core/` + rebuild |
 | Consumer / target project | `plugins/pai-orbit/dist/<tool>/` (via marketplace.json) | `core/` or `adapters/` directly — consumers never point at source |
+| `factory/` orchestrator | `plugins/pai-orbit/dist/claude-code/` (read-only), the agent CLI, the board, the code host, chat | `core/` or `adapters/`; a copy of any mode text; a merge or release without the recorded human approval |
+| Factory agent process (one per stage) | The model provider; files inside its own ticket workspace | The board, the code host, chat, release targets — it holds no credential for them; another ticket's workspace |
 
 ## Cross-cutting Standards
 
-- **Auth:** n/a — no runtime auth; distribution is via git + the Claude Code marketplace.
-- **Logging:** n/a — no runtime logging; hooks may print advisory messages to stdout (e.g. `arch-drift-guard.sh`), never structured logs.
+- **Auth:** the plugin has no runtime auth; distribution is via git + the Claude Code marketplace. The factory holds three kinds of credential and keeps them apart: the model credential (given to the agent), board/code-host/chat credentials (orchestrator only), and release credentials (release stage only, after approval). Credentials come from the environment and are never written to documents, logs, comments or the repo.
+- **Logging:** the plugin has no runtime logging; hooks may print advisory messages to stdout (e.g. `arch-drift-guard.sh`), never structured logs. The factory writes an append-only audit trail per ticket (`events.jsonl`, one JSON object per line) and keeps each stage's raw agent output.
 - **Error handling:** hooks fail open where possible (advisory hooks like `arch-drift-guard.sh` never block); safety hooks (`bash-guard.sh`) fail closed by denying the specific matched command only.
 - **API versioning:** n/a — no API surface. Plugin version is tracked in `plugins/pai-orbit/core/plugin.json` and should be bumped alongside README/CLAUDE.md references on every meaningful change.

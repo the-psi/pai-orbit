@@ -1,0 +1,5 @@
+# Credentials and a deployment's own config never go into the repo.
+.env
+factory.config.json
+# State, audit trail and ticket workspaces of a local run.
+.orbit-factory/

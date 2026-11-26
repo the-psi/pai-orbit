@@ -215,6 +215,9 @@ every key.
 - A stage that returns `failed`, crashes, times out, or returns no valid result is retried once.
   After that the ticket is handed back: its branch is pushed, a report is posted, the factory labels
   are removed, and it is unassigned from the factory.
+- Merges run one at a time per project. A branch that no longer merges cleanly is sent back to the
+  build stage with the conflict as feedback, and needs a fresh approval afterwards. (Added after the
+  first real run, where two approved tickets merged at the same moment and collided.)
 - After a restart the scheduler reloads every `state.json`. A ticket that was mid-stage restarts
   that stage.
 

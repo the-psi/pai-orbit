@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Agentic Factory stage result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "summary"],
+  "properties": {
+    "status": { "type": "string", "enum": ["done", "needs_input", "declined", "failed"] },
+    "summary": { "type": "string" },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["question", "why"],
+        "properties": {
+          "question": { "type": "string" },
+          "why": { "type": "string" },
+          "options": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["decision", "basis"],
+        "properties": {
+          "decision": { "type": "string" },
+          "basis": { "type": "string" }
+        }
+      }
+    },
+    "artifacts": { "type": "array", "items": { "type": "string" } },
+    "reason": { "type": "string" },
+    "size": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "files": { "type": "integer" },
+        "changedLines": { "type": "integer" },
+        "services": { "type": "integer" },
+        "sensitiveAreas": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}
