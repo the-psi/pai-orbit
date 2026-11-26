@@ -37,13 +37,14 @@ What is not yet proven is listed under "What stands between this and a customer"
 | Docker image and compose file | Built and run locally |
 | Tests | See `docs/features/agentic-factory/test-plan.md` for counts and results |
 | Real-agent run | Done on a small fixture project with a local board; see the test plan |
-| Run against a real GitHub repo | **Not done** (kept local by instruction) |
+| Run against a real GitHub repo | Done as a one-person, single-account trial: two tickets from issue to release, two correctly refused. Not yet done with a separate factory identity and a second person reviewing |
 | Run on a real customer-sized codebase | **Not done** |
 
 ## What stands between this and a customer
 
-1. **GitHub has not been exercised for real.** The adapter's understanding of `gh` output is
-   untested against GitHub. This is the first thing a pilot must do.
+1. **GitHub has been exercised only in a single-account trial.** Issues, comments, labels, pushes,
+   pull requests, merges and a release all worked. Reviews by a second person and the factory
+   running under its own identity (a bot account or a GitHub App) are still to do.
 2. **Cost is unmeasured at real size.** The fixture ticket cost well under a dollar per stage. The
    defaults (USD 50 per ticket) are estimates with wide uncertainty.
 3. **Tickets share one container.** Isolation between tickets is by directory. One container per

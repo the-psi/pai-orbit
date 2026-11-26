@@ -4,9 +4,11 @@
 **Issue:** none (standalone, local only)
 **Requirements:** [requirements.md](./requirements.md) — 48 REQs, 43 ACs, 15 scenarios
 **Design:** [design.md](./design.md)
-**Result:** 527 of 527 automated tests pass. Four real tickets were taken from "ready" to "released"
-by the actual Claude CLI: two on the host, and two inside the Docker container. 34 of 43 acceptance criteria are proven, 6 are proven
-in part, and 3 are not yet proven (see "Coverage"). Nothing was run against GitHub.
+**Result:** 546 of 546 automated tests pass. Six real tickets were taken from "ready" to "released"
+by the actual Claude CLI: two on the host, two inside the Docker container on a local board, and
+two inside the Docker container against GitHub. 34 of 43 acceptance criteria are proven, 6 are proven
+in part, and 3 are not yet proven (see "Coverage"). GitHub was exercised in a one-person,
+single-account trial; pull request reviews by a second person were not.
 
 ---
 
@@ -30,11 +32,11 @@ network).
 
 | Files | Tests | What they cover |
 |---|---|---|
-| `unit-*.test.js` (11 files) | 330 | Config validation, working calendar, state store, process helper, Claude CLI arguments and result parsing, stage prompts, notifiers, preflight, operator CLI, contract and schema |
-| `pipeline-*.test.js` (12 files) | 153 | Intake, questions, gates, merge, waiting timers, failures, parallel tickets, release, control and take-over, merge conflict, already groomed tickets, release racing a merge |
+| `unit-*.test.js` (12 files) | 335 | Config validation, working calendar, state store, process helper, Claude CLI arguments and result parsing, stage prompts, notifiers, preflight, operator CLI, contract and schema |
+| `pipeline-*.test.js` (14 files) | 167 | Intake, questions, gates, merge, waiting timers, failures, parallel tickets, release, control and take-over, merge conflict, already groomed tickets, release racing a merge |
 | `github-*.test.js` (2 files) | 42 | GitHub board and code host against simulated `gh` output |
 | `smoke.test.js`, `workspace-tags.test.js` | 2 | One ticket from ready to released and closed; tags synced before a release |
-| **Total** | **527** | **527 pass, 0 fail** |
+| **Total** | **546** | **546 pass, 0 fail** |
 
 The unit and scenario tests were written by sub-agents that were given the requirements and told to
 assert the required behaviour, not what the code did, and not to edit the source.
@@ -101,6 +103,36 @@ non-root user and contains Node 22, git, `gh` and the Claude CLI.
 
 ---
 
+### 4. Run against GitHub (2026-11-26)
+
+The same trial project was published as a public repo with four issues as tickets, and the factory
+ran in Docker against it with the real agent. It was a **single-account trial**
+(`trial.singleAccount`): the factory ran under the tester's own account with a fine-grained token
+limited to that one repo, so approvals were comments on the issue. The approvals were given by the
+requester in the browser, not by the tester.
+
+| Issue | What happened on GitHub | Cost |
+|---|---|---|
+| #1 Bulk discount, already groomed | Recognised as groomed; design written; after approval built, tested and reviewed; pull request #5 opened; merged after approval; released; closed | USD 0.36 |
+| #2 Add Germany, raw | Groomed; requirements, then design, approved; pull request #6 opened; merged after approval; released; closed | USD 0.55 |
+| #3 Vague ticket | Declined with advice on how to resubmit; `factory-declined` set | USD 0.09 |
+| #4 `payments` label | Declined at intake; no agent run | USD 0.00 |
+
+Both tickets went out as one release, tag `v1.0.1`, on the commit that holds both merges. A fresh
+clone of the base branch passed 18 of 18 tests, and a German invoice large enough for the bulk
+discount gave the correct combined result. Each pull request was checked independently before the
+requester approved: the acceptance numbers in the requirements were recomputed and matched, and no
+existing test had been changed.
+
+What this run exercised in the GitHub adapters for the first time, successfully: listing eligible
+issues by either start label, reading an issue, claiming (labels and assignee), commenting, reading
+comments since a time, the waiting label, pushing branches, opening pull requests, reading pull
+request state and mergeability, merging, pushing a tag, releasing labels, and closing issues.
+
+What it did **not** exercise: reading pull request reviews from a second person (the normal merge
+gate), `changes_requested` reviews, a merge conflict, and the branch-protection check, which needs a
+permission the trial token did not have and so reported "could not confirm".
+
 ## Defects found and fixed during testing
 
 | # | Found by | Defect | Fix |
@@ -114,6 +146,12 @@ non-root user and contains Node 22, git, `gh` and the Claude CLI.
 | 7 | Docker run, real agent | A groomed ticket in a billing library was designed correctly and then refused, because the agent was asked whether the work touched a "sensitive area" and answered "billing" | The agent is no longer asked to judge. The design lists the files it will change and the factory matches them against the project's protected path patterns; the files actually changed are checked again after build |
 | 8 | Docker run, real agent | One ticket's release ran while another ticket was being merged; the release's push of the base branch was refused and a correctly released ticket was handed back | A release and a merge can no longer overlap; the base branch is pushed only when the release added commits, and never by force |
 | 9 | Docker run, real agent | A tag left in the workspace by the failed release attempt blocked the next attempt's push | Before a release the workspace's tags are made identical to the remote's |
+| 10 | GitHub run | GitHub refused one push with a bare "(failed)" while another ticket was pushing; the factory treated it as fatal and handed a healthy ticket back | A failed push is tried twice more before it is an error |
+| 11 | GitHub run | The requester approved with "Quote reply" and the word `approve`; the factory required a comment starting with `/approve` and ignored it | Quoted lines are skipped and the first typed line decides; the slash is optional. A comment of `reply` was, correctly, not taken as approval |
+
+Not a defect, but it cost a pass: the first token had read access only, so GitHub refused every
+write. Nothing was changed on the repo. `preflight` reported "gh is authenticated" and could not
+tell that the token lacked write access; a write-permission check in `preflight` is worth adding.
 
 ---
 
@@ -148,8 +186,9 @@ AC-35, AC-36, AC-37, AC-38, AC-40, AC-41, AC-42, AC-43.
 
 ## Not tested at all
 
-- **GitHub.** The board and code-host adapters have never called GitHub. Their assumptions about
-  `gh` output are listed in the adapter tests and are unverified. This is the first job of a pilot.
+- **GitHub with a separate factory identity.** The adapters now work against GitHub in a
+  single-account trial. Pull request reviews by a second person, `changes_requested`, a merge
+  conflict and the branch-protection check have not been exercised.
 - **Slack.** The notifier was tested with a simulated HTTP call only.
 - **Optional `/playwright` stage** with a real agent.
 - **Release levels `staging` and `production`.**
@@ -163,7 +202,7 @@ AC-35, AC-36, AC-37, AC-38, AC-40, AC-41, AC-42, AC-43.
 
 ## Test cases to add in the pilot
 
-- [ ] Ten or more real tickets on a GitHub sandbox repo with a bot account
+- [ ] Ten or more real tickets on GitHub with a separate factory identity (two done in a single-account trial)
 - [ ] The real agent inside the container with an API key (done with a personal subscription token)
 - [ ] A real merge conflict resolved by the real agent
 - [ ] A restart of the container in the middle of a real stage
