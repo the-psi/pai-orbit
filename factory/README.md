@@ -175,6 +175,37 @@ The cost defaults are estimates, not measurements. Reset them after the first 10
 - Protect the base branch on the code host as a second line. `preflight` fails if GitHub reports it
   unprotected.
 
+## The status page
+
+`orbit-factory ui` serves one page that shows the factory at work and lets a named person decide.
+
+- **Board:** every ticket in the column of its stage, with what it waits for and what it has cost.
+- **Live activity:** while a stage runs, the step the agent is on ("Reading src/tax.js", "Running:
+  npm test"), on the card and in full in the ticket's panel.
+- **History:** each ticket's timeline, with the agent's report for every stage.
+- **Review screen:** a ticket that needs a person opens one focused screen: the question at the top,
+  the one document to decide on in the middle (the whole requirements or design file), and Approve
+  or Send back at the bottom. The agent's own decisions, the other documents, the changed files and
+  the ticket text are one tab away. Sending back needs a reason, which the agent then works from.
+
+Who can do what:
+
+| Sign-in | Set with | Can |
+|---|---|---|
+| Shared password | `FACTORY_UI_PASSWORD` | Look |
+| A person's own name and password | `FACTORY_UI_USERS="asha:secret,ravi:secret"` | Look, and decide what the config's `roles` name them for |
+
+Use the same names in `FACTORY_UI_USERS` as in `roles`. The page only records a decision. The
+factory checks the person again, acts on its next pass, and writes the decision on the ticket, so
+the ticket remains the complete record. Code approval in a normal setup stays on the pull request;
+the page lists the changed files and links to it.
+
+The page listens on the local machine only unless a sign-in is configured. To reach it by one URL
+after deployment, publish its port (8080) behind an HTTPS proxy or the hosting service's own
+address. Per-person passwords are adequate for a trial; for real use put company sign-in in front.
+
+Nothing else can be changed from the page: it cannot pause, stop, edit or configure the factory.
+
 ## Single-account trial mode
 
 For a one-person trial where no second account exists for the factory. Off by default.

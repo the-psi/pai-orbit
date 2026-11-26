@@ -13,6 +13,7 @@ const path = require('node:path');
 const { stage: stageDef, nextStage, REWORK_STAGE, GATE_ROLE, featureDir, buildPrompt } = require('./stages');
 const { workingMsBetween, workingDayHours } = require('./calendar');
 const { slugify } = require('./workspace');
+const { inRole, roleNames } = require('./roles');
 
 const HOUR = 3600 * 1000;
 
@@ -191,6 +192,8 @@ class Factory {
         title: ticket.title,
         url: ticket.url,
         reporter: ticket.reporter,
+        // Kept so the review screen can show what was asked without calling the board.
+        body: String(ticket.body || '').slice(0, 20000),
         // Which start label the person used. Recorded now because claiming removes the label.
         groomed: ticket.labels.includes(this.config.board.groomedLabel),
         slug,
@@ -585,13 +588,39 @@ class Factory {
   }
 
   _inRole(role, user, reporter) {
-    const list = this.config.roles[role] || [];
-    if (!user) return false;
-    // The factory's own account never counts (REQ-40), except in a single-account trial, where
-    // the person and the factory share one account and the factory's own comments are skipped
-    // by their marker instead.
-    if (user === this.config.board.botUser && !this._single()) return false;
-    return list.includes(user) || list.includes('*') || (list.includes('@reporter') && user === reporter);
+    return inRole(this.config, role, user, reporter);
+  }
+
+  /**
+   * What people said since the factory asked: ticket comments, plus decisions made on the status
+   * page. A status-page decision is turned into the same shape as a comment, so one piece of code
+   * checks who it is from and what it says, wherever it was given.
+   */
+  async _commentsAndDecisions(run) {
+    const comments = await this.board.commentsSince(run.ticketId, run.pending.since);
+    const seen = run.decisionsSeen || [];
+    const fresh = this.store.decisions(run.ticketId).filter((d) => !seen.includes(d.id));
+    if (!fresh.length) return comments;
+    // Each decision is looked at once. One that does not match what is being asked now is dropped.
+    run.decisionsSeen = seen.concat(fresh.map((d) => d.id));
+    this.store.save(run);
+    const p = run.pending;
+    const usable = fresh.filter((d) => new Date(d.at) >= new Date(p.since)
+      && (d.kind === 'answer' ? p.kind === 'answer' && d.stage === p.stage : p.kind === 'approval' && d.gate === p.gate));
+    const asComments = usable.map((d) => ({
+      id: `page-${d.id}`,
+      author: d.by,
+      createdAt: d.at,
+      viaStatusPage: true,
+      body: d.kind === 'approve' ? 'approve' : d.kind === 'reject' ? `reject ${d.text || ''}` : String(d.text || ''),
+    }));
+    return comments.concat(asComments).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  }
+
+  /** Put a status-page decision on the ticket too, so the ticket stays the complete record. */
+  async _recordOnTicket(run, comment, text) {
+    if (!comment.viaStatusPage) return;
+    await this._guard(run, 'record on ticket', () => this._post(run.ticketId, text));
   }
 
   /** The newest review from each named merge approver. */
@@ -776,12 +805,7 @@ class Factory {
   }
 
   _roleNames(role, run) {
-    const list = (this.config.roles[role] || []).map((n) => {
-      if (n === '@reporter') return run.reporter ? `the reporter (${run.reporter})` : 'the reporter';
-      if (n === '*') return 'any reviewer the code host accepts';
-      return n;
-    });
-    return list.length ? list.join(', ') : 'a named person';
+    return roleNames(this.config, role, run.reporter);
   }
 
   // ------------------------------------------------------------------ polling parked and running tickets
@@ -817,9 +841,12 @@ class Factory {
   }
 
   async _checkAnswer(run, ticket) {
-    const comments = await this.board.commentsSince(run.ticketId, run.pending.since);
+    const comments = await this._commentsAndDecisions(run);
     const answers = comments.filter((c) => !isFactoryComment(c) && this._inRole('answer', c.author, ticket.reporter));
     if (!answers.length) return this._timers(run, 'an answer');
+    for (const c of answers) {
+      await this._recordOnTicket(run, c, `**Answer from ${c.author}**, given on the status page:\n\n${quote(c.body)}`);
+    }
     const text = answers.map((c) => `**${c.author}** (${c.createdAt}):\n\n${quote(c.body)}`).join('\n\n');
     const dir = await this.workspace.prepare(run.ticketId, run.branch);
     this.workspace.appendFile(dir, path.posix.join(run.featureDir, 'decisions-log.md'), [
@@ -846,7 +873,7 @@ class Factory {
     const gate = run.pending.gate;
     if (gate === 'merge') return this._checkMergeApproval(run);
     const role = GATE_ROLE[gate];
-    const comments = await this.board.commentsSince(run.ticketId, run.pending.since);
+    const comments = await this._commentsAndDecisions(run);
     for (const c of comments) {
       if (isFactoryComment(c) || !this._inRole(role, c.author, ticket.reporter)) continue; // REQ-39
       const decision = decisionOf(c.body);
@@ -862,7 +889,8 @@ class Factory {
         }
         run.approvals[gate] = { by: c.author, at: c.createdAt };
         run.pending = null;
-        this.store.event(run.ticketId, 'approved', { gate, by: c.author });
+        await this._recordOnTicket(run, c, `**Approved** at the ${gate} stop by ${c.author}, on the status page.`);
+        this.store.event(run.ticketId, 'approved', { gate, by: c.author, ...(c.viaStatusPage ? { how: 'status page' } : {}) });
         await this._guard(run, 'waiting label', () => this.board.setState(run.ticketId, { waiting: false }));
         if (gate === 'release') {
           run.status = 'running'; // stage is already 'release'; the release batch picks it up
@@ -874,6 +902,7 @@ class Factory {
       }
       if (decision && decision.reject) {
         const feedback = decision.text || 'Rejected without a stated reason.';
+        await this._recordOnTicket(run, c, `**Sent back** at the ${gate} stop by ${c.author}, on the status page:\n\n${quote(feedback)}`);
         this.store.event(run.ticketId, 'rejected', { gate, by: c.author });
         if (gate === 'release') {
           await this._handBack(run, `The release was declined by ${c.author}: ${feedback} The change is already merged.`);
@@ -901,12 +930,13 @@ class Factory {
     if (this._single()) {
       // A code host does not let an account approve its own pull request, so in a single-account
       // trial the approval is a comment on the ticket. It is tied to the commit it was given for.
-      const comments = await this.board.commentsSince(run.ticketId, run.pending.since);
+      const comments = await this._commentsAndDecisions(run);
       for (const c of comments) {
         if (isFactoryComment(c) || !this._inRole('mergeApprover', c.author, run.reporter)) continue;
         const decision = decisionOf(c.body);
         if (decision && decision.approve) {
           run.approvals.mergeComment = { by: c.author, at: c.createdAt, sha: status.headSha };
+          await this._recordOnTicket(run, c, `**Approved** for merge by ${c.author}, on the status page.`);
           run.pending = null;
           run.status = 'running'; // stage is already 'merge'
           this.store.save(run);
@@ -916,6 +946,7 @@ class Factory {
         }
         if (decision && decision.reject) {
           const feedback = decision.text || 'Rejected without a stated reason.';
+          await this._recordOnTicket(run, c, `**Sent back** at code review by ${c.author}, on the status page:\n\n${quote(feedback)}`);
           this.store.event(run.ticketId, 'rejected', { gate: 'merge', by: c.author });
           await this._rework(run, 'merge', { source: `code review, ${c.author}`, text: feedback });
           return undefined;

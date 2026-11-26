@@ -45,6 +45,29 @@ class StateStore {
     return path.join(dir, `${stage}-${String(attempt).padStart(2, '0')}-${Date.now()}.json`);
   }
 
+  /**
+   * Record a decision a named person made on the status page. The status page only writes it
+   * here; the factory reads it on its next pass, checks the person again, and acts.
+   * @param {{by: string, kind: 'approve'|'reject'|'answer', gate?: string, stage?: string, text?: string}} decision
+   */
+  addDecision(ticketId, decision) {
+    const dir = this.runDir(ticketId);
+    fs.mkdirSync(dir, { recursive: true });
+    const entry = { id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`, at: this.now().toISOString(), ...decision };
+    fs.appendFileSync(path.join(dir, 'decisions.jsonl'), `${JSON.stringify(entry)}\n`);
+    return entry;
+  }
+
+  /** Every decision recorded for a ticket, oldest first. */
+  decisions(ticketId) {
+    try {
+      return fs.readFileSync(path.join(this.runDir(ticketId), 'decisions.jsonl'), 'utf8')
+        .split('\n').filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
+
   /** Where the runner writes what the agent is doing right now, one JSON object per line. */
   livePath(ticketId) {
     const dir = this.runDir(ticketId);

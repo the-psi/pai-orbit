@@ -20,7 +20,7 @@ Running
   preflight               Check the setup without starting anything
 
 Watching
-  ui                      Serve the read-only status page (board, timeline, totals)
+  ui                      Serve the status page (board, timeline, review and approve)
   status [--json]         Stage, what each ticket waits on, cost so far
   events <ticket>         The audit trail of one ticket
 
@@ -109,10 +109,11 @@ async function main(argv) {
   const startUi = () => new Promise((resolve, reject) => {
     const plan = listenPlan(config);
     if (plan.problem) { reject(new Error(plan.problem)); return; }
-    const server = createUiServer({ store: new StateStore(dataDir), config, password: plan.password });
+    const server = createUiServer({ store: new StateStore(dataDir), config, password: plan.password, users: plan.users });
     server.once('error', reject);
     server.listen(plan.port, plan.host, () => {
-      log(`status page: http://${plan.host === '0.0.0.0' ? 'localhost' : plan.host}:${plan.port}/${plan.password ? ' (password required)' : ' (this machine only)'}`);
+      const signIn = plan.users.size ? `${plan.users.size} named sign-in(s) may decide` : 'nobody can decide: set FACTORY_UI_USERS to allow approvals';
+      log(`status page: http://${plan.host === '0.0.0.0' ? 'localhost' : plan.host}:${plan.port}/ (${plan.password || plan.users.size ? 'sign-in required' : 'this machine only'}; ${signIn})`);
       resolve(server);
     });
   });

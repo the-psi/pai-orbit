@@ -20,8 +20,9 @@ services:
     # A clean stop lets stages in flight finish before the container exits.
     stop_grace_period: 2m
 
-  # The read-only status page: http://localhost:8080
-  # Set FACTORY_UI_PASSWORD in .env; the page refuses to start without it.
+  # The status page: http://localhost:8080
+  # FACTORY_UI_PASSWORD lets people look. FACTORY_UI_USERS ("name:password,...") lets a named
+  # person approve, send back and answer. The page refuses to start with neither.
   ui:
     image: orbit-factory
     restart: unless-stopped
@@ -29,10 +30,12 @@ services:
     environment:
       FACTORY_UI_HOST: 0.0.0.0
       FACTORY_UI_PASSWORD: ${FACTORY_UI_PASSWORD:-}
+      FACTORY_UI_USERS: ${FACTORY_UI_USERS:-}
     ports:
       - "8080:8080"
     volumes:
-      - factory-data:/data:ro
+      # Read and write: the page records a person's decision here for the factory to pick up.
+      - factory-data:/data
       - ./factory.config.json:/config/factory.config.json:ro
 
 volumes:

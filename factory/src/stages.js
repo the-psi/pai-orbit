@@ -47,13 +47,7 @@ function nextStage(name, config) {
 /** Which stage is re-run when a gate rejects. */
 const REWORK_STAGE = { requirements: 'groom', design: 'design', merge: 'build' };
 
-/** Which role approves at each ticket-comment gate. */
-const GATE_ROLE = {
-  requirements: 'requirementsApprover',
-  design: 'designApprover',
-  merge: 'mergeApprover',
-  release: 'releaseApprover',
-};
+const { GATE_ROLE } = require('./roles');
 
 function featureDir(config, slug) {
   return path.posix.join(config.docsRoot.replace(/\\/g, '/').replace(/\/+$/, ''), 'features', slug);

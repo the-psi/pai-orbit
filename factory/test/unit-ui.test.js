@@ -77,18 +77,20 @@ test('a ticket page gives a readable timeline with the agent\'s report and its d
   assert.equal((await r.get('/api/tickets/999')).status, 404);
 });
 
-test('the page is read-only: nothing but GET is accepted, and no route changes state', async (t) => {
+test('without a named sign-in nothing can be changed: no route accepts a write', async (t) => {
   const r = await rig(t);
   seed(r.store);
   const before = JSON.stringify(r.store.all());
   for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
-    for (const p of ['/', '/api/overview', '/api/tickets/1', '/api/tickets/1/approve', '/api/pause']) {
+    for (const p of ['/', '/api/overview', '/api/tickets/1', '/api/tickets/1/approve', '/api/pause', '/api/tickets/2/decision', '/api/tickets/4/decision']) {
       const res = await r.get(p, { method, body: method === 'DELETE' ? undefined : '{}' });
-      assert.equal(res.status, 405, `${method} ${p}`);
+      assert.ok([403, 404, 405].includes(res.status), `${method} ${p} -> ${res.status}`);
     }
   }
   assert.equal(JSON.stringify(r.store.all()), before);
   assert.equal(r.store.control().paused, false);
+  assert.deepEqual(r.store.decisions('2'), [], 'no decision was recorded');
+  assert.deepEqual(r.store.decisions('4'), []);
 });
 
 test('with a password set, nothing is served without it', async (t) => {
@@ -128,8 +130,12 @@ test('no secret reaches the browser', async (t) => {
 });
 
 test('listenPlan: this machine only by default; a password is required to listen more widely', () => {
-  assert.deepEqual(listenPlan(config, {}), { host: '127.0.0.1', port: 8080, password: '', problem: '' });
-  assert.match(listenPlan(config, { FACTORY_UI_HOST: '0.0.0.0' }).problem, /FACTORY_UI_PASSWORD is not set/);
+  const plain = listenPlan(config, {});
+  assert.deepEqual([plain.host, plain.port, plain.password, plain.users.size, plain.problem], ['127.0.0.1', 8080, '', 0, '']);
+  const named = listenPlan(config, { FACTORY_UI_HOST: '0.0.0.0', FACTORY_UI_USERS: 'asha:s1, ravi:s2,broken,:x' });
+  assert.equal(named.problem, '');
+  assert.deepEqual([...named.users.keys()], ['asha', 'ravi']);
+  assert.match(listenPlan(config, { FACTORY_UI_HOST: '0.0.0.0' }).problem, /neither FACTORY_UI_PASSWORD nor FACTORY_UI_USERS is set/);
   const open = listenPlan(config, { FACTORY_UI_HOST: '0.0.0.0', FACTORY_UI_PASSWORD: 'pw', FACTORY_UI_PORT: '9000' });
   assert.equal(open.problem, '');
   assert.equal(open.port, 9000);

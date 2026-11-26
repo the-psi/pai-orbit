@@ -326,6 +326,12 @@ What this does NOT include:
   updating when it ships.
 - **Assumption.** The factory runs on the Claude CLI / Agent SDK rather than a custom agent loop; to
   be confirmed in `/design`.
+- **Status page (scope change, 2026-11-26).** Grooming excluded "a hosted multi-customer service or
+  web dashboard". At the requester's direction the factory now serves its own status page: a board,
+  live agent activity, and a review screen where a named person approves, sends back or answers.
+  It is one page served by the factory, not a hosted product. Decisions made there are re-checked
+  by the factory and written on the ticket, so REQ-9 and REQ-39 still hold. Code approval in a
+  normal setup stays on the pull request.
 - **Feasibility evidence.** Orbit modes have already been driven headless with `claude -p` for
   testing (`docs/features/groom-shared-signal-consumers/test-plan.md`).
 - **Factory identity.** The factory acts on the board and code host under its own bot identity,

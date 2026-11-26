@@ -1,18 +1,23 @@
 'use strict';
-// Read-only status page for the factory: a board of tickets by stage, one ticket's timeline, and
-// the totals. It reads the same files the factory writes (state.js) and changes nothing.
+// The factory's status page: a board of tickets by stage, one ticket's timeline, the totals, and
+// a review screen where a named person approves, sends back, or answers.
 //
 // Rules this file keeps:
-//   - GET only. There is no route that approves, rejects, stops or edits anything. Approvals stay
-//     on the ticket, where the record is.
-//   - Reachable from another machine only with a password (HTTP Basic). Without one it binds to
-//     this machine only.
+//   - Looking needs a sign-in whenever the page is reachable from another machine.
+//   - Deciding (approve, send back, answer) needs a NAMED sign-in. The page only records the
+//     decision; the factory checks the person again, acts, and writes it on the ticket, so the
+//     ticket stays the complete record.
+//   - Code approval in a normal setup stays on the pull request. The page links to it.
+//   - Nothing else can be changed from here: no pause, stop, edit or settings.
 //   - No credential is ever sent to the browser.
 
 const fs = require('node:fs');
 const http = require('node:http');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const { execFileSync } = require('node:child_process');
+const { GATE_ROLE, inRole, roleNames } = require('../roles');
+const { safeId } = require('../state');
 
 const PAGE = fs.readFileSync(path.join(__dirname, 'page.html'), 'utf8');
 
@@ -143,42 +148,160 @@ function timeline(events) {
   }));
 }
 
+// What a person is asked at each stop, in their words, and which document answers it.
+const ASK = {
+  requirements: { title: 'Approve the requirements?', doc: 'requirements.md', reports: ['groom'] },
+  design: { title: 'Approve the design?', doc: 'design.md', reports: ['design'] },
+  merge: { title: 'Approve the code for merge?', doc: '', reports: ['build', 'test', 'playwright', 'review'] },
+  release: { title: 'Approve the release?', doc: '', reports: [] },
+};
+const DOCS = [
+  ['requirements.md', 'Requirements'], ['design.md', 'Design'], ['test-plan.md', 'Test plan'], ['decisions-log.md', 'Answers so far'],
+];
+const MAX_DOC = 300000;
+
+/** "asha:secret1,ravi:secret2" -> Map. One password per person, so a decision has a name on it. */
+function parseUsers(text) {
+  const users = new Map();
+  for (const part of String(text || '').split(',')) {
+    const i = part.indexOf(':');
+    if (i <= 0) continue;
+    const name = part.slice(0, i).trim();
+    const pass = part.slice(i + 1).trim();
+    if (name && pass) users.set(name, pass);
+  }
+  return users;
+}
+
+function same(a, b) {
+  return crypto.timingSafeEqual(crypto.createHash('sha256').update(String(a)).digest(), crypto.createHash('sha256').update(String(b)).digest());
+}
+
 /**
- * @param {{store: object, config: object, password?: string, now?: () => Date}} opts
+ * @param {{store: object, config: object, password?: string, users?: Map<string, string>, now?: () => Date}} opts
+ *   `password` lets anyone look. `users` lets a named person decide.
  * @returns {import('node:http').Server}
  */
 function createUiServer(opts) {
   const { store, config } = opts;
   const now = opts.now || (() => new Date());
   const password = opts.password || '';
+  const users = opts.users || new Map();
+  const single = config.trial && config.trial.singleAccount === true;
 
-  function overview() {
+  function overview(user) {
     const control = store.control();
-    const tickets = store.all().map((run) => summarise(run, store.events(run.ticketId), store.live(run.ticketId)));
+    const tickets = store.all().map((run) => {
+      const t = summarise(run, store.events(run.ticketId), store.live(run.ticketId));
+      t.youCanDecide = permission(run, user).can;
+      return t;
+    });
     return {
       project: config.project,
       generatedAt: now().toISOString(),
+      signedInAs: user,
       paused: control.paused === true,
       spentTodayUsd: store.spentToday(),
       dailyLimitUsd: config.limits.costPerDayUsd,
       ticketLimitUsd: config.limits.costPerTicketUsd,
       concurrency: config.concurrency,
       gates: { requirements: config.gates.requirements === true, design: config.gates.design === true, merge: true, release: true },
-      singleAccountTrial: config.trial && config.trial.singleAccount === true,
+      singleAccountTrial: single,
       columns: COLUMNS,
       tickets,
     };
   }
 
-  function authorised(req) {
-    if (!password) return true;
+  /** Who is asking. `user` is '' for someone who may only look. */
+  function identify(req) {
+    const open = !password && users.size === 0;
     const header = String(req.headers.authorization || '');
-    if (!header.startsWith('Basic ')) return false;
+    if (!header.startsWith('Basic ')) return { ok: open, user: '' };
     const given = Buffer.from(header.slice(6), 'base64').toString('utf8');
-    const pass = given.slice(given.indexOf(':') + 1);
-    const a = crypto.createHash('sha256').update(pass).digest();
-    const b = crypto.createHash('sha256').update(password).digest();
-    return crypto.timingSafeEqual(a, b);
+    const i = given.indexOf(':');
+    const name = i === -1 ? '' : given.slice(0, i);
+    const pass = i === -1 ? given : given.slice(i + 1);
+    if (users.has(name) && same(pass, users.get(name))) return { ok: true, user: name };
+    if (password && same(pass, password)) return { ok: true, user: '' };
+    return { ok: open, user: '' };
+  }
+
+  /** May this person decide what this ticket is waiting for? The factory checks again before acting. */
+  function permission(run, user) {
+    const p = run.pending;
+    if (!p || !['waiting_answer', 'waiting_approval'].includes(run.status)) return { can: false, why: 'Nothing is waiting for a decision on this ticket.' };
+    const role = p.kind === 'answer' ? 'answer' : GATE_ROLE[p.gate];
+    const who = roleNames(config, role, run.reporter);
+    if (p.kind === 'approval' && p.gate === 'merge' && !single) {
+      return { can: false, why: `Code is approved on the pull request itself, with a review from ${who}.` };
+    }
+    if (!user) return { can: false, why: `You are signed in to look only. Sign in with your own name to decide. This one is for ${who}.` };
+    if (!inRole(config, role, user, run.reporter)) return { can: false, why: `This decision is for ${who}. You are signed in as ${user}.` };
+    return { can: true, why: '' };
+  }
+
+  function workspaceDir(run) {
+    return path.join(store.dataDir, 'workspaces', safeId(run.ticketId), 'repo');
+  }
+
+  function documents(run) {
+    const out = [];
+    if (!run.featureDir) return out;
+    for (const [file, name] of DOCS) {
+      try {
+        const full = path.join(workspaceDir(run), run.featureDir, file);
+        const text = fs.readFileSync(full, 'utf8');
+        out.push({ name, path: `${run.featureDir}/${file}`, text: text.length > MAX_DOC ? `${text.slice(0, MAX_DOC)}\n\n(cut short: the file is very long)` : text });
+      } catch { /* not written yet */ }
+    }
+    return out;
+  }
+
+  function changes(run) {
+    try {
+      const out = execFileSync('git', ['-c', 'safe.directory=*', 'diff', '--numstat', `origin/${config.repo.baseBranch}...HEAD`], {
+        cwd: workspaceDir(run), encoding: 'utf8', timeout: 15000, stdio: ['ignore', 'pipe', 'ignore'],
+      });
+      return out.split('\n').filter(Boolean).map((line) => {
+        const [added, removed, file] = line.split('\t');
+        return { path: file, added: Number(added) || 0, removed: Number(removed) || 0 };
+      });
+    } catch {
+      return [];
+    }
+  }
+
+  /** Everything a person needs to decide, and nothing else. */
+  function review(run, user) {
+    const events = store.events(run.ticketId);
+    const p = run.pending;
+    const docs = documents(run);
+    const lastEnd = (stage) => events.filter((e) => e.type === 'stage_end' && e.stage === stage && e.status).pop();
+    let ask = null;
+    let reports = [];
+    let doc = null;
+    if (p && p.kind === 'approval') {
+      const a = ASK[p.gate] || { title: `Approve ${p.gate}?`, doc: '', reports: [] };
+      ask = { kind: 'approval', gate: p.gate, title: a.title, since: p.since };
+      reports = a.reports.map(lastEnd).filter(Boolean);
+      doc = docs.find((d) => d.path.endsWith(`/${a.doc}`)) || null;
+    } else if (p && p.kind === 'answer') {
+      ask = { kind: 'answer', stage: p.stage, title: `The agent needs an answer to continue (${p.stage})`, since: p.since };
+      reports = [lastEnd(p.stage)].filter(Boolean);
+    }
+    return {
+      ticket: summarise(run, events, store.live(run.ticketId)),
+      signedInAs: user,
+      ask,
+      permission: permission(run, user),
+      questions: p && p.questions ? p.questions : [],
+      reports: reports.map((e) => ({ stage: e.stage, summary: e.summary || '', assumptions: Array.isArray(e.assumptions) ? e.assumptions : [] })),
+      document: doc,
+      otherDocuments: docs.filter((d) => d !== doc),
+      changes: p && p.kind === 'approval' && p.gate === 'merge' ? changes(run) : [],
+      ticketText: run.body || '',
+      releaseLevel: config.release.level,
+    };
   }
 
   function send(res, code, type, body) {
@@ -192,29 +315,82 @@ function createUiServer(opts) {
     });
     res.end(body);
   }
+  const json = (res, code, value) => send(res, code, 'application/json; charset=utf-8', JSON.stringify(value));
+
+  function readBody(req, limit = 20000) {
+    return new Promise((resolve, reject) => {
+      let size = 0;
+      const chunks = [];
+      req.on('data', (c) => {
+        size += c.length;
+        if (size > limit) { reject(new Error('too large')); req.destroy(); return; }
+        chunks.push(c);
+      });
+      req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+      req.on('error', reject);
+    });
+  }
+
+  /** A person's decision. Written to the factory's inbox; the factory acts on its next pass. */
+  async function decide(req, res, id, user) {
+    // A browser sends the saved sign-in to this address even from another site's page, so a
+    // decision must also prove it came from this page.
+    const origin = req.headers.origin;
+    if (req.headers['x-factory-action'] !== 'decide' || (origin && new URL(origin).host !== req.headers.host)) {
+      return json(res, 403, { error: 'This request did not come from the status page.' });
+    }
+    const run = store.load(id);
+    if (!run) return json(res, 404, { error: 'No such ticket.' });
+    const allowed = permission(run, user);
+    if (!allowed.can) return json(res, 403, { error: allowed.why });
+    let body;
+    try { body = JSON.parse(await readBody(req)); } catch { return json(res, 400, { error: 'The request could not be read.' }); }
+    const kind = body && body.kind;
+    const text = String((body && body.text) || '').trim().slice(0, 8000);
+    const p = run.pending;
+    if (p.kind === 'answer') {
+      if (kind !== 'answer') return json(res, 400, { error: 'This ticket is waiting for an answer.' });
+      if (!text) return json(res, 400, { error: 'Write the answer first.' });
+      store.addDecision(id, { by: user, kind: 'answer', stage: p.stage, text });
+    } else {
+      if (!['approve', 'reject'].includes(kind)) return json(res, 400, { error: 'Choose approve or send back.' });
+      if (kind === 'reject' && !text) return json(res, 400, { error: 'Say what should change, so the work can be redone.' });
+      store.addDecision(id, { by: user, kind, gate: p.gate, text: kind === 'reject' ? text : '' });
+    }
+    return json(res, 202, { ok: true, message: 'Recorded. The factory acts on it at its next pass, usually within a minute.' });
+  }
 
   return http.createServer((req, res) => {
     const url = new URL(req.url, 'http://factory.local');
     if (url.pathname === '/healthz') return send(res, 200, 'text/plain; charset=utf-8', 'ok');
-    if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'text/plain; charset=utf-8', 'This page is read-only.');
-    if (!authorised(req)) {
+    const who = identify(req);
+    if (!who.ok) {
       res.writeHead(401, { 'www-authenticate': 'Basic realm="Agentic Factory", charset="UTF-8"', 'cache-control': 'no-store' });
-      return res.end('A password is required.');
+      return res.end('Sign in to see the factory.');
     }
+    const decision = url.pathname.match(/^\/api\/tickets\/([^/]+)\/decision$/);
+    if (req.method === 'POST' && decision) {
+      return decide(req, res, decodeURIComponent(decision[1]), who.user)
+        .catch((err) => json(res, 500, { error: `The decision could not be recorded: ${err.message}` }));
+    }
+    // Everything else only reads.
+    if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'text/plain; charset=utf-8', 'Not allowed.');
     try {
       if (url.pathname === '/') return send(res, 200, 'text/html; charset=utf-8', PAGE);
-      if (url.pathname === '/api/overview') return send(res, 200, 'application/json; charset=utf-8', JSON.stringify(overview()));
-      const m = url.pathname.match(/^\/api\/tickets\/([^/]+)$/);
+      if (url.pathname === '/api/overview') return json(res, 200, overview(who.user));
+      const m = url.pathname.match(/^\/api\/tickets\/([^/]+)(\/review)?$/);
       if (m) {
         const id = decodeURIComponent(m[1]);
         const run = store.load(id);
-        if (!run) return send(res, 404, 'application/json; charset=utf-8', JSON.stringify({ error: 'No such ticket' }));
+        if (!run) return json(res, 404, { error: 'No such ticket' });
+        if (m[2]) return json(res, 200, review(run, who.user));
         const events = store.events(id);
         const live = store.live(id);
         const ticket = summarise(run, events, live);
+        ticket.youCanDecide = permission(run, who.user).can;
         // Steps of the stage in flight only: once a stage ends, its report in the timeline replaces them.
         const activity = ticket.workingSince ? live.filter((s) => s.stage === ticket.stage) : [];
-        return send(res, 200, 'application/json; charset=utf-8', JSON.stringify({ ticket, stageCost: run.stageCost || {}, activity, timeline: timeline(events) }));
+        return json(res, 200, { ticket, stageCost: run.stageCost || {}, activity, timeline: timeline(events) });
       }
       return send(res, 404, 'text/plain; charset=utf-8', 'Not found');
     } catch (err) {
@@ -224,19 +400,23 @@ function createUiServer(opts) {
 }
 
 /**
- * Decide where the page may listen. Anything other than this machine needs a password.
- * @returns {{host: string, port: number, password: string, problem: string}}
+ * Decide where the page may listen. Anything other than this machine needs a sign-in.
+ *   FACTORY_UI_PASSWORD  one shared password: anyone with it may look, nobody may decide.
+ *   FACTORY_UI_USERS     "name:password,name2:password2": each person may look, and may decide
+ *                        what the config names them for. Use the same names as in `roles`.
+ * @returns {{host: string, port: number, password: string, users: Map<string, string>, problem: string}}
  */
 function listenPlan(config, env = process.env) {
   const ui = config.ui || {};
   const host = env.FACTORY_UI_HOST || ui.host || '127.0.0.1';
   const port = Number(env.FACTORY_UI_PORT || ui.port || 8080);
   const password = env.FACTORY_UI_PASSWORD || '';
+  const users = parseUsers(env.FACTORY_UI_USERS);
   const local = ['127.0.0.1', 'localhost', '::1'].includes(host);
-  const problem = !local && !password
-    ? `The status page is set to listen on ${host}, which other machines can reach, but FACTORY_UI_PASSWORD is not set. Set a password, or use host 127.0.0.1.`
+  const problem = !local && !password && users.size === 0
+    ? `The status page is set to listen on ${host}, which other machines can reach, but neither FACTORY_UI_PASSWORD nor FACTORY_UI_USERS is set. Set one, or use host 127.0.0.1.`
     : '';
-  return { host, port, password, problem };
+  return { host, port, password, users, problem };
 }
 
-module.exports = { createUiServer, listenPlan, summarise, timeline, describe, columnOf, COLUMNS };
+module.exports = { createUiServer, listenPlan, parseUsers, summarise, timeline, describe, columnOf, COLUMNS };
