@@ -27,7 +27,12 @@ class StateStore {
   constructor(dataDir, opts = {}) {
     this.dataDir = path.resolve(dataDir);
     this.now = opts.now || (() => new Date());
-    fs.mkdirSync(path.join(this.dataDir, 'runs'), { recursive: true });
+    try {
+      fs.mkdirSync(path.join(this.dataDir, 'runs'), { recursive: true });
+    } catch (err) {
+      // The status page mounts the data read-only. Reading still works; only writing would fail.
+      if (!fs.existsSync(this.dataDir)) throw err;
+    }
   }
 
   runDir(ticketId) {

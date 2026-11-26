@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agentic Factory</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --panel: #ffffff; --ink: #1c2330; --muted: #5d6878; --line: #dfe3ea;
+    --accent: #2459d6; --ok: #1a7f4b; --warn: #a15c00; --bad: #b3261e; --person: #7a3fc4;
+    --chip: #eef1f6; --shadow: 0 1px 2px rgba(20, 30, 50, .08), 0 4px 14px rgba(20, 30, 50, .06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b; --panel: #1b2029; --ink: #e8ecf3; --muted: #9aa6b8; --line: #2c3442;
+      --accent: #7aa2ff; --ok: #58c98b; --warn: #e3a64a; --bad: #ff8a80; --person: #c39bff;
+      --chip: #262d39; --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 14px 16px 10px; border-bottom: 1px solid var(--line); background: var(--panel); position: sticky; top: 0; z-index: 2; }
+  .top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+  h1 { font-size: 17px; margin: 0; font-weight: 650; }
+  .project { color: var(--muted); }
+  .spacer { flex: 1; }
+  .updated { color: var(--muted); font-size: 12px; }
+  .facts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .fact { background: var(--chip); border-radius: 8px; padding: 6px 10px; min-width: 120px; }
+  .fact b { display: block; font-size: 16px; font-weight: 650; }
+  .fact span { color: var(--muted); font-size: 12px; }
+  .bar { height: 4px; background: var(--line); border-radius: 2px; margin-top: 5px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--accent); }
+  .banner { margin-top: 10px; padding: 7px 10px; border-radius: 8px; font-weight: 600; }
+  .banner.paused { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+  .banner.error { background: color-mix(in srgb, var(--bad) 16%, transparent); color: var(--bad); }
+  .banner.trial { background: var(--chip); color: var(--muted); font-weight: 500; }
+  main { padding: 14px 16px 40px; }
+  .board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(210px, 1fr); gap: 10px; overflow-x: auto; padding-bottom: 8px; }
+  @media (max-width: 760px) { .board { grid-auto-flow: row; grid-auto-columns: auto; } }
+  .col { background: color-mix(in srgb, var(--panel) 55%, transparent); border: 1px solid var(--line); border-radius: 10px; padding: 8px; min-height: 90px; }
+  .col h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 2px 4px 8px; display: flex; justify-content: space-between; }
+  .card { width: 100%; text-align: left; font: inherit; color: inherit; background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 8px; padding: 9px 10px; margin-bottom: 8px; cursor: pointer; box-shadow: var(--shadow); display: block; }
+  .card:hover, .card:focus-visible { border-color: var(--accent); outline: none; }
+  .card.working { border-left-color: var(--accent); }
+  .card.person { border-left-color: var(--person); }
+  .card.done { border-left-color: var(--ok); }
+  .card.returned { border-left-color: var(--bad); }
+  .card .id { color: var(--muted); font-size: 12px; }
+  .card .title { font-weight: 600; margin: 1px 0 6px; overflow-wrap: anywhere; }
+  .state { font-size: 12.5px; }
+  .state.working { color: var(--accent); }
+  .state.person { color: var(--person); font-weight: 600; }
+  .state.done { color: var(--ok); }
+  .state.returned { color: var(--bad); }
+  .meta { color: var(--muted); font-size: 12px; margin-top: 5px; display: flex; flex-wrap: wrap; gap: 4px 10px; }
+  .pulse { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-right: 5px; animation: pulse 1.4s infinite; }
+  @keyframes pulse { 50% { opacity: .25; } }
+  @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+  .empty { color: var(--muted); padding: 30px 6px; text-align: center; }
+  aside { position: fixed; inset: 0 0 0 auto; width: min(560px, 100%); background: var(--panel); border-left: 1px solid var(--line); box-shadow: var(--shadow); transform: translateX(105%); transition: transform .18s ease; z-index: 5; display: flex; flex-direction: column; }
+  aside.open { transform: none; }
+  @media (prefers-reduced-motion: reduce) { aside { transition: none; } }
+  .ahead { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; gap: 10px; align-items: flex-start; }
+  .ahead h3 { margin: 0; font-size: 16px; overflow-wrap: anywhere; }
+  .close { margin-left: auto; font: inherit; background: var(--chip); color: var(--ink); border: 0; border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+  .abody { padding: 12px 16px 30px; overflow-y: auto; }
+  .links a { color: var(--accent); margin-right: 14px; overflow-wrap: anywhere; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 10px 0 14px; }
+  .kv dt { color: var(--muted); } .kv dd { margin: 0; overflow-wrap: anywhere; }
+  .box { background: var(--chip); border-radius: 8px; padding: 9px 11px; margin: 10px 0; }
+  .box h4 { margin: 0 0 5px; font-size: 13px; }
+  .box ol, .box ul { margin: 0; padding-left: 20px; }
+  .tl { list-style: none; margin: 14px 0 0; padding: 0; border-left: 2px solid var(--line); }
+  .tl li { position: relative; padding: 0 0 12px 16px; }
+  .tl li::before { content: ""; position: absolute; left: -6px; top: 5px; width: 10px; height: 10px; border-radius: 50%; background: var(--muted); border: 2px solid var(--panel); }
+  .tl li.work::before { background: var(--accent); } .tl li.ok::before { background: var(--ok); }
+  .tl li.warn::before { background: var(--warn); } .tl li.bad::before { background: var(--bad); } .tl li.person::before { background: var(--person); }
+  .tl time { color: var(--muted); font-size: 12px; margin-right: 8px; white-space: nowrap; }
+  .tl .more { color: var(--muted); font-size: 12.5px; margin-top: 3px; overflow-wrap: anywhere; }
+  .tl details { margin-top: 4px; font-size: 12.5px; } .tl summary { cursor: pointer; color: var(--muted); }
+  .legend { color: var(--muted); font-size: 12px; margin-top: 14px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <h1>Agentic Factory</h1>
+    <span class="project" id="project"></span>
+    <span class="spacer"></span>
+    <span class="updated" id="updated">Loading…</span>
+  </div>
+  <div class="facts" id="facts"></div>
+  <div id="banners"></div>
+</header>
+<main>
+  <div class="board" id="board"></div>
+  <p class="legend">This page only shows what the factory is doing. Answers and approvals are given on the ticket itself.</p>
+</main>
+<aside id="panel" aria-hidden="true">
+  <div class="ahead"><div><div class="id" id="pid"></div><h3 id="ptitle"></h3></div><button class="close" id="close">Close</button></div>
+  <div class="abody" id="pbody"></div>
+</aside>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var openId = null;
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined && text !== null) n.textContent = text;
+    return n;
+  }
+  function money(n) { return 'USD ' + Number(n || 0).toFixed(2); }
+  function ago(iso) {
+    if (!iso) return '';
+    var s = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+    if (s < 60) return s + 's';
+    if (s < 3600) return Math.round(s / 60) + ' min';
+    if (s < 172800) return (s / 3600).toFixed(1) + ' h';
+    return Math.round(s / 86400) + ' days';
+  }
+  function clock(iso) {
+    var d = new Date(iso);
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+  function tone(t) {
+    if (t.status === 'done') return 'done';
+    if (t.column === 'Returned to people') return 'returned';
+    if (t.needsPerson) return 'person';
+    if (t.workingSince) return 'working';
+    return '';
+  }
+  function safeLink(url, label) {
+    if (!/^https?:\/\//i.test(url || '')) return null;
+    var a = el('a', null, label);
+    a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    return a;
+  }
+
+  function renderFacts(o) {
+    var f = $('facts'); f.textContent = '';
+    var active = o.tickets.filter(function (t) { return ['running', 'waiting_answer', 'waiting_approval'].indexOf(t.status) !== -1; });
+    var working = o.tickets.filter(function (t) { return t.workingSince; }).length;
+    var waiting = o.tickets.filter(function (t) { return t.needsPerson; }).length;
+    var done = o.tickets.filter(function (t) { return t.status === 'done'; }).length;
+    function fact(big, small, share) {
+      var d = el('div', 'fact'); d.appendChild(el('b', null, big)); d.appendChild(el('span', null, small));
+      if (share !== undefined) { var b = el('div', 'bar'); var i = el('i'); i.style.width = Math.min(100, Math.round(share * 100)) + '%'; b.appendChild(i); d.appendChild(b); }
+      f.appendChild(d);
+    }
+    fact(String(working), 'agent working now (limit ' + o.concurrency + ')');
+    fact(String(waiting), waiting === 1 ? 'ticket waiting for a person' : 'tickets waiting for a person');
+    fact(String(active.length), 'in progress');
+    fact(String(done), 'released');
+    fact(money(o.spentTodayUsd), 'spent today of ' + money(o.dailyLimitUsd), o.dailyLimitUsd ? o.spentTodayUsd / o.dailyLimitUsd : 0);
+    var gates = ['requirements', 'design', 'merge', 'release'].filter(function (g) { return o.gates[g]; });
+    fact(String(gates.length), 'approval stops: ' + gates.join(', '));
+  }
+
+  function renderBanners(o) {
+    var b = $('banners'); b.textContent = '';
+    if (o.paused) b.appendChild(el('div', 'banner paused', 'The factory is paused. Stages in flight finish; no new stage starts.'));
+    if (o.singleAccountTrial) b.appendChild(el('div', 'banner trial', 'Single-account trial mode is on: the factory and the approver share one account.'));
+  }
+
+  function card(t) {
+    var c = el('button', 'card ' + tone(t));
+    c.type = 'button';
+    c.appendChild(el('div', 'id', '#' + t.id + (t.startedGroomed ? ' · already groomed' : '')));
+    c.appendChild(el('div', 'title', t.title || '(no title)'));
+    var s = el('div', 'state ' + tone(t));
+    if (t.workingSince) s.appendChild(el('span', 'pulse'));
+    s.appendChild(document.createTextNode(t.state + (t.workingSince ? ' · ' + ago(t.workingSince) : '') + (t.needsPerson && t.waitingSince ? ' · ' + ago(t.waitingSince) : '')));
+    c.appendChild(s);
+    var m = el('div', 'meta');
+    m.appendChild(el('span', null, money(t.costUsd)));
+    if (t.activeMinutes) m.appendChild(el('span', null, t.activeMinutes + ' min of agent time'));
+    c.appendChild(m);
+    c.addEventListener('click', function () { openTicket(t.id); });
+    return c;
+  }
+
+  function renderBoard(o) {
+    var board = $('board'); board.textContent = '';
+    if (!o.tickets.length) { board.appendChild(el('div', 'empty', 'No tickets yet. Add the factory-ready or factory-groomed label to a ticket to start.')); return; }
+    o.columns.forEach(function (name) {
+      var items = o.tickets.filter(function (t) { return t.column === name; });
+      var col = el('section', 'col');
+      var h = el('h2'); h.appendChild(el('span', null, name)); h.appendChild(el('span', null, String(items.length)));
+      col.appendChild(h);
+      items.sort(function (a, b) { return String(b.updatedAt).localeCompare(String(a.updatedAt)); }).forEach(function (t) { col.appendChild(card(t)); });
+      board.appendChild(col);
+    });
+  }
+
+  function renderTicket(d) {
+    var t = d.ticket;
+    $('pid').textContent = '#' + t.id + ' · ' + t.state;
+    $('ptitle').textContent = t.title || '(no title)';
+    var b = $('pbody'); b.textContent = '';
+    var links = el('div', 'links');
+    var a1 = safeLink(t.url, 'Open the ticket'); if (a1) links.appendChild(a1);
+    var a2 = safeLink(t.pr, 'Open the pull request'); if (a2) links.appendChild(a2);
+    if (links.childNodes.length) b.appendChild(links);
+
+    var kv = el('dl', 'kv');
+    function row(k, v) { if (v === '' || v === undefined || v === null) return; kv.appendChild(el('dt', null, k)); kv.appendChild(el('dd', null, v)); }
+    row('Stage', t.stage);
+    row('Started as', t.startedGroomed ? 'An already groomed ticket (starts at design)' : 'A raw ticket (the factory grooms it)');
+    row('Cost so far', money(t.costUsd));
+    var per = Object.keys(d.stageCost || {}).map(function (k) { return k + ' ' + Number(d.stageCost[k]).toFixed(2); }).join(' · ');
+    row('Cost by stage', per);
+    row('Agent time', t.activeMinutes ? t.activeMinutes + ' min' : '');
+    row('Branch', t.branch);
+    row('Waiting for', t.waitingFor ? t.waitingFor + ' · ' + ago(t.waitingSince) : '');
+    row('Reason', t.reason);
+    b.appendChild(kv);
+
+    if (t.questions && t.questions.length) {
+      var q = el('div', 'box'); q.appendChild(el('h4', null, 'Questions waiting for an answer on the ticket'));
+      var ol = el('ol'); t.questions.forEach(function (x) { ol.appendChild(el('li', null, x)); }); q.appendChild(ol); b.appendChild(q);
+    }
+
+    var tl = el('ol', 'tl');
+    d.timeline.slice().reverse().forEach(function (e) {
+      var li = el('li', e.kind);
+      li.appendChild(el('time', null, clock(e.at)));
+      li.appendChild(document.createTextNode(e.text));
+      var extra = [];
+      if (e.seconds !== undefined) extra.push(e.seconds + 's');
+      if (e.costUsd !== undefined) extra.push(money(e.costUsd));
+      if (extra.length) li.appendChild(el('div', 'more', extra.join(' · ')));
+      if (e.summary) { var ds = el('details'); ds.appendChild(el('summary', null, 'What the agent reported')); ds.appendChild(el('div', 'more', e.summary)); li.appendChild(ds); }
+      if (e.assumptions.length) {
+        var da = el('details'); da.appendChild(el('summary', null, e.assumptions.length + ' decision(s) taken without a person'));
+        var ul = el('ul'); e.assumptions.forEach(function (x) { ul.appendChild(el('li', null, (x.decision || '') + ' — based on: ' + (x.basis || ''))); });
+        da.appendChild(ul); li.appendChild(da);
+      }
+      if (e.questions.length) {
+        var dq = el('details'); dq.appendChild(el('summary', null, 'The questions'));
+        var oq = el('ol'); e.questions.forEach(function (x) { oq.appendChild(el('li', null, (x.question || '') + (x.why ? ' — ' + x.why : ''))); });
+        dq.appendChild(oq); li.appendChild(dq);
+      }
+      tl.appendChild(li);
+    });
+    b.appendChild(tl);
+  }
+
+  function openTicket(id) {
+    openId = id;
+    $('panel').classList.add('open'); $('panel').setAttribute('aria-hidden', 'false');
+    loadTicket();
+  }
+  function closePanel() { openId = null; $('panel').classList.remove('open'); $('panel').setAttribute('aria-hidden', 'true'); }
+  $('close').addEventListener('click', closePanel);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePanel(); });
+
+  function loadTicket() {
+    if (!openId) return;
+    fetch('/api/tickets/' + encodeURIComponent(openId), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { if (d && openId === d.ticket.id) renderTicket(d); })
+      .catch(function () {});
+  }
+
+  function load() {
+    fetch('/api/overview', { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (o) {
+        $('project').textContent = o.project;
+        $('updated').textContent = 'Updated ' + new Date(o.generatedAt).toLocaleTimeString();
+        renderFacts(o); renderBanners(o); renderBoard(o);
+        loadTicket();
+      })
+      .catch(function (err) {
+        var b = $('banners'); b.textContent = '';
+        b.appendChild(el('div', 'banner error', 'Cannot reach the factory (' + err.message + '). Showing the last known state.'));
+      });
+  }
+  load();
+  setInterval(load, 5000);
+})();
+</script>
+</body>
+</html>

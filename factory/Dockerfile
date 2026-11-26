@@ -51,5 +51,8 @@ ENV FACTORY_SANDBOXED=1 \
 # State, audit trail, workspaces and agent sessions all live here. Mount a volume.
 VOLUME ["/data"]
 
+# The read-only status page (`orbit-factory ui`, or `run` with ui.enabled).
+EXPOSE 8080
+
 ENTRYPOINT ["node", "/opt/orbit/factory/bin/factory.js"]
 CMD ["run"]

@@ -101,6 +101,14 @@ const DEFAULTS = Object.freeze({
     envPassthrough: [],
   },
   pollSeconds: 60,
+  ui: {
+    // The read-only status page. `orbit-factory ui` serves it; `orbit-factory run` also serves
+    // it when `enabled` is true. It listens on this machine only unless a password is set in
+    // FACTORY_UI_PASSWORD (then FACTORY_UI_HOST=0.0.0.0 makes it reachable from outside).
+    enabled: false,
+    host: '127.0.0.1',
+    port: 8080,
+  },
   trial: {
     // TRIAL USE ONLY. For a one-person trial where the factory has to run under that person's
     // own account. When true: comments from the factory's account count as the person's (the
@@ -170,6 +178,7 @@ function validate(cfg, raw = {}) {
   }
   if (!RELEASE_LEVELS.includes(cfg.release.level)) problems.push(`release.level must be one of ${RELEASE_LEVELS.join(', ')}`);
   if (typeof cfg.trial.singleAccount !== 'boolean') problems.push('trial.singleAccount must be true or false');
+  num('ui.port', cfg.ui.port, 1, 65535);
   num('concurrency', cfg.concurrency, 1, 5);
   num('limits.costPerTicketUsd', cfg.limits.costPerTicketUsd, 0.01);
   num('limits.costPerStageUsd', cfg.limits.costPerStageUsd, 0.01);

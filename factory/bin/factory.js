@@ -8,6 +8,7 @@ const { load } = require('../src/config');
 const { createFactory } = require('../src/index');
 const { preflight } = require('../src/preflight');
 const { StateStore } = require('../src/state');
+const { createUiServer, listenPlan } = require('../src/ui/server');
 
 const USAGE = `orbit-factory — run pai-orbit unattended, from backlog to release
 
@@ -19,6 +20,7 @@ Running
   preflight               Check the setup without starting anything
 
 Watching
+  ui                      Serve the read-only status page (board, timeline, totals)
   status [--json]         Stage, what each ticket waits on, cost so far
   events <ticket>         The audit trail of one ticket
 
@@ -98,10 +100,33 @@ async function main(argv) {
     return 0;
   }
 
-  if (!['status', 'preflight', 'once', 'run', 'local'].includes(command)) {
+  if (!['status', 'preflight', 'once', 'run', 'local', 'ui'].includes(command)) {
     throw new Error(`Unknown command: ${command}. Run "orbit-factory --help".`);
   }
   const config = load(configFile);
+
+  /** Start the status page. Resolves with the server, or null when it must not start. */
+  const startUi = () => new Promise((resolve, reject) => {
+    const plan = listenPlan(config);
+    if (plan.problem) { reject(new Error(plan.problem)); return; }
+    const server = createUiServer({ store: new StateStore(dataDir), config, password: plan.password });
+    server.once('error', reject);
+    server.listen(plan.port, plan.host, () => {
+      log(`status page: http://${plan.host === '0.0.0.0' ? 'localhost' : plan.host}:${plan.port}/${plan.password ? ' (password required)' : ' (this machine only)'}`);
+      resolve(server);
+    });
+  });
+
+  if (command === 'ui') {
+    const server = await startUi();
+    await new Promise((resolve) => {
+      const stop = () => server.close(() => resolve());
+      process.on('SIGINT', stop);
+      process.on('SIGTERM', stop);
+    });
+    return 0;
+  }
+
   const factory = createFactory(config, { dataDir, log });
 
   switch (command) {
@@ -137,6 +162,9 @@ async function main(argv) {
       const stop = () => { stopping = true; log('stopping after the stages in flight finish'); };
       process.on('SIGINT', stop);
       process.on('SIGTERM', stop);
+      if (config.ui.enabled) {
+        try { await startUi(); } catch (err) { log(`status page not started: ${err.message}`); }
+      }
       log(`factory started for ${config.project}; polling every ${config.pollSeconds}s`);
       while (!stopping) {
         try { await factory.tick(); } catch (err) { log(`tick failed: ${err.message}`); }
