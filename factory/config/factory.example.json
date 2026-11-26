@@ -86,5 +86,8 @@
     "level": "tag",
     "envPassthrough": []
   },
-  "pollSeconds": 60
+  "pollSeconds": 60,
+  "trial": {
+    "singleAccount": false
+  }
 }

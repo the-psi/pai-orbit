@@ -228,6 +228,22 @@ Linear, Azure DevOps) that are not code hosts.
 7. `factory preflight` checks the project before the factory starts and refuses to run if the base
    branch is unprotected on a code host that supports protection.
 
+## Single-account trial mode
+
+Added 2026-11-26 so that a one-person trial can run against a real code host without a second
+account. It is a setting, `trial.singleAccount`, off by default, and it is deliberately not a way
+to run a real factory.
+
+With it on, the factory's account may be named in roles; every comment the factory posts carries a
+marker and the factory skips marked comments when it looks for answers and approvals; and the merge
+gate accepts an `/approve` comment on the ticket, recorded against the pull request's head commit,
+because a code host refuses a review of one's own pull request. The fixed gates still exist: nothing
+merges or releases without a comment a person typed.
+
+What it gives up is REQ-40's guarantee that the approver is not the factory's own identity. That is
+why `preflight` warns while it is on. The proper answer for shared work is a separate identity for
+the factory: a bot account or a GitHub App.
+
 ## Configuration
 
 One JSON file per project, owned by the operator and read from outside the ticket workspace, so a

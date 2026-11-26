@@ -16,6 +16,14 @@ const { slugify } = require('./workspace');
 
 const HOUR = 3600 * 1000;
 
+// Every comment the factory posts ends with this marker. It is how the factory tells its own
+// comments from a person's when both come from one account (single-account trial).
+const FACTORY_MARK = '<!-- orbit-factory -->';
+
+function isFactoryComment(comment) {
+  return /<!--\s*orbit-factory/.test(String(comment.body || ''));
+}
+
 // Environment variables the agent process may inherit. Board, code-host and chat credentials
 // are never in this list, so the agent cannot use them (REQ-11, REQ-36, REQ-43).
 const AGENT_ENV = [
@@ -251,7 +259,7 @@ class Factory {
     run.groomedBy = 'person';
     this.store.save(run);
     this.store.event(run.ticketId, 'groomed_ticket', { requirements: `${found}/requirements.md` });
-    await this._guard(run, 'groomed comment', () => this.board.comment(run.ticketId,
+    await this._guard(run, 'groomed comment', () => this._post(run.ticketId,
       `Picked up as an already groomed ticket. Using \`${found}/requirements.md\` and starting at design.`));
     return this._moveTo(run, 'design');
   }
@@ -534,9 +542,22 @@ class Factory {
     return false;
   }
 
+  /** Post a comment as the factory, marked so the factory can recognise it later. */
+  async _post(ticketId, body) {
+    return this.board.comment(ticketId, `${body}\n\n${FACTORY_MARK}`);
+  }
+
+  _single() {
+    return this.config.trial.singleAccount === true;
+  }
+
   _inRole(role, user, reporter) {
     const list = this.config.roles[role] || [];
-    if (!user || user === this.config.board.botUser) return false; // REQ-40
+    if (!user) return false;
+    // The factory's own account never counts (REQ-40), except in a single-account trial, where
+    // the person and the factory share one account and the factory's own comments are skipped
+    // by their marker instead.
+    if (user === this.config.board.botUser && !this._single()) return false;
     return list.includes(user) || list.includes('*') || (list.includes('@reporter') && user === reporter);
   }
 
@@ -564,7 +585,11 @@ class Factory {
       return false;
     }
     // Re-check the approval against the current head: an approval on an older commit is void (REQ-41).
-    const approval = this._approverReviews(run, status).find((r) => r.state === 'approved' && r.sha === status.headSha);
+    let approval = this._approverReviews(run, status).find((r) => r.state === 'approved' && r.sha === status.headSha);
+    const byComment = run.approvals.mergeComment;
+    if (!approval && this._single() && byComment && byComment.sha === status.headSha) {
+      approval = { author: byComment.by, submittedAt: byComment.at, sha: byComment.sha };
+    }
     if (!approval) {
       await this._parkForApproval(run, 'merge', `The pull request changed after it was approved, so it needs approval again: ${run.pr.url}`);
       return false;
@@ -653,7 +678,7 @@ class Factory {
       const run = this.store.load(stale.ticketId);
       if (!run || run.status !== 'running') continue;
       if (ok) {
-        await this._guard(run, 'release comment', () => this.board.comment(run.ticketId, `Released (level \`${this.config.release.level}\`).\n\n${outcome.result.summary}`));
+        await this._guard(run, 'release comment', () => this._post(run.ticketId, `Released (level \`${this.config.release.level}\`).\n\n${outcome.result.summary}`));
         await this._notify(run, 'released', `Released at level ${this.config.release.level}.`);
         this.store.event(run.ticketId, 'released', { level: this.config.release.level });
         await this._moveTo(run, 'done'); // also applies the stage-to-column map (REQ-6)
@@ -682,7 +707,7 @@ class Factory {
       '',
       '<!-- orbit-factory:question -->',
     ].join('\n');
-    const comment = await this.board.comment(run.ticketId, body);
+    const comment = await this._post(run.ticketId, body);
     run.status = 'waiting_answer';
     run.resume = stageName;
     run.pending = { kind: 'answer', stage: stageName, questions, since: comment.createdAt, reminded: false, escalated: false };
@@ -695,10 +720,12 @@ class Factory {
   async _parkForApproval(run, gate, text) {
     const role = GATE_ROLE[gate];
     const who = this._roleNames(role, run);
-    const how = gate === 'merge'
+    const how = gate === 'merge' && this._single()
+      ? `Single-account trial: reply \`/approve\` on this ticket to merge the pull request, or \`/reject <what to change>\`. Only a reply from ${who} counts.`
+      : gate === 'merge'
       ? `Approve by submitting an approving review on the pull request. Only a review from ${who} counts, and it must be on the latest commit.`
       : `Reply \`/approve\` on this ticket to continue, or \`/reject <what to change>\`. Only a reply from ${who} counts.`;
-    const comment = await this.board.comment(run.ticketId, [
+    const comment = await this._post(run.ticketId, [
       `### Approval needed: ${gate}`,
       '',
       text,
@@ -758,7 +785,7 @@ class Factory {
 
   async _checkAnswer(run, ticket) {
     const comments = await this.board.commentsSince(run.ticketId, run.pending.since);
-    const answers = comments.filter((c) => this._inRole('answer', c.author, ticket.reporter));
+    const answers = comments.filter((c) => !isFactoryComment(c) && this._inRole('answer', c.author, ticket.reporter));
     if (!answers.length) return this._timers(run, 'an answer');
     const text = answers.map((c) => `**${c.author}** (${c.createdAt}):\n\n${quote(c.body)}`).join('\n\n');
     const dir = await this.workspace.prepare(run.ticketId, run.branch);
@@ -788,7 +815,7 @@ class Factory {
     const role = GATE_ROLE[gate];
     const comments = await this.board.commentsSince(run.ticketId, run.pending.since);
     for (const c of comments) {
-      if (!this._inRole(role, c.author, ticket.reporter)) continue; // REQ-39
+      if (isFactoryComment(c) || !this._inRole(role, c.author, ticket.reporter)) continue; // REQ-39
       const body = c.body.trim();
       if (/^\/approve\b/i.test(body)) {
         if (gate === 'release' && this.config.release.level === 'production'
@@ -796,7 +823,7 @@ class Factory {
           if (!run.pending.distinctNoted) {
             run.pending.distinctNoted = true;
             this.store.save(run);
-            await this.board.comment(run.ticketId, `A production release needs a different approver from the person who approved the merge (${c.author}).`);
+            await this._post(run.ticketId, `A production release needs a different approver from the person who approved the merge (${c.author}).`);
           }
           continue;
         }
@@ -837,6 +864,30 @@ class Factory {
     if (status.state === 'closed') {
       await this._handBack(run, 'The pull request was closed without being merged.');
       return undefined;
+    }
+    if (this._single()) {
+      // A code host does not let an account approve its own pull request, so in a single-account
+      // trial the approval is a comment on the ticket. It is tied to the commit it was given for.
+      const comments = await this.board.commentsSince(run.ticketId, run.pending.since);
+      for (const c of comments) {
+        if (isFactoryComment(c) || !this._inRole('mergeApprover', c.author, run.reporter)) continue;
+        const body = c.body.trim();
+        if (/^\/approve\b/i.test(body)) {
+          run.approvals.mergeComment = { by: c.author, at: c.createdAt, sha: status.headSha };
+          run.pending = null;
+          run.status = 'running'; // stage is already 'merge'
+          this.store.save(run);
+          this.store.event(run.ticketId, 'approved', { gate: 'merge', by: c.author, how: 'comment (single-account trial)' });
+          await this._guard(run, 'waiting label', () => this.board.setState(run.ticketId, { waiting: false }));
+          return undefined;
+        }
+        if (/^\/reject\b/i.test(body)) {
+          const feedback = body.replace(/^\/reject\b/i, '').trim() || 'Rejected without a stated reason.';
+          this.store.event(run.ticketId, 'rejected', { gate: 'merge', by: c.author });
+          await this._rework(run, 'merge', { source: `code review, ${c.author}`, text: feedback });
+          return undefined;
+        }
+      }
     }
     const reviews = this._approverReviews(run, status);
     const changes = reviews.filter((r) => r.state === 'changes_requested' && new Date(r.submittedAt) > new Date(run.pending.since));
@@ -886,7 +937,7 @@ class Factory {
       run.pending.reminded = true;
       this.store.save(run);
       this.store.event(run.ticketId, 'escalation', { waitingFor: what });
-      await this._guard(run, 'escalation comment', () => this.board.comment(run.ticketId, `Escalation: the factory has waited ${Math.floor(hours)} working hours for ${what}.`));
+      await this._guard(run, 'escalation comment', () => this._post(run.ticketId, `Escalation: the factory has waited ${Math.floor(hours)} working hours for ${what}.`));
       await this._notify(run, 'escalation', `Still waiting for ${what} after ${Math.floor(hours)} working hours.`, this.config.roles.escalation);
       return;
     }
@@ -894,7 +945,7 @@ class Factory {
       run.pending.reminded = true;
       this.store.save(run);
       this.store.event(run.ticketId, 'reminder', { waitingFor: what });
-      await this._guard(run, 'reminder comment', () => this.board.comment(run.ticketId, `Reminder: the factory is waiting for ${what}.`));
+      await this._guard(run, 'reminder comment', () => this._post(run.ticketId, `Reminder: the factory is waiting for ${what}.`));
       await this._notify(run, 'reminder', `Waiting for ${what}.`);
     }
   }
@@ -922,7 +973,7 @@ class Factory {
     run.handBackReason = reason;
     this.store.save(run);
     this.store.event(run.ticketId, 'handed_back', { stage: stageAt, reason });
-    await this._guard(run, 'hand-back comment', () => this.board.comment(run.ticketId, [
+    await this._guard(run, 'hand-back comment', () => this._post(run.ticketId, [
       '### The factory handed this ticket back',
       '',
       `**Stage:** ${stageAt}`,
@@ -943,7 +994,7 @@ class Factory {
     run.declineReason = reason;
     this.store.save(run);
     this.store.event(run.ticketId, 'declined', { stage: run.stage, reason });
-    await this._guard(run, 'decline comment', () => this.board.comment(run.ticketId, `### The factory declined this ticket\n\n${reason}`));
+    await this._guard(run, 'decline comment', () => this._post(run.ticketId, `### The factory declined this ticket\n\n${reason}`));
     await this._guard(run, 'release ticket', () => this.board.release(run.ticketId, { declined: true }));
     await this._notify(run, 'declined', reason);
   }
@@ -1010,4 +1061,4 @@ function quote(text) {
   return String(text).split('\n').map((l) => `> ${l}`).join('\n');
 }
 
-module.exports = { Factory, AGENT_ENV, globToRegExp, sensitiveHits };
+module.exports = { Factory, AGENT_ENV, globToRegExp, sensitiveHits, FACTORY_MARK, isFactoryComment };

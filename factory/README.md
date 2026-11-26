@@ -175,6 +175,33 @@ The cost defaults are estimates, not measurements. Reset them after the first 10
 - Protect the base branch on the code host as a second line. `preflight` fails if GitHub reports it
   unprotected.
 
+## Single-account trial mode
+
+For a one-person trial where no second account exists for the factory. Off by default.
+
+```json
+"board": { "botUser": "<your own login>" },
+"trial": { "singleAccount": true }
+```
+
+What changes when it is on:
+
+- Comments from the factory's account count as yours. The factory marks every comment it posts
+  and skips those, so it never answers or approves its own requests.
+- Code is approved with an `/approve` comment on the ticket (or `/reject <what to change>`), not a
+  pull request review, because a code host does not let an account approve its own pull request.
+  The approval is tied to the commit it was given for.
+- The base branch can require a pull request but must require zero approvals.
+
+What you lose: the guarantee that the approver is someone other than the factory. `preflight`
+prints a warning for as long as it is on. Do not use it for shared or customer work; give the
+factory its own identity instead (a bot account, or a GitHub App).
+
+Give the factory a token that can reach only the repo it works on. With your own account, that
+means a fine-grained token limited to that one repository. Never give it a token or a login that
+can reach your other repositories, and run it in the container, not directly on a machine where
+you are logged in to your code host.
+
 ## When something goes wrong
 
 The factory hands a ticket back to people when a stage fails twice, tests still fail after three fix
@@ -196,6 +223,8 @@ current stage.
 - **Release steps that commit to a protected base branch will be refused by the code host.** At
   release level `tag`, keep the release steps to tagging, or let the project's own pipeline do the
   rest.
+- **The factory and its agent share one container.** The agent is not given the code-host token,
+  but a determined process in the same container could find it. Scope the token to the one repo.
 - **The working calendar has no public holidays.**
 - **GitHub Projects column moves are not done.** Labels carry the state.
 - **On Windows outside Docker, orbit's `bash-guard` hook is off by default** because it needs bash

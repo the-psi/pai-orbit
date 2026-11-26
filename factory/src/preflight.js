@@ -48,9 +48,15 @@ async function preflight(config, opts = {}) {
   if (opts.codeHost) {
     let protectedBase = null;
     try { protectedBase = await opts.codeHost.baseProtected(config.repo.baseBranch); } catch { protectedBase = null; }
-    if (protectedBase === true) add('branch protection', 'ok', `${config.repo.baseBranch} requires review`);
+    const single = config.trial && config.trial.singleAccount === true;
+    if (single && protectedBase === true) add('branch protection', 'warn', `${config.repo.baseBranch} has a review rule. In a single-account trial the required number of approvals must be 0, because an account cannot approve its own pull request`);
+    else if (single && protectedBase === false) add('branch protection', 'warn', `${config.repo.baseBranch} does not require a review before merge; acceptable only for a single-account trial`);
+    else if (protectedBase === true) add('branch protection', 'ok', `${config.repo.baseBranch} requires review`);
     else if (protectedBase === false) add('branch protection', 'fail', `${config.repo.baseBranch} does not require a review before merge; protect it before running the factory`);
     else add('branch protection', 'warn', `could not confirm that ${config.repo.baseBranch} is protected on this code host`);
+  }
+  if (config.trial && config.trial.singleAccount === true) {
+    add('trial mode', 'warn', 'single-account trial is ON: the factory and the approver are the same account, and code is approved by a comment. Trial use only');
   }
   if (config.notifier.type === 'slack' && !env[config.notifier.webhookEnv]) {
     add('chat alerts', 'warn', `${config.notifier.webhookEnv} is not set; alerts go to the console`);

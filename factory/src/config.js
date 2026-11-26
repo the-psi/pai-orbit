@@ -101,6 +101,15 @@ const DEFAULTS = Object.freeze({
     envPassthrough: [],
   },
   pollSeconds: 60,
+  trial: {
+    // TRIAL USE ONLY. For a one-person trial where the factory has to run under that person's
+    // own account. When true: comments from the factory's account count as the person's (the
+    // factory recognises and skips the comments it wrote itself), and code is approved with an
+    // `/approve` comment on the ticket instead of a pull request review, because a code host
+    // does not let an account approve its own pull request. This removes the guarantee that
+    // the approver is someone other than the factory. Never use it for shared or customer work.
+    singleAccount: false,
+  },
 });
 
 const RELEASE_LEVELS = ['tag', 'staging', 'production'];
@@ -160,6 +169,7 @@ function validate(cfg, raw = {}) {
     problems.push('runner.permissionMode bypassPermissions is allowed only inside the factory container (FACTORY_SANDBOXED=1)');
   }
   if (!RELEASE_LEVELS.includes(cfg.release.level)) problems.push(`release.level must be one of ${RELEASE_LEVELS.join(', ')}`);
+  if (typeof cfg.trial.singleAccount !== 'boolean') problems.push('trial.singleAccount must be true or false');
   num('concurrency', cfg.concurrency, 1, 5);
   num('limits.costPerTicketUsd', cfg.limits.costPerTicketUsd, 0.01);
   num('limits.costPerStageUsd', cfg.limits.costPerStageUsd, 0.01);
@@ -190,7 +200,7 @@ function validate(cfg, raw = {}) {
   roleList('escalation', false);
   const bot = cfg.board.botUser;
   for (const name of ['requirementsApprover', 'designApprover', 'mergeApprover', 'releaseApprover']) {
-    if (Array.isArray(cfg.roles[name]) && cfg.roles[name].includes(bot)) {
+    if (Array.isArray(cfg.roles[name]) && cfg.roles[name].includes(bot) && cfg.trial.singleAccount !== true) {
       problems.push(`roles.${name} must not include the factory's own identity (${bot})`);
     }
   }
