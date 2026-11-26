@@ -61,7 +61,7 @@ test('single-account trial: one account asks, answers, approves, merges and rele
     await rig.factory.runUntilIdle();
     const run = rig.run('1');
     assert.equal(run.pending.gate, 'merge', rig.logs.join('\n'));
-    assert.match(rig.comments('1').at(-1).body, /Single-account trial: reply `\/approve` on this ticket to merge/);
+    assert.match(rig.comments('1').at(-1).body, /Single-account trial: reply `approve` on this ticket to merge/);
   });
 
   await t.test('no merge happens until the person approves by comment', async () => {

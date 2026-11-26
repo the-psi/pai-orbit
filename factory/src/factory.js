@@ -20,6 +20,24 @@ const HOUR = 3600 * 1000;
 // comments from a person's when both come from one account (single-account trial).
 const FACTORY_MARK = '<!-- orbit-factory -->';
 
+/**
+ * Read a person's approval or rejection from a comment.
+ * People reply the way the tool in front of them makes easy: with "Quote reply", which puts the
+ * quoted text first, and with or without the slash. So quoted lines are skipped, and the first
+ * line a person actually typed decides: `/approve`, `approve`, `approved`, or `/reject <why>`,
+ * `reject <why>`. Anything else is not a decision.
+ * @returns {{approve: true}|{reject: true, text: string}|null}
+ */
+function decisionOf(body) {
+  const lines = String(body || '').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('>'));
+  if (!lines.length) return null;
+  const first = lines[0];
+  if (/^\/approve\b/i.test(first) || /^approved?[.!]?$/i.test(first)) return { approve: true };
+  const m = first.match(/^\/reject(?:ed)?\b[\s:,-]*(.*)$/i) || first.match(/^reject(?:ed)?\b[\s:,-]*(.*)$/i);
+  if (m) return { reject: true, text: [m[1], ...lines.slice(1)].join('\n').trim() };
+  return null;
+}
+
 function isFactoryComment(comment) {
   return /<!--\s*orbit-factory/.test(String(comment.body || ''));
 }
@@ -735,10 +753,10 @@ class Factory {
     const role = GATE_ROLE[gate];
     const who = this._roleNames(role, run);
     const how = gate === 'merge' && this._single()
-      ? `Single-account trial: reply \`/approve\` on this ticket to merge the pull request, or \`/reject <what to change>\`. Only a reply from ${who} counts.`
+      ? `Single-account trial: reply \`approve\` on this ticket to merge the pull request, or \`reject <what to change>\`. Only a reply from ${who} counts.`
       : gate === 'merge'
       ? `Approve by submitting an approving review on the pull request. Only a review from ${who} counts, and it must be on the latest commit.`
-      : `Reply \`/approve\` on this ticket to continue, or \`/reject <what to change>\`. Only a reply from ${who} counts.`;
+      : `Reply \`approve\` on this ticket to continue, or \`reject <what to change>\`. Only a reply from ${who} counts.`;
     const comment = await this._post(run.ticketId, [
       `### Approval needed: ${gate}`,
       '',
@@ -830,8 +848,8 @@ class Factory {
     const comments = await this.board.commentsSince(run.ticketId, run.pending.since);
     for (const c of comments) {
       if (isFactoryComment(c) || !this._inRole(role, c.author, ticket.reporter)) continue; // REQ-39
-      const body = c.body.trim();
-      if (/^\/approve\b/i.test(body)) {
+      const decision = decisionOf(c.body);
+      if (decision && decision.approve) {
         if (gate === 'release' && this.config.release.level === 'production'
           && run.approvals.merge && run.approvals.merge.by === c.author) {
           if (!run.pending.distinctNoted) {
@@ -853,8 +871,8 @@ class Factory {
         await this._moveTo(run, nextStage(REWORK_STAGE[gate], this.config));
         return undefined;
       }
-      if (/^\/reject\b/i.test(body)) {
-        const feedback = body.replace(/^\/reject\b/i, '').trim() || 'Rejected without a stated reason.';
+      if (decision && decision.reject) {
+        const feedback = decision.text || 'Rejected without a stated reason.';
         this.store.event(run.ticketId, 'rejected', { gate, by: c.author });
         if (gate === 'release') {
           await this._handBack(run, `The release was declined by ${c.author}: ${feedback} The change is already merged.`);
@@ -885,8 +903,8 @@ class Factory {
       const comments = await this.board.commentsSince(run.ticketId, run.pending.since);
       for (const c of comments) {
         if (isFactoryComment(c) || !this._inRole('mergeApprover', c.author, run.reporter)) continue;
-        const body = c.body.trim();
-        if (/^\/approve\b/i.test(body)) {
+        const decision = decisionOf(c.body);
+        if (decision && decision.approve) {
           run.approvals.mergeComment = { by: c.author, at: c.createdAt, sha: status.headSha };
           run.pending = null;
           run.status = 'running'; // stage is already 'merge'
@@ -895,8 +913,8 @@ class Factory {
           await this._guard(run, 'waiting label', () => this.board.setState(run.ticketId, { waiting: false }));
           return undefined;
         }
-        if (/^\/reject\b/i.test(body)) {
-          const feedback = body.replace(/^\/reject\b/i, '').trim() || 'Rejected without a stated reason.';
+        if (decision && decision.reject) {
+          const feedback = decision.text || 'Rejected without a stated reason.';
           this.store.event(run.ticketId, 'rejected', { gate: 'merge', by: c.author });
           await this._rework(run, 'merge', { source: `code review, ${c.author}`, text: feedback });
           return undefined;
@@ -1075,4 +1093,4 @@ function quote(text) {
   return String(text).split('\n').map((l) => `> ${l}`).join('\n');
 }
 
-module.exports = { Factory, AGENT_ENV, globToRegExp, sensitiveHits, FACTORY_MARK, isFactoryComment };
+module.exports = { Factory, AGENT_ENV, globToRegExp, sensitiveHits, FACTORY_MARK, isFactoryComment, decisionOf };
