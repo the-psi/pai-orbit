@@ -3,9 +3,9 @@ You are now in REVIEW MODE.
 This is a code review session against the project's documented architecture, conventions, and requirements.
 
 Usage:
-- `/review` — full review: architecture conformance, conventions, requirements match
-- `/review security` — security-focused pass: OWASP checklist only
-- `/review full` — both full review and security pass in sequence
+- `/review` — full review: architecture conformance, conventions, requirements match. When the diff touches a security-sensitive area (see step 3), the security pass runs automatically as well — no flag needed
+- `/review security` — security-focused pass only: checklist plus live verification of changed routes
+- `/review full` — both full review and security pass, always
 
 Switch out when:
 - Blocking findings need to be fixed → `/build` (return to REVIEW after fix)
@@ -72,6 +72,9 @@ Check each changed file against:
 - No credentials, tokens, or secrets in code or comments
 - No `TODO: fix later` on security-relevant paths
 - No disabled tests or skipped assertions without a documented reason
+
+**Security trigger (automatic)**
+If the diff touches any of: auth or sessions, role/permission checks, HTTP routes, user input handling, file uploads or XML parsing, outbound HTTP calls, CORS or rate limiting, client-side rendering of external data, logging, CI/CD pipelines, Dockerfiles, Kubernetes/Terraform or other IaC, or dependency manifests — run the **Security pass** below after this review and link its report from the Summary. Say so in one line ("Diff touches auth and routes — running the security pass"). Skip silently only when none of these apply.
 
 #### 4. Produce the review report
 
@@ -160,11 +163,21 @@ Work through each category. For each finding: report `file:line — description 
 - [ ] No endpoint that should be authenticated is reachable without credentials
 - [ ] Session tokens are not logged, stored in plaintext, or returned in URLs
 - [ ] Token expiry and refresh are handled correctly
+- [ ] JWT validation config: signing-algorithm allowlist set (no `alg:none`, one key not shared across RS256/HS256), issuer and audience validated, HTTPS metadata required
+- [ ] Token lifetime in code matches what the login response, docs or tracker state (e.g. `expiresIn`)
+- [ ] Logout revokes the session; refresh tokens rotate and cannot be reused
 
 **Authorisation**
 - [ ] Every data-mutating operation checks that the authenticated user has permission for the specific resource, not just for the operation type
 - [ ] Ownership checks use the authenticated user's identity from the trusted source (session / IAP header / JWT claim) — never from user-supplied input
 - [ ] Admin-only operations are gated at the right layer
+- [ ] Every new or changed route carries an explicit role guard — POST / PUT / PATCH / DELETE especially; a route that only checks "logged in" is a finding
+- [ ] A route on one API version has the same guards as its twin on the other version (older versions often lack checks the newer one added)
+- [ ] Impersonation / act-as / proxy-user paths are restricted and audited
+
+**Business logic**
+- [ ] Money- or data-moving flows cannot skip a step, be self-approved, or be replayed / submitted twice
+- [ ] Amounts, currencies, quantities and signs are validated server-side; approval and balance checks are not racy (check-then-act without a lock or transaction)
 
 **Secrets and credentials**
 - [ ] No credentials, API keys, tokens, or passwords in code, comments, or test fixtures
@@ -176,6 +189,34 @@ Work through each category. For each finding: report `file:line — description 
 - [ ] All external input (request body, query params, headers, file uploads) is validated at the boundary
 - [ ] File uploads: type validated server-side (not just client-side); size limited; stored outside the web root
 - [ ] Error messages do not leak stack traces, internal paths, or schema details to the client
+- [ ] No mass assignment: request bodies are mapped to an explicit allowlist of fields, not spread into a model (`Object.assign(model, req.body)`, `**data`)
+- [ ] Uploads: file type checked by magic bytes with an exact match (not `contains`); size capped and streamed, not buffered whole; filename sanitised against path traversal
+- [ ] XML parsers have DTDs and external entities disabled
+
+**SSRF, deserialization and external calls**
+- [ ] Server-side fetches to a user-, tenant- or config-supplied URL use an allowlist and block internal addresses (localhost, link-local, private ranges)
+- [ ] Responses from external services are validated before use; no unsafe deserialization (`pickle`, `TypeNameHandling`, `BinaryFormatter`, `yaml.load` without a safe loader)
+
+**API hardening**
+- [ ] CORS is not a wildcard (or wildcard sub-domain) together with credentials
+- [ ] Rate limiting does not live only in one instance's memory when the service runs as several instances
+- [ ] Deprecated or debug endpoints are removed or gated
+
+**Client-side**
+- [ ] No unsanitised data in `innerHTML`, `dangerouslySetInnerHTML`, `document.write` or `eval`
+- [ ] `postMessage` handlers check the sender's origin
+- [ ] Tokens are not kept in `localStorage` / `sessionStorage` where an XSS bug could read them
+- [ ] Scripts loaded from a CDN carry integrity (SRI) hashes
+
+**Logging and audit**
+- [ ] Full request/response bodies, tokens and personal data are not written to logs or chat webhooks
+- [ ] Actions that move money or change permissions are written to an audit log
+
+**CI/CD and infrastructure as code**
+- [ ] TLS verification is not disabled in pipelines (`--insecure-skip-tls-verify`, `curl -k`, `verify=False`)
+- [ ] Pipeline secrets are not passed on a command line or echoed (use stdin or a masked variable)
+- [ ] Containers do not run as root; Kubernetes workloads set a `securityContext` and the namespace has a `NetworkPolicy`
+- [ ] Base images and CI actions are pinned to a version or digest
 
 **Dependencies**
 - [ ] No new dependency added with known high/critical CVEs (check with `pip audit`, `npm audit`, `trivy`, or equivalent)
@@ -191,6 +232,27 @@ Work through each category. For each finding: report `file:line — description 
 - [ ] Storage buckets / blobs are not publicly readable unless explicitly required
 - [ ] No internal service URLs or admin endpoints exposed publicly
 
+### Live verification of changed routes
+
+Reading code shows a route *looks* unprotected; a request shows whether it is. When the diff adds or changes HTTP routes, auth or role checks, finish the checklist and then ask the user:
+
+> "Live verification is required for these changed routes: `<list>`. Shall we run it against your local instance?"
+
+Run it only after a yes. Never run it silently, and never run it just because a server happens to be listening.
+
+Rules (these mirror the `security-scan` skill's live-testing gate; this mode keeps them inline so every tool gets them):
+- **Local instance only.** The target is an instance the user started on their own machine (`localhost`, `127.0.0.1` or `::1`) with synthetic data. Any other host (staging, production, third-party) is refused — check from source only.
+- **Throwaway accounts only.** Use an account created only for testing, from a `credentials` file the user says they made for this, or one they give you. Never a real person's account. Confirm the host and account with the user before the first request.
+- **Changed routes only.** Probe just the routes in the diff, not the whole API — for example: does an unauthenticated request get 401/403; does a low-privilege account get 403 on a route the diff guards; does a response contain a field the diff meant to hide.
+- **Reads only.** No POST, PUT, PATCH or DELETE and no test-data creation. State-changing routes are verified from source and marked "source only".
+- **Small and sequential.** One request at a time, about 30 in total. Stop on any error you do not understand.
+- **A refusal is final.** If the harness blocks a request, report the block and the source-only evidence. Do not retry, re-encode or route around it.
+- **No local instance, or the user says no:** skip the step, keep the source-only findings, and record "Live verification: skipped (<reason>)" in the report.
+
+Tag each affected finding `live-confirmed`, `live-not-reproduced` or `source only`. A finding the live probe cannot reproduce is not dropped: say what was tried and keep it at its source-based severity until the user decides.
+
+For a full assessment of a whole repository or a deployed environment (full-coverage dynamic testing, dependency lookups, retesting a fix tracker), use the `security-scan` and `security-scan-retest` skills — this pass only reviews the diff.
+
 ### Output format
 
 Write findings to `<docs root>/wip/security-review-<branch>-<date>.md`:
@@ -199,6 +261,7 @@ Write findings to `<docs root>/wip/security-review-<branch>-<date>.md`:
 ## Security Review: <branch or PR title>
 Date: <date>
 Reviewer: <name>
+Live verification: ran against <host> as <throwaway account> / skipped (<reason>)
 
 ## Summary
 Overall assessment: Clean / Findings — <N> critical, <N> high, <N> medium, <N> low.
