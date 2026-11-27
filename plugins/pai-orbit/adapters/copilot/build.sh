@@ -13,7 +13,7 @@
 #   .github/copilot-instructions.md          slim rule book + context discovery
 #   .github/prompts/<mode>.prompt.md         16 mode prompts (all of core/modes/;
 #                                             /setup and /suggest-skills use agent runtime)
-#   .github/prompts/<skill>.prompt.md         7 skill prompts
+#   .github/prompts/<skill>.prompt.md         9 skill prompts
 #   .github/prompts/<stack>-builder.prompt.md 7 service-builder agent prompts (mode: agent per D30)
 #   .github/instructions/git.instructions.md
 #   .github/instructions/data-model.instructions.md
@@ -217,7 +217,7 @@ Create the `.copilot/*`, `AGENTS.md`, and `docs/` files. Tell the user what was 
 The `npx github:the-psi/pai-orbit init copilot` step writes these files before `/setup` runs:
 
 - `.github/copilot-instructions.md` — always-loaded rule book
-- `.github/prompts/*.prompt.md` — 32 slash-command prompt files
+- `.github/prompts/*.prompt.md` — 34 slash-command prompt files
 - `.github/instructions/*.instructions.md` — 5 auto-attaching guidance files
 - `.husky/pre-commit.template` and `.pre-commit-config.yaml.template` — inert hook templates
 
@@ -238,6 +238,7 @@ The file has these top-level sections:
 
 - `# pai-orbit configuration` (title)
 - `## Agile Board` — `type:`, `url:`, and a `## Agile Board → columns` markdown table populated **only** from the column names/labels confirmed in Step 2b. Never write placeholder or example values.
+- `## Mode transitions` — the mode→column map the board skill's `transition(mode)` reads at groom/design/build/review close-out. Board-IDs header (GitHub Projects: project node ID + Status field ID; Linear: team ID; Jira: project key; GitLab: none) then a `| Mode | Target column | Column ID |` table with one row each for groom, design, build, review. Column ID is the real option / state / status ID (GitLab: the label name) captured in Step 2b — never a placeholder. Suggest targets by case-insensitive substring synonyms (groom: Ready for Design, Design, Groomed, Refined, Ready; design: Ready for Build, Build, Ready for Dev, To do, Ready; build: In review, Review, Code review, QA, Testing; review: Approved, Ready to merge, Ready for release), falling back to the next real column after the previous mode's target (review never falls back and never suggests Done: no match → `no move`). A suggestion at or before the previous mode's target becomes `no move`. Show the whole map and confirm every row before saving. Boards with no columns (GitHub Issues, Notion, none): write every row as `no move`. On re-run, compare saved rows with the live board by ID, flag only renamed/broken rows, keep the rest.
 - `## Branching` — `model:` (github-flow / gitflow / trunk), `main:` (branch name), `pr_merge_strategy:`, `protected:` (list)
 - `## Deployment` — `provider:` and per-service target/image/deploy_cmd rows
 - `## Docs` — `home:` (`local` / `dedicated-repo` / `confluence` / `notion`) plus the appropriate path/URL field
@@ -369,7 +370,7 @@ Architecture files:
 
 Methodology surfaces (always written):
 - ✅ Generated — `.github/copilot-instructions.md` — slim rule book + Context discovery + prompt-library pointer
-- ✅ Generated — `.github/prompts/` — 32 invokable slash commands (16 modes, 7 skills, 7 service-builder agent prompts, 2 named agents: `docs-writer`, `cross-repo-impact`)
+- ✅ Generated — `.github/prompts/` — 34 invokable slash commands (16 modes, 9 skills, 7 service-builder agent prompts, 2 named agents: `docs-writer`, `cross-repo-impact`)
 - ✅ Generated — `.github/instructions/` — 5 auto-attaching guidance files (`git`, `data-model`, `arch-drift`, `context-discovery`, `decisions`)
 - ✅ Generated — `.copilot/pai-orbit-config.md` — board, branch model, deploy targets, docs home, team conventions
 - ✅ Generated — `.copilot/team.md` — team members, owners, default assignees
@@ -1159,7 +1160,7 @@ bash plugins/pai-orbit/build.sh
 ## What ships
 
 - `.github/copilot-instructions.md` — slim rule book + Context discovery + prompt-library pointer
-- `.github/prompts/*.prompt.md` — invokable slash commands (mode, skill, agent — 32 total)
+- `.github/prompts/*.prompt.md` — invokable slash commands (mode, skill, agent — 34 total)
 - `.github/instructions/*.instructions.md` — auto-attaching guidance (5 total)
 - `.husky/pre-commit.template` — opt-in commit-time lint + weak secret tripwire (husky variant)
 - `.pre-commit-config.yaml.template` — same enforcement scope, pre-commit-framework variant
@@ -1255,6 +1256,29 @@ for ref in "$CORE_DIR"/reference/*.md; do
       } >> "$f"
     fi
   done
+done
+
+# Skill-local references/ (e.g. security-scan/references/*.md): same flat-file
+# constraint, so inline each file into its OWN skill's prompt only. The
+# verify-dist.sh check fails the build if a prompt points at a references/ file
+# that has no appendix.
+for ref in "$CORE_DIR"/skills/*/references/*.md; do
+  [ -f "$ref" ] || continue
+  ref_name="$(basename "$ref")"
+  skill_name="$(basename "$(dirname "$(dirname "$ref")")")"
+  f="$DIST_DIR/.github/prompts/${skill_name}.prompt.md"
+  [ -f "$f" ] || continue
+  ref_title="$(head -n 1 "$ref" | sed 's/^# *//' | tr '[:upper:]' '[:lower:]')"
+  {
+    echo ""
+    echo "---"
+    echo ""
+    echo "## Appendix: $ref_title"
+    echo ""
+    echo "Referenced above as \`references/$ref_name\` — inlined here since Copilot prompts are flat files with no sibling-file lookup:"
+    echo ""
+    rewrite_paths < "$ref"
+  } >> "$f"
 done
 
 emit_skill_instructions

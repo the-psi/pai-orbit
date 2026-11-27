@@ -206,6 +206,7 @@ If you prefer not to pipe to bash, clone or download this directory and copy \`.
 
 - **No command system.** Modes cannot be invoked as \`/build\`, \`/design\`, etc. They become rule documents the agent reads.
 - **No skill invocation.** Skills become reference documents only.
+- **No skill sub-files.** Only each skill's \`SKILL.md\` is concatenated into \`skills.mdc\`. A skill's \`references/\` folder (e.g. \`security-scan\`) is not included, so its pointers to those files will not resolve. Use the Cursor plugin build for full skills.
 - **No agents.** Claude Code's named sub-agents (docs-writer, cross-repo-impact) have no Cursor analog.
 - **No hooks.** PreToolUse/PostToolUse safety and lint hooks are dropped. Replicate with Cursor's own command-execution settings if needed.
 EOF

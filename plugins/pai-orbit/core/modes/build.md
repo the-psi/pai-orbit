@@ -22,6 +22,7 @@ Switch out when:
 Before starting:
 - **Related open-story gate (first gate, before branch changes or edits):** For ticketed work, run the board skill's Related open-story check. Skip when no ticket is in scope.
 - **Branch setup (first repository action after the related-story gate, before file edits):** Read `.claude/pai-orbit-config.md → ## Git` to determine the branching model. Then:
+  - **Security findings list (overrides the bullets below):** always a branch and PR, even trunk-based. If already on a branch created for this findings work, reuse it; otherwise, whatever branch you are on, create a new branch from the branch new work starts from under the git model (`develop` under GitFlow, otherwise the main branch), never carrying uncommitted changes into it. Under "don't ask", state the branch name and create it without waiting for confirmation (see `reference/security-findings.md`).
   - **GitHub Flow / GitFlow, currently on `main`/`master`/`develop`:** derive the branch name from the linked board issue title (kebab-case the title, prefix with `feature/`, `fix/`, or `hotfix/` as appropriate). If no board issue is linked, ask the user for the slug. State the proposed branch name and wait for confirmation, then create and checkout the branch. Do not write any code until the branch is confirmed.
   - **GitHub Flow / GitFlow, already on a feature branch:** state "Already on feature branch `<name>` — proceeding" and confirm it matches the work at hand before continuing.
   - **Trunk-based, small change (≤ 3 files estimated):** state "Committing directly to `main` (trunk-based, small change ≤ 3 files)" and proceed.
@@ -29,14 +30,14 @@ Before starting:
   - **Trunk-based, scope unclear:** ask the user before deciding.
   - **No branching model configured:** state "No branching model configured — defaulting to GitHub Flow", then follow the GitHub Flow path above.
   - **First output of every session:** after branch is established, emit one line: "Branch: `<branch>` → PR target: `<base>`" before any implementation output.
-- **Tests:** suggest running the project's test suite before writing any new code, so regressions are caught against a clean baseline. Skip if the user explicitly says to proceed without running tests.
+- **Tests:** suggest running the project's test suite before writing any new code, so regressions are caught against a clean baseline. Skip if the user explicitly says to proceed without running tests (not for a security findings list; see `reference/security-findings.md` step 1).
 - Resolve the docs root per `reference/docs-path-resolution.md` (config: `.claude/pai-orbit-config.md → ## System Docs`).
 - Read `CLAUDE.md` — it contains the project's architecture, stack, conventions, and key file locations
 - If `<docs root>/architecture/constraints.md` exists, read it before generating any code — treat violations of declared constraints as blocking; do not produce code that crosses a constraint boundary without flagging it explicitly and switching to `/arch` to ratify the change
 - Read relevant `<docs root>/features/<feature>/` and `<docs root>/decisions/` before starting significant work
 - Check the task board (see `/board` for board details): find the relevant issue and confirm it is in the right in-progress state
 - **Read full issue context before building:** read the issue's full comment history and any linked design docs/ADRs — not just the body. The body is often the original ask; a later comment or design doc may supersede it, and on conflict the later one wins.
-- **Build-readiness gate:** only build issues that are groomed **and** design-resolved. If the body or comments still pose an open question ("confirm whether…", "before deploying, confirm…"), or non-trivial work has no design doc, stop and switch to `/design` — do not proceed, and do not just move the card.
+- **Build-readiness gate:** only build issues that are groomed **and** design-resolved. If the body or comments still pose an open question ("confirm whether…", "before deploying, confirm…"), or non-trivial work has no design doc, stop and switch to `/design` — do not proceed, and do not just move the card. A security findings list as defined in `reference/security-findings.md` follows that file instead; anything else (a finding pasted in chat, a feature ticket with security items) goes through this gate as usual.
 
 During build:
 - **Orchestrate parallel work (more than 3 files; ≤ 3 files — work directly, no orchestrator):** you, the primary agent, are the orchestrator. Split per repo; inside each repo spawn task agents **directly** (no agent spawns children), each tagged with a stream:
@@ -45,6 +46,7 @@ During build:
   - **Change reports:** every task agent returns a change report (what it changed that others depend on). At each layer boundary, reconcile: a spec-neutral change (rename, file path, message text) → adjust the other streams automatically and list it in the final summary; a change that alters requirements, design, AC or user-facing behaviour, or forces finished work to be redone → ask the user first. When in doubt, ask.
   - **Missing spec** (e.g. no `test-plan.md`): tell the user which stream is delayed and why; it runs after code, using the code as the spec.
   - **Tests:** the code stream runs only existing tests for its own layer and writes no new ones. After merging streams (order: code → tests → docs) do **one** verification run (regression + new tests). On failure, decide whether the code, the test, or the AC is wrong and follow the ask rule above.
+  - **Security findings list:** the stream rules above do not apply to attack tests. Follow `reference/security-findings.md` step 5: attack tests come from `triage.md` (not `test-plan.md`), are written before the fix and seen failing, and the suite runs after each group. Fix groups run one at a time in step 4 order; parallelise only within a group. On a suite failure, existing tests are never edited (the code / test / AC choice above does not apply).
   - **Tool limits:** keep open agents at or below the tool's cap, close finished agents, and hold excess tasks until a slot frees. If the tool cannot run agents in parallel, follow the same layer order sequentially.
 - Each sub-agent must read the repo's own `CLAUDE.md` before starting
 <!-- CLAUDE_CODE_ONLY: build-subagent-rules -->
@@ -53,10 +55,14 @@ During build:
 - Do not add features, refactors, or abstractions beyond what the task requires
 - **Verify state before running scripts, migrations, or infra changes:** check current state first (schema, file existence, deployed config). If the work is already done, record an "already complete" note on the issue and move on — do not re-run completed work. (This applies to *completed* work only — genuinely idempotent setup/seed/DDL scripts are safe to just run.)
 
+## Security findings
+
+When the goal points to a security findings file (a security assessment report, or a tracker whose rows are security findings), read `reference/security-findings.md` in full and follow it: intake, triage, one owner checkpoint, fixes by group with an attack test per finding, an ops list, a tracker copy and independent verification. Where it differs from the other rules in this mode (including closing the board item under After shipping), it wins.
+
 ## After shipping
 
 - If the change added a service, modified inter-service communication, crossed a service boundary, or introduced a new external integration: run `/arch validate` or prompt the user to do so before closing out
-- Close the task board item; use `/board` to handle the closure and any follow-up items
+- Move the task board item: run `/board` `transition(build)` — it moves the ticket to the column mapped in `.claude/pai-orbit-config.md → ## Mode transitions` (e.g. In review). Build does **not** close the issue: it closes on merge via `closes #N` in the shipping commit, or by a confirmed `/board` close
 - If new tasks were discovered during build, create board items rather than noting them inline
 - **Capabilities obligation:** update `<docs root>/domain/product-capabilities.md` with what was added or changed, following that file's own maintenance rules if it declares any. Otherwise: append the entry to the section covering the surface the capability belongs to — **never prepend to the top of the file** — and edit an existing entry in place when the change extends something already documented rather than adding a second entry for it. Record anything shipped-but-dark (feature flag off, approval pending, ops prerequisite unrun) with a consistent, greppable marker, so "what is built but not live?" stays answerable. Write in the present tense: what the product does now, not what this build did. Do not restructure the file as a side effect of a build.
 - **ADR obligation:** if you introduced a new pattern, abstraction, naming convention, or chose between two viable approaches — write an ADR in `<docs root>/decisions/` and include it in the same commit as the code. The signal: "would a future developer need to know why this was done this way?" If yes, it needs an ADR. Do not defer this to a follow-up — if the code ships without the ADR it will never be written.

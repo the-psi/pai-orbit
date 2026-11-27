@@ -123,7 +123,16 @@ Workflow skills (`/git`, `/board`, `/analysis`, `/data-model`, `/process-map`, `
 
 > **`/review security`** — the security-focused pass is a sub-mode of `/review`. Use `/review` for full code review, `/review security` for the OWASP checklist, or `/review full` for both in sequence. Critical and High findings block merge.
 
-> **v1.15.0 — install tracking per coding agent + project site.** Releases are now created automatically on every version bump, with one download file per coding agent, so GitHub counts installs for Claude Code, Codex and Copilot (Cursor is tracked by repo clones). Codex and Copilot installs download their release file (falling back to the bundled files offline), and Claude Code installs the plugin from the release zip (Claude Code 2.1.224 or later). A new project site with an install-stats dashboard is published daily to GitHub Pages. No tracking code runs in the plugin. Update pai-orbit to pick it up (see [Updating](#updating)).
+> **v1.16.0 — install tracking per coding agent + project site.** Releases are now created automatically on every version bump, with one download file per coding agent, so GitHub counts installs for Claude Code, Codex and Copilot (Cursor is tracked by repo clones). Codex and Copilot installs download their release file (falling back to the bundled files offline), and Claude Code installs the plugin from the release zip (Claude Code 2.1.224 or later). A new project site with an install-stats dashboard is published daily to GitHub Pages. No tracking code runs in the plugin. Update pai-orbit to pick it up (see [Updating](#updating)).
+
+> **Migrating to v1.15.0 — modes now move their own ticket.** `/groom`, `/design`, `/build` and `/review` move the ticket at close-out using a `## Mode transitions` map that `/setup` writes.
+> - Re-run `/setup` once — it adds `## Mode transitions` to `.claude/pai-orbit-config.md` (existing sections untouched).
+> - Until you do, those modes finish normally and print: "No mode-transition map — re-run /setup to enable automatic board moves."
+> - `/build` no longer closes the issue; it moves it (e.g. to In review). The issue closes on merge via `closes #N`.
+> - `/review` never moves the issue to Done by default. Done comes from the merge (your board's merge automation or `closes #N`). If your board has an "Approved" or "Ready to merge" column, an approving review moves the issue there.
+> - GitHub Projects: run `gh auth refresh -s project` if moves fail with a permission error.
+
+> **v1.14.0 — `/build` handles security findings lists.** Give `/build` a findings tracker (`.xlsx` / `.csv`) or assessment report: it triages each finding against the code, asks the owner once to confirm the plan, fixes by root-cause group with an attack test per `code`-lane finding, lists ops work (key rotation, history purge) in `ops-actions.md`, and writes results to a copy of the tracker. Usage: `/build Goal: fix the findings in <path>`. Update pai-orbit to pick it up (see [Updating](#updating)).
 
 > **v1.13.0 — `/build` orchestrates parallel streams.** For builds over 3 files, `/build` now splits work into code, tests and docs streams run by the primary agent: dependent tasks in order, independent tasks together, changes reported and reconciled at each layer, then one verification run. Same behaviour on every adapter within the tool's agent cap. Update pai-orbit to pick it up (see [Updating](#updating)).
 
