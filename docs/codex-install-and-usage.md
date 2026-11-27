@@ -33,13 +33,24 @@ npx github:the-psi/pai-orbit#feat/codex-adapter init codex
 
 ### Re-install / upgrade
 
-The `init` subcommand refuses to overwrite ANY existing top-level entry (`AGENTS.md`, `.agents/`, `.codex/`, `README.md`, or any other dist entry that already exists in your project). This protects hand-written project files and other tools that may already own paths like `.agents/`. Use `update` to overwrite:
+The `init` subcommand refuses to overwrite ANY existing top-level entry (`AGENTS.md`, `.agents/`, `.codex/`, `README.md`, or any other dist entry that already exists in your project). This protects hand-written project files and other tools that may already own paths like `.agents/`. Use `update` to upgrade:
 
 ```bash
 npx github:the-psi/pai-orbit update codex
 ```
 
-`update` is idempotent — safe to run after every pai-orbit upgrade.
+`update` refreshes plugin-owned files and **keeps your project settings**. It is idempotent — running it twice changes nothing the second time.
+
+| File | What `update` does |
+|---|---|
+| `.codex/pai-orbit-config.md`, `.codex/team.md`, `.codex/config.toml` | Never rewritten. Sections/tables added in the new release are appended (with a "fill this in" note); new keys inside an existing `config.toml` table are listed as "new key available". |
+| `.codex/hooks/lint-python.sh`, `lint-ts.sh` | New release installed; your `# --- CONFIGURE ... END CONFIGURE ---` block (repo paths) is copied into it. If the old script also differed outside that block, it is saved as `<name>.pai-orbit-old`. If the markers are missing, the new script is installed, the old one is backed up, and you are warned to re-add your paths. |
+| `AGENTS.md`, `README.md` | Identical → unchanged. Different → yours is kept and the new release is written to `<name>.pai-orbit-new` for you to compare and merge. An unedited file from an older release is also reported this way. |
+| Everything else (skills, agents, other hooks, wrappers, templates) | Overwritten with the new release. |
+
+The installer ends with a summary: preserved, added, migrated, conflicts, backups. If any hook file changed, it lists them and tells you to run `/hooks` in Codex to re-trust them — Codex trust is tied to each script's hash. Nothing is printed about re-trust when no hook changed.
+
+You do not need to re-run `$setup` after an update.
 
 ### Local development install
 
@@ -288,7 +299,7 @@ Windows-only edge case: the sandbox helper isn't discoverable from certain worki
 **The installer aborts with `ERROR: refusing to overwrite existing project files.`**
 `init codex` refuses to overwrite if ANY top-level dist entry already exists in your project (`AGENTS.md`, `.agents/`, `.codex/`, `README.md`, etc.). The installer prints the full list of conflicting entries. Two ways to proceed:
 
-- **You already have pai-orbit installed** — run `npx github:the-psi/pai-orbit update codex` to overwrite.
+- **You already have pai-orbit installed** — run `npx github:the-psi/pai-orbit update codex` to upgrade (your settings are kept).
 - **A different tool owns one of the conflicts** (e.g. a hand-written `AGENTS.md`, or another tool using `.agents/`) — back up or rename the conflicting entries first, then re-run `init codex`.
 
 This safety guard was added after a review flagged that early versions only checked `.agents/skills/` — meaning a hand-written `AGENTS.md` could be silently clobbered on first install. Every top-level entry is now checked individually.

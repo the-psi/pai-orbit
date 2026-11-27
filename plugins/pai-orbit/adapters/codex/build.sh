@@ -389,16 +389,20 @@ Pin a specific release with a git ref suffix:
 npx github:${GITHUB_REPO}#<tag> init codex
 \`\`\`
 
-To re-install and overwrite existing files (upgrade path):
+To upgrade an existing install (keeps your project settings — see
+\`docs/codex-install-and-usage.md\`):
 
 \`\`\`bash
 npx github:${GITHUB_REPO} update codex
 \`\`\`
 
-The CLI copies every file under \`dist/codex/\` into your project's root.
-Under the hood it just runs Node's \`fs.copyFile\`; there's no network fetch
-beyond \`npx\`'s initial repo download, no shell requirement, and no
-platform-specific script.
+The CLI copies the files under \`dist/codex/\` into your project's root. On
+\`update\` it keeps your config files (\`.codex/pai-orbit-config.md\`,
+\`.codex/team.md\`, \`.codex/config.toml\`), carries the \`repo=\` block of the lint
+hooks into the new scripts, and writes \`*.pai-orbit-new\` side-files when your
+\`AGENTS.md\` / \`README.md\` differ from the release. Hooks that changed must be
+re-trusted with \`/hooks\`. There's no network fetch beyond \`npx\`'s initial repo
+download, no shell requirement, and no platform-specific script.
 
 ## Upgrading from 1.4.0 or earlier
 
@@ -413,7 +417,7 @@ working as reference text. To pick up skills, hooks and subagents:
 npx github:${GITHUB_REPO} update codex
 \`\`\`
 
-Use \`update codex\`, not \`init codex\` — \`init\` deliberately refuses to overwrite
+Use \`update codex\`, not \`init codex\` — \`init\` deliberately refuses to touch
 an existing install. After upgrading, run \`/hooks\` inside Codex and trust the four
 registered hooks; hook trust is invalidated by every hook edit.
 

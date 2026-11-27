@@ -1,4 +1,4 @@
-# pai-orbit · v1.11.1
+# pai-orbit · v1.11.2
 
 A structured developer methodology harness for Claude Code, Cursor, GitHub Copilot, and OpenAI Codex (beta) — installed as a plugin in Claude Code and Cursor, and with one command for Copilot and Codex.
 
@@ -119,6 +119,8 @@ Workflow skills (`/git`, `/board`, `/analysis`, `/data-model`, `/process-map`, `
 > **`/groom` readiness gate** — before handing off to `/design`, `/groom` audits every open question and classifies it as a *functional gap* (what the system does — must be resolved) or a *design question* (how it does it — deferred to `/design`). The feature is not marked groomed until all functional gaps are closed. This prevents half-specified features from entering design.
 
 > **`/review security`** — the security-focused pass is a sub-mode of `/review`. Use `/review` for full code review, `/review security` for the OWASP checklist, or `/review full` for both in sequence. Critical and High findings block merge.
+
+> **v1.11.2 — Codex `update` preserves project settings.** `npx github:the-psi/pai-orbit update codex` no longer resets `.codex/pai-orbit-config.md`, `team.md`, `config.toml`, or the lint hooks' `repo=` paths (previously lint silently stopped running). Migration: existing installs upgrade in place; your first update may report `AGENTS.md`/`README.md` conflicts (`*.pai-orbit-new`) and `.pai-orbit-old` backups, and you must re-trust changed hooks with `/hooks`. See [docs/codex-install-and-usage.md](docs/codex-install-and-usage.md).
 
 > **v1.11.0 — `/arch define` for greenfield architecture.** A new `/arch` sub-mode that *decides* an architecture instead of describing one: measurable drivers (`docs/architecture/drivers.md`, new), a system context diagram, a decomposition derived from domain language and `/process-map` lanes, style selection from a catalogue scored against the ranked drivers (with an ADR), structure, constraints with fitness functions, and stack last. `/arch update` now detects upstream changes — a process map, UX journey, domain knowledge, or drivers changed since the architecture was derived — and assesses their impact. `/arch init` remains the path for existing codebases. Existing `system.md` / `constraints.md` files keep working; the new sections are optional. Update pai-orbit to pick it up (see [Updating](#updating)).
 

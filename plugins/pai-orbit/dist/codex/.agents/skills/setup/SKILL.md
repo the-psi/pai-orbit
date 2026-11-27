@@ -341,6 +341,10 @@ End with: "Run `/suggest-skills` after a few sessions to discover operational sk
 
 The steps above are the tool-agnostic setup. Codex CLI has a few extra one-time knobs to turn on. Run through these after the core setup completes.
 
+### 0. Re-run safety (read first)
+
+`$setup` may be run on a project that is already configured (for example after `update codex`). Before asking anything, read the existing `.codex/pai-orbit-config.md`, `.codex/team.md`, and the `repo=` blocks inside `.codex/hooks/lint-python.sh` and `.codex/hooks/lint-ts.sh`. Ask only about fields that are empty or still placeholders (`{{...}}`, `repo=""`). **Never overwrite a value that is already configured** — show it and keep it unless the user explicitly asks to change it.
+
 ### 1. Trust the hooks
 
 Codex requires explicit trust for every hook script before it fires. Run:
@@ -376,6 +380,8 @@ repo=""
 ```
 
 Replace with your project's actual repo paths (one `case` arm per repo/service that has a `venv/` or `node_modules/` with the linter installed). Until this is filled in, the lint hooks exit early on line 28 and never actually run `ruff` / `eslint`.
+
+`update codex` preserves this block: it is copied from your existing script into the new release, so you do not need to redo it after an upgrade. Keep the `# --- CONFIGURE` / `# --- END CONFIGURE ---` marker lines — the update relies on them.
 
 ### 4. Verify TOML subagents load
 

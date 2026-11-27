@@ -1,6 +1,6 @@
 # Design: Codex `update` preserves project settings (#76)
 
-Status: Designed — pending approval
+Status: Approved (2026-11-25, Upneet Singh)
 Date: 2026-11-24
 Requirements: [requirements.md](requirements.md)
 Impact report: [analysis-codex-update-preserve-settings-2026-11-03.md](../../wip/analysis-codex-update-preserve-settings-2026-11-03.md) (loaded; shared-interface gate satisfied)
@@ -113,6 +113,6 @@ Four lists printed at the end: **preserved**, **added**, **migrated**, **conflic
 5. ADR (see session close).
 
 ## Open questions
-- [ ] How to verify AC-9 (`$setup` re-run) beyond a text check and one manual run: owner: Upneet Singh / `/test`; blocks: AC-9 sign-off only.
+- [x] How to verify AC-9 (`$setup` re-run): text check in tests + manual `$setup` re-run on a configured project (SPARDHA copy, 2026-11-28): retained team/lint/hook settings, asked only for the unfilled board and branch fields.
 - [ ] Does cursor-plugin have a separate place where users edit `repo=` in `scripts/` copies? Not affected by this design but unverified: owner: `/build` (quick check); blocks: nothing.
 - [ ] #58 (self-update) overlap: confirm it stays separate; checkpoint awaiting confirmation: owner: Upneet Singh.
