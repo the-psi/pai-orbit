@@ -5,3 +5,9 @@
 factory/test/
 factory/.orbit-factory/
 factory/**/node_modules/
+# Credentials and a deployment's own config must never be baked into the image, even when
+# someone builds on a machine where these files exist next to the code.
+factory/**/.env
+factory/**/.env.*
+!factory/.env.example
+factory/**/factory.config.json

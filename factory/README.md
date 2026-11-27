@@ -125,6 +125,24 @@ differ.
 Everything the factory must not lose lives on the `/data` volume: run state, the audit trail,
 ticket workspaces and agent sessions.
 
+### Use the published image instead of building
+
+A version tag builds the image in GitHub Actions and publishes it to GitHub Container Registry
+(`.github/workflows/factory-image.yml`):
+
+```bash
+git tag factory-v0.1.0 && git push origin factory-v0.1.0
+# -> ghcr.io/<owner>/orbit-factory:0.1.0   (and :latest for a plain x.y.z version)
+```
+
+To run a published version, replace the `build:` block of the compose file with
+`image: ghcr.io/<owner>/orbit-factory:<version>`. The config file and `.env` stay as they are.
+
+The image holds no credentials and no project config. `Dockerfile.dockerignore` keeps `.env` and
+`factory.config.json` out of the build even when they exist next to the code, and the workflow
+checks the built image for them. A new package on the registry starts private: make it public, or
+give each server a token that may read packages.
+
 ## Commands
 
 ```
