@@ -24,6 +24,11 @@
     "type": "local",
     "mergeMethod": "squash"
   },
+  "gitlab": {
+    "tokenEnv": "GITLAB_TOKEN",
+    "apiUrl": "",
+    "project": ""
+  },
   "notifier": {
     "type": "console",
     "webhookEnv": "FACTORY_SLACK_WEBHOOK_URL"

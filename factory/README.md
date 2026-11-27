@@ -143,6 +143,45 @@ The image holds no credentials and no project config. `Dockerfile.dockerignore` 
 checks the built image for them. A new package on the registry starts private: make it public, or
 give each server a token that may read packages.
 
+## Using GitLab
+
+Set both types to `gitlab`. The site and the project are read from `repo.url`, so the same setup
+works for gitlab.com and a self-hosted GitLab:
+
+```json
+"repo":     { "url": "https://git.example.com/group/app.git", "baseBranch": "main" },
+"board":    { "type": "gitlab", "botUser": "orbit-factory" },
+"codeHost": { "type": "gitlab", "mergeMethod": "squash" }
+```
+
+Put the token in `.env` as `GITLAB_TOKEN`. Use a project access token (or a bot user's token) with
+the `api` and `write_repository` scopes and the Developer role or higher; Maintainer if only
+maintainers may merge into the base branch. `board.botUser` must be the user name the token
+belongs to. `preflight` checks the token, the access level and that the two names match.
+
+What people do on GitLab:
+
+| Step | On GitLab |
+|---|---|
+| Hand a ticket over | Add the label `factory-ready` or `factory-groomed` to the issue |
+| Answer a question, approve requirements, design or release | Comment on the issue |
+| Approve the code | The **Approve** button on the merge request |
+| Send the code back | Comment `reject <what to change>` on the merge request |
+
+Things that differ from GitHub:
+
+- An approval counts only for the commit the merge request had when it was given. If the factory
+  pushes a rework afterwards, approve again.
+- GitLab's free tier cannot require approvals, so `preflight` warns that it could not confirm a
+  review is required. Protect the base branch so that nobody can push to it directly.
+- `mergeMethod` is `squash` or `merge`. Rebase and fast-forward are a project setting in GitLab.
+- If GitLab is served under a path (`https://host/gitlab`), set `gitlab.apiUrl` and
+  `gitlab.project` in the config. For a server with a private certificate authority, set
+  `NODE_EXTRA_CA_CERTS`.
+
+The adapter is tested against a simulated GitLab, including a full run from a label to a release.
+It has not yet been run against a real GitLab server.
+
 ## Commands
 
 ```
@@ -165,7 +204,7 @@ orbit-factory stop <id>      stop one ticket and hand it back
 | Setting | Meaning | Default |
 |---|---|---|
 | `repo.url`, `repo.baseBranch` | The project the factory works on | required, `main` |
-| `board.type`, `codeHost.type` | `github` or `local` | `local` |
+| `board.type`, `codeHost.type` | `github`, `gitlab` or `local` | `local` |
 | `roles.*` | Who may answer and who may approve at each gate | reporter answers; approvers must be named |
 | `gates.requirements`, `gates.design` | The two optional gates | off |
 | `limits.costPerTicketUsd` | Hard stop for one ticket | 50 |
@@ -290,9 +329,9 @@ current stage.
 - **Tickets are separated by directory, not by container.** All tickets run inside one factory
   container. An agent stage that runs shell commands could read a sibling ticket's directory. One
   container per ticket is planned.
-- **GitHub is the only real board and code host.** Its adapter is tested against simulated `gh`
-  output and has not yet been run against GitHub. GitLab, Jira and Azure DevOps adapters are not
-  built.
+- **GitHub and GitLab are the real boards and code hosts.** GitHub has been run for real, in a
+  single-account trial. GitLab is tested against a simulated GitLab only and has not yet been
+  run against a real server. Jira and Azure DevOps adapters are not built.
 - **Release steps that commit to a protected base branch will be refused by the code host.** At
   release level `tag`, keep the release steps to tagging, or let the project's own pipeline do the
   rest.
@@ -324,8 +363,10 @@ factory/
 │   ├── workspace.js        one clone and branch per ticket
 │   ├── calendar.js         working-time arithmetic
 │   ├── preflight.js        setup checks
-│   ├── boards/             local, github
-│   ├── codehosts/          local, github
+│   ├── decision.js         reading approve and reject from a comment
+│   ├── gitlab-api.js       GitLab REST client
+│   ├── boards/             local, github, gitlab
+│   ├── codehosts/          local, github, gitlab
 │   ├── runners/            claude-cli, fake
 │   └── notifiers/          console, slack
 └── test/

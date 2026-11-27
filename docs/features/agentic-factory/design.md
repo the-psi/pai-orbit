@@ -121,6 +121,19 @@ workflow states differ on every platform and often per project, so they are neve
 trigger; moving a card is best-effort decoration. The label names use a hyphen, not a colon or a
 space, so the same names are valid on all four.
 
+### GitLab
+
+GitLab is a board and a code host (`board.type` and `codeHost.type` `gitlab`), through the GitLab
+REST API. Issues, labels, assignees and comments map one to one. The merge gate maps as follows
+(`docs/decisions/2026-11-27-agentic-factory-gitlab-adapter.md`):
+
+| The factory needs | On GitLab |
+|---|---|
+| An approving review from a named person | That person is in the merge request's approvals |
+| The commit the approval was given for | The merge request version (one per push) that was current when GitLab recorded the approval. An approval whose record cannot be found carries no commit and does not count |
+| A review that requests changes | A comment on the merge request that starts with `reject` |
+| A merge that fails closed | The merge call names the commit it checked; GitLab refuses if the branch moved, and a refused merge is handed to people |
+
 Not included: starting later than design (for example from a person's `design.md`). Design always
 runs, so the after-design size check is never skipped.
 
@@ -305,7 +318,8 @@ every key.
   commands could still read a sibling directory. One container per ticket closes this and is the
   first hardening step in the plan. REQ-21 is met by convention in the first build, not by
   enforcement.
-- **GitHub is the only real board and code host.** The `local` implementation exists for trials and
+- **GitHub and GitLab are the real boards and code hosts.** GitLab has not yet been run against a
+  real server. The `local` implementation exists for trials and
   tests.
 - **Working calendar** has no public-holiday list.
 - **Board column moves** on GitHub Projects v2 are best-effort; labels carry the state.

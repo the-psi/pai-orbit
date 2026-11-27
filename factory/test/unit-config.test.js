@@ -184,14 +184,14 @@ test('calendar.days must list at least one weekday', () => {
 // ---- swappable part types ----
 
 test('unknown board, code host, notifier and runner types are rejected', () => {
-  assert.throws(() => fromObject(base({ board: { type: 'jira' } })), /board\.type must be local or github/);
-  assert.throws(() => fromObject(base({ codeHost: { type: 'gitlab' } })), /codeHost\.type must be local or github/);
+  assert.throws(() => fromObject(base({ board: { type: 'jira' } })), /board\.type must be local, github or gitlab/);
+  assert.throws(() => fromObject(base({ codeHost: { type: 'bitbucket' } })), /codeHost\.type must be local, github or gitlab/);
   assert.throws(() => fromObject(base({ notifier: { type: 'email' } })), /notifier\.type must be console or slack/);
   assert.throws(() => fromObject(base({ runner: { type: 'codex' } })), /runner\.type must be claude-cli or fake/);
 });
 
 test('every known board, code host, notifier and runner type is accepted', () => {
-  for (const type of ['local', 'github']) {
+  for (const type of ['local', 'github', 'gitlab']) {
     assert.equal(fromObject(base({ board: { type } })).board.type, type);
     assert.equal(fromObject(base({ codeHost: { type } })).codeHost.type, type);
   }

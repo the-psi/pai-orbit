@@ -14,7 +14,7 @@ const DEFAULTS = Object.freeze({
   docsRoot: 'docs',
   // Which implementation of each swappable part to use.
   board: {
-    type: 'local', // local | github
+    type: 'local', // local | github | gitlab
     readyLabel: 'factory-ready',
     ownedLabel: 'factory-owned',
     waitingLabel: 'factory-waiting',
@@ -31,7 +31,17 @@ const DEFAULTS = Object.freeze({
     // Factory stage -> board column. Moves are best-effort.
     columns: { groom: 'In progress', design: 'In progress', pr: 'In review', done: 'Done' },
   },
-  codeHost: { type: 'local', mergeMethod: 'squash' }, // local | github
+  codeHost: { type: 'local', mergeMethod: 'squash' }, // local | github | gitlab
+  // Used when board.type or codeHost.type is gitlab.
+  gitlab: {
+    // Name of the environment variable that holds the GitLab token (held by the orchestrator,
+    // never given to the agent).
+    tokenEnv: 'GITLAB_TOKEN',
+    // Leave both empty to read the site and the project from repo.url. Set them only when
+    // GitLab is served under a path (https://host/gitlab) or the API is on another address.
+    apiUrl: '',
+    project: '',
+  },
   notifier: { type: 'console', webhookEnv: 'FACTORY_SLACK_WEBHOOK_URL' }, // console | slack
   runner: {
     type: 'claude-cli', // claude-cli | fake
@@ -176,8 +186,15 @@ function validate(cfg, raw = {}) {
   }
   if (!cfg.repo.url) problems.push('repo.url is required');
   if (!cfg.repo.baseBranch) problems.push('repo.baseBranch is required');
-  if (!['local', 'github'].includes(cfg.board.type)) problems.push('board.type must be local or github');
-  if (!['local', 'github'].includes(cfg.codeHost.type)) problems.push('codeHost.type must be local or github');
+  if (!['local', 'github', 'gitlab'].includes(cfg.board.type)) problems.push('board.type must be local, github or gitlab');
+  if (!['local', 'github', 'gitlab'].includes(cfg.codeHost.type)) problems.push('codeHost.type must be local, github or gitlab');
+  if (cfg.board.type === 'gitlab' || cfg.codeHost.type === 'gitlab') {
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(String(cfg.gitlab.tokenEnv || ''))) problems.push('gitlab.tokenEnv must be the name of an environment variable');
+    if (cfg.codeHost.type === 'gitlab' && !['squash', 'merge'].includes(cfg.codeHost.mergeMethod)) {
+      problems.push('codeHost.mergeMethod must be squash or merge for GitLab (rebase and fast-forward are a project setting there)');
+    }
+    if (Boolean(cfg.gitlab.apiUrl) !== Boolean(cfg.gitlab.project)) problems.push('gitlab.apiUrl and gitlab.project must be set together, or both left empty');
+  }
   if (!['console', 'slack'].includes(cfg.notifier.type)) problems.push('notifier.type must be console or slack');
   if (!['claude-cli', 'fake'].includes(cfg.runner.type)) problems.push('runner.type must be claude-cli or fake');
   if (cfg.runner.permissionMode === 'bypassPermissions' && !process.env.FACTORY_SANDBOXED) {

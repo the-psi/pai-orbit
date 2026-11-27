@@ -133,6 +133,27 @@ What it did **not** exercise: reading pull request reviews from a second person 
 gate), `changes_requested` reviews, a merge conflict, and the branch-protection check, which needs a
 permission the trial token did not have and so reported "could not confirm".
 
+### 5. GitLab adapter (2026-11-27)
+
+Tested without a GitLab server, against an in-memory GitLab (`factory/test/fake-gitlab.js`) that
+answers the REST calls the adapter makes and performs merges as real git merges in a repository on
+disk.
+
+| What | Result |
+|---|---|
+| Client, board and code host, method by method (`gitlab-adapter.test.js`, 33 tests) | Pass |
+| The credential helper gives git the token for the GitLab site and for no other site (real `git credential fill`) | Pass |
+| A labelled issue goes to a merge request, merges on a named approver's approval, and is released (`pipeline-gitlab.test.js`) | Pass |
+| An approval from someone outside the role does not merge | Pass |
+| A `reject` comment on the merge request sends the work back with the reviewer's words | Pass |
+| An approval given for the old commit does not merge the reworked commit | Pass |
+| A merge GitLab refuses is handed back and not retried | Pass |
+| A merge request closed by a person hands the ticket back | Pass |
+
+**Not proven:** anything against a real GitLab server. In particular the wording of the approval
+note the commit check relies on, the token scopes, pushing through the credential helper to a real
+server, and behaviour with approval rules and merge pipelines.
+
 ## Defects found and fixed during testing
 
 | # | Found by | Defect | Fix |
@@ -189,6 +210,8 @@ AC-35, AC-36, AC-37, AC-38, AC-40, AC-41, AC-42, AC-43.
 - **GitHub with a separate factory identity.** The adapters now work against GitHub in a
   single-account trial. Pull request reviews by a second person, `changes_requested`, a merge
   conflict and the branch-protection check have not been exercised.
+- **GitLab against a real server.** The adapter is tested against a simulated GitLab only (see
+  section 5).
 - **Slack.** The notifier was tested with a simulated HTTP call only.
 - **Optional `/playwright` stage** with a real agent.
 - **Release levels `staging` and `production`.**
@@ -203,6 +226,7 @@ AC-35, AC-36, AC-37, AC-38, AC-40, AC-41, AC-42, AC-43.
 ## Test cases to add in the pilot
 
 - [ ] Ten or more real tickets on GitHub with a separate factory identity (two done in a single-account trial)
+- [ ] One ticket end to end on the real GitLab server, with a project access token
 - [ ] The real agent inside the container with an API key (done with a personal subscription token)
 - [ ] A real merge conflict resolved by the real agent
 - [ ] A restart of the container in the middle of a real stage

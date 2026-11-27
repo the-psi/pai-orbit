@@ -10,6 +10,9 @@ const { LocalBoard } = require('./boards/local');
 const { GitHubBoard } = require('./boards/github');
 const { LocalCodeHost } = require('./codehosts/local');
 const { GitHubCodeHost } = require('./codehosts/github');
+const { GitLabBoard } = require('./boards/gitlab');
+const { GitLabCodeHost } = require('./codehosts/gitlab');
+const { GitLabApi, parseRepoUrl } = require('./gitlab-api');
 const { ClaudeCliRunner } = require('./runners/claude-cli');
 const { FakeRunner } = require('./runners/fake');
 const { ConsoleNotifier, SlackNotifier } = require('./notifiers');
@@ -41,13 +44,34 @@ function createFactory(config, opts) {
   };
   const localDir = path.join(dataDir, 'local');
 
-  const board = o.board || (config.board.type === 'github'
-    ? new GitHubBoard({ repo: githubRepo(config.repo.url), ...labels })
-    : new LocalBoard({ dir: localDir, ...labels }));
+  // One GitLab client, shared by the board and the code host, made only when one of them needs it.
+  let gitlabApi = null;
+  const gitlab = () => {
+    if (!gitlabApi) {
+      const g = config.gitlab;
+      const where = g.apiUrl ? { baseUrl: g.apiUrl, project: g.project } : parseRepoUrl(config.repo.url);
+      gitlabApi = new GitLabApi({ ...where, token: env[g.tokenEnv] || '', fetch: o.fetch });
+    }
+    return gitlabApi;
+  };
 
-  const codeHost = o.codeHost || (config.codeHost.type === 'github'
-    ? new GitHubCodeHost({ repo: githubRepo(config.repo.url), mergeMethod: config.codeHost.mergeMethod })
-    : new LocalCodeHost({ dir: localDir, repoUrl: config.repo.url }));
+  let board = o.board;
+  if (!board) {
+    if (config.board.type === 'github') board = new GitHubBoard({ repo: githubRepo(config.repo.url), ...labels });
+    else if (config.board.type === 'gitlab') board = new GitLabBoard({ api: gitlab(), ...labels });
+    else board = new LocalBoard({ dir: localDir, ...labels });
+  }
+
+  let codeHost = o.codeHost;
+  if (!codeHost) {
+    if (config.codeHost.type === 'github') {
+      codeHost = new GitHubCodeHost({ repo: githubRepo(config.repo.url), mergeMethod: config.codeHost.mergeMethod });
+    } else if (config.codeHost.type === 'gitlab') {
+      codeHost = new GitLabCodeHost({ api: gitlab(), mergeMethod: config.codeHost.mergeMethod, tokenEnv: config.gitlab.tokenEnv });
+    } else {
+      codeHost = new LocalCodeHost({ dir: localDir, repoUrl: config.repo.url });
+    }
+  }
 
   const guard = path.join(config.runner.pluginDir, 'hooks', 'bash-guard.sh');
   const guardOn = config.runner.bashGuard === true

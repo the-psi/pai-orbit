@@ -14,34 +14,9 @@ const { stage: stageDef, nextStage, REWORK_STAGE, GATE_ROLE, featureDir, buildPr
 const { workingMsBetween, workingDayHours } = require('./calendar');
 const { slugify } = require('./workspace');
 const { inRole, roleNames } = require('./roles');
+const { FACTORY_MARK, decisionOf, isFactoryComment } = require('./decision');
 
 const HOUR = 3600 * 1000;
-
-// Every comment the factory posts ends with this marker. It is how the factory tells its own
-// comments from a person's when both come from one account (single-account trial).
-const FACTORY_MARK = '<!-- orbit-factory -->';
-
-/**
- * Read a person's approval or rejection from a comment.
- * People reply the way the tool in front of them makes easy: with "Quote reply", which puts the
- * quoted text first, and with or without the slash. So quoted lines are skipped, and the first
- * line a person actually typed decides: `/approve`, `approve`, `approved`, or `/reject <why>`,
- * `reject <why>`. Anything else is not a decision.
- * @returns {{approve: true}|{reject: true, text: string}|null}
- */
-function decisionOf(body) {
-  const lines = String(body || '').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('>'));
-  if (!lines.length) return null;
-  const first = lines[0];
-  if (/^\/approve\b/i.test(first) || /^approved?[.!]?$/i.test(first)) return { approve: true };
-  const m = first.match(/^\/reject(?:ed)?\b[\s:,-]*(.*)$/i) || first.match(/^reject(?:ed)?\b[\s:,-]*(.*)$/i);
-  if (m) return { reject: true, text: [m[1], ...lines.slice(1)].join('\n').trim() };
-  return null;
-}
-
-function isFactoryComment(comment) {
-  return /<!--\s*orbit-factory/.test(String(comment.body || ''));
-}
 
 // Environment variables the agent process may inherit. Board, code-host and chat credentials
 // are never in this list, so the agent cannot use them (REQ-11, REQ-36, REQ-43).
@@ -632,7 +607,7 @@ class Factory {
           '',
           `Built by the Agentic Factory. Requirements, design and test plan are in \`${run.featureDir}/\`.`,
           '',
-          'This pull request needs an approving review from a named merge approver before the factory merges it. To send it back, submit a review that requests changes.',
+          this._hostWords().prNote,
         ].join('\n'),
       });
       this.store.save(run);
@@ -690,6 +665,14 @@ class Factory {
   }
 
   /** The newest review from each named merge approver. */
+  /** Words for the code review step. A code host may supply its own (`codeHost.words`). */
+  _hostWords() {
+    return this.codeHost.words || {
+      prNote: 'This pull request needs an approving review from a named merge approver before the factory merges it. To send it back, submit a review that requests changes.',
+      approveHow: (who) => `Approve by submitting an approving review on the pull request. Only a review from ${who} counts, and it must be on the latest commit.`,
+    };
+  }
+
   _approverReviews(run, status) {
     const latest = new Map();
     for (const r of status.reviews) {
@@ -851,7 +834,7 @@ class Factory {
     const how = gate === 'merge' && this._single()
       ? `Single-account trial: reply \`approve\` on this ticket to merge the pull request, or \`reject <what to change>\`. Only a reply from ${who} counts.`
       : gate === 'merge'
-      ? `Approve by submitting an approving review on the pull request. Only a review from ${who} counts, and it must be on the latest commit.`
+      ? this._hostWords().approveHow(who)
       : `Reply \`approve\` on this ticket to continue, or \`reject <what to change>\`. Only a reply from ${who} counts.`;
     const comment = await this._post(run.ticketId, [
       `### Approval needed: ${gate}`,

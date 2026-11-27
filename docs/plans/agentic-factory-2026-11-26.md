@@ -131,7 +131,7 @@ config, and the pipeline uses only what every platform has.
 | Open or closed | Issue state | Issue state | Status category | State |
 | Code review approval | Pull request review | Merge request approval | — (use the code platform) | Pull request vote |
 | Protected base branch | Branch protection | Protected branch | — | Branch policy |
-| Command line the adapter would use | `gh` | `glab` | Jira REST API | `az boards`, `az repos` |
+| How the adapter talks to it | `gh` | GitLab REST API | Jira REST API | `az boards`, `az repos` |
 
 This table is from general knowledge of these platforms and from the tools orbit's own board skill
 already names. None of it has been tried from the factory; each adapter needs its own check against
@@ -139,9 +139,10 @@ the real platform.
 
 What this means for the work:
 
-- **Built:** GitHub for both sides (untested against GitHub), plus the local file-based pair.
-- **To build, one adapter each:** GitLab board, GitLab code host, Jira board, Azure DevOps board,
-  Azure Repos code host. Each is one file implementing an existing interface, with its own tests.
+- **Built:** GitHub for both sides (run for real in a single-account trial), GitLab for both
+  sides (added 2026-11-27; tested against a simulated GitLab, not yet against a real server),
+  plus the local file-based pair.
+- **To build, one adapter each:** Jira board, Azure DevOps board, Azure Repos code host. Each is one file implementing an existing interface, with its own tests.
 - **Order:** whichever the customer uses comes first. If unknown, Jira board with a GitHub or GitLab
   code host is the likeliest mixed setup.
 - **Per platform, a person still does the same three things:** add one label, reply in a comment,

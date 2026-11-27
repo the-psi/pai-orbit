@@ -19,7 +19,9 @@ async function preflight(config, opts = {}) {
   const git = await exec('git', ['--version'], { env });
   add('git', git.code === 0 ? 'ok' : 'fail', git.code === 0 ? git.stdout.trim() : 'git is not installed');
 
-  const remote = await exec('git', ['ls-remote', '--heads', config.repo.url, config.repo.baseBranch], { env, timeoutMs: 30000 });
+  // A private repository needs the code host's credentials even to be listed.
+  const auth = opts.codeHost && typeof opts.codeHost.gitAuthArgs === 'function' ? opts.codeHost.gitAuthArgs() : [];
+  const remote = await exec('git', [...auth, 'ls-remote', '--heads', config.repo.url, config.repo.baseBranch], { env, timeoutMs: 30000 });
   if (remote.code !== 0) add('repository', 'fail', `cannot reach ${config.repo.url}`);
   else if (!remote.stdout.trim()) add('repository', 'fail', `base branch ${config.repo.baseBranch} not found in ${config.repo.url}`);
   else add('repository', 'ok', `${config.repo.url} (${config.repo.baseBranch})`);
@@ -44,6 +46,21 @@ async function preflight(config, opts = {}) {
   if (config.board.type === 'github' || config.codeHost.type === 'github') {
     const gh = await exec('gh', ['auth', 'status'], { env, timeoutMs: 30000 });
     add('GitHub access', gh.code === 0 ? 'ok' : 'fail', gh.code === 0 ? 'gh is authenticated' : 'gh is not authenticated (set GH_TOKEN)');
+  }
+  if (config.board.type === 'gitlab' || config.codeHost.type === 'gitlab') {
+    const tokenEnv = config.gitlab.tokenEnv;
+    if (!env[tokenEnv]) {
+      add('GitLab access', 'fail', `${tokenEnv} is not set`);
+    } else if (opts.codeHost && typeof opts.codeHost.checkAccess === 'function') {
+      let access;
+      try { access = await opts.codeHost.checkAccess(); } catch (err) { access = { ok: false, user: '', detail: String(err && err.message) }; }
+      add('GitLab access', access.ok ? 'ok' : 'fail', access.detail);
+      if (access.ok && access.user && access.user !== config.board.botUser) {
+        add('GitLab identity', 'fail', `the token belongs to ${access.user}, but board.botUser is ${config.board.botUser}; they must be the same account`);
+      }
+    } else {
+      add('GitLab access', 'warn', `${tokenEnv} is set; access to the project was not checked`);
+    }
   }
   if (opts.codeHost) {
     let protectedBase = null;
