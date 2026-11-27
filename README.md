@@ -1,4 +1,4 @@
-# pai-orbit · v1.14.0
+# pai-orbit · v1.15.0
 
 A structured developer methodology harness for Claude Code, Cursor, GitHub Copilot, and OpenAI Codex (beta) — installed as a plugin in Claude Code and Cursor, and with one command for Copilot and Codex.
 
@@ -122,6 +122,13 @@ Workflow skills (`/git`, `/board`, `/analysis`, `/data-model`, `/process-map`, `
 > **`/groom` readiness gate** — before handing off to `/design`, `/groom` audits every open question and classifies it as a *functional gap* (what the system does — must be resolved) or a *design question* (how it does it — deferred to `/design`). The feature is not marked groomed until all functional gaps are closed. This prevents half-specified features from entering design.
 
 > **`/review security`** — the security-focused pass is a sub-mode of `/review`. Use `/review` for full code review, `/review security` for the OWASP checklist, or `/review full` for both in sequence. Critical and High findings block merge.
+
+> **Migrating to v1.15.0 — modes now move their own ticket.** `/groom`, `/design`, `/build` and `/review` move the ticket at close-out using a `## Mode transitions` map that `/setup` writes.
+> - Re-run `/setup` once — it adds `## Mode transitions` to `.claude/pai-orbit-config.md` (existing sections untouched).
+> - Until you do, those modes finish normally and print: "No mode-transition map — re-run /setup to enable automatic board moves."
+> - `/build` no longer closes the issue; it moves it (e.g. to In review). The issue closes on merge via `closes #N`.
+> - `/review` never moves the issue to Done by default. Done comes from the merge (your board's merge automation or `closes #N`). If your board has an "Approved" or "Ready to merge" column, an approving review moves the issue there.
+> - GitHub Projects: run `gh auth refresh -s project` if moves fail with a permission error.
 
 > **v1.14.0 — `/build` handles security findings lists.** Give `/build` a findings tracker (`.xlsx` / `.csv`) or assessment report: it triages each finding against the code, asks the owner once to confirm the plan, fixes by root-cause group with an attack test per `code`-lane finding, lists ops work (key rotation, history purge) in `ops-actions.md`, and writes results to a copy of the tracker. Usage: `/build Goal: fix the findings in <path>`. Update pai-orbit to pick it up (see [Updating](#updating)).
 
