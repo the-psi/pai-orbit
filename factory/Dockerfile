@@ -37,6 +37,11 @@ RUN sed -i 's/\r$//' plugins/pai-orbit/dist/claude-code/hooks/*.sh \
  && chmod +x factory/bin/factory.js \
  && ln -s /opt/orbit/factory/bin/factory.js /usr/local/bin/orbit-factory
 
+# The address this image is published under, when it is built for a registry. The setup page
+# prefills it, so the compose file it makes points back at this same image.
+ARG FACTORY_IMAGE=""
+ENV FACTORY_IMAGE=${FACTORY_IMAGE}
+
 USER factory
 # A repo mounted from the host (a local bare repo for a trial) is owned by another user, and git
 # refuses such repos by default. This container exists only to run the factory, so trust them.

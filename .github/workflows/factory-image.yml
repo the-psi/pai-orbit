@@ -72,6 +72,7 @@ jobs:
             echo "version=${version}"
             echo "publish=${publish}"
             echo "tags=${tags}"
+            echo "first=${tags%%,*}"
           } >> "${GITHUB_OUTPUT}"
 
       - name: Set up Docker Buildx
@@ -93,6 +94,8 @@ jobs:
           load: true
           push: false
           tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            FACTORY_IMAGE=${{ steps.meta.outputs.publish == 'true' && steps.meta.outputs.first || '' }}
           labels: |
             org.opencontainers.image.title=orbit-factory
             org.opencontainers.image.description=Agentic Factory for pai-orbit

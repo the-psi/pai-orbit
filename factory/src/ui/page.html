@@ -102,6 +102,15 @@
   .legend { color: var(--muted); font-size: 12px; margin: 8px 0 0; }
 
   .me { color: var(--muted); font-size: 12px; }
+  .setbtn { font: inherit; font-size: 12.5px; color: var(--ink); background: var(--chip); border: 1px solid var(--line); border-radius: 7px; padding: 3px 11px; cursor: pointer; }
+  .setbtn:hover { border-color: var(--accent); }
+  .set h4 { margin: 18px 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .set h4:first-child { margin-top: 0; }
+  .set table { width: 100%; border-collapse: collapse; }
+  .set td { padding: 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .set td:first-child { width: 44%; color: var(--muted); padding-right: 10px; }
+  .set .on { color: var(--ok); font-weight: 600; } .set .off { color: var(--muted); }
+  .set .foot { color: var(--muted); font-size: 12.5px; margin-top: 16px; }
   .cta { margin-top: 7px; font-size: 12.5px; font-weight: 600; color: var(--person); }
   .cta.sent { color: var(--muted); font-weight: 500; }
   /* The review screen: one question, one document, one decision. */
@@ -183,6 +192,7 @@
     <h1>Agentic Factory</h1>
     <span class="project" id="project"></span>
     <span class="spacer"></span>
+    <button class="setbtn" id="setbtn" type="button">Settings</button>
     <span class="me" id="me"></span>
     <span class="updated" id="updated">Loading…</span>
   </div>
@@ -414,6 +424,43 @@
   }
   function closePanel() { openId = null; $('panel').classList.remove('open'); $('panel').setAttribute('aria-hidden', 'true'); }
   $('close').addEventListener('click', closePanel);
+
+  // Settings: how this factory is set up. Read only; changing it means editing the config file.
+  function openSettings() {
+    openId = null;
+    $('pid').textContent = 'Settings';
+    $('ptitle').textContent = 'How this factory is set up';
+    var b = $('pbody'); b.textContent = 'Loading…';
+    $('panel').classList.add('open'); $('panel').setAttribute('aria-hidden', 'false');
+    fetch('/api/settings', { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (s) {
+        b.textContent = '';
+        var box = el('div', 'set');
+        function group(title, rows) {
+          box.appendChild(el('h4', null, title));
+          var t = el('table');
+          rows.forEach(function (r) {
+            var tr = el('tr'); tr.appendChild(el('td', null, r[0]));
+            var td = el('td', r[2] || null, r[1]); tr.appendChild(td); t.appendChild(tr);
+          });
+          box.appendChild(t);
+        }
+        var onOff = function (v) { return v ? 'On' : 'Off'; };
+        group('Project', [['Name', s.project], ['Repository', s.repository], ['Main branch', s.branch], ['Platform', s.platform], ["Factory's account", s.factoryAccount]].concat(s.singleAccountTrial ? [['One-person trial', 'On', 'on']] : []));
+        group('Where it stops for a person', s.stops.map(function (g) {
+          var text = g.on ? (g.always ? 'Always' : 'On') + (g.who.length ? ' · ' + g.who.join(', ') : '') : 'Off';
+          return [g.name, text, g.on ? 'on' : 'off'];
+        }).concat([['May answer questions', s.answers.join(', ')]]));
+        group('Checks it does by itself', s.checks.map(function (c) { return [c.name, onOff(c.on), c.on ? 'on' : 'off']; }));
+        group('AI model per step', s.models.map(function (m) { return [m.step, m.model]; }));
+        group('Limits', [['Cost per ticket', money(s.limits.costPerTicketUsd)], ['Cost per day', money(s.limits.costPerDayUsd)], ['Tickets at once', String(s.limits.ticketsAtOnce)], ['Checks for tickets every', s.limits.checkEverySeconds + ' s'], ['Alerts', s.alerts], ['Release level', s.release]]);
+        box.appendChild(el('p', 'foot', 'These settings come from the config file and cannot be changed here. To change them, edit the file (or make a new one with the setup page) and restart the factory.'));
+        b.appendChild(box);
+      })
+      .catch(function (err) { b.textContent = 'Could not load the settings: ' + err.message; });
+  }
+  $('setbtn').addEventListener('click', openSettings);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePanel(); });
 
   function loadTicket() {

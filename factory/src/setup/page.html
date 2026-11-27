@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agentic Factory setup</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --panel: #ffffff; --ink: #1c2330; --muted: #5d6878; --line: #dfe3ea;
+    --accent: #2459d6; --accent-ink: #ffffff; --ok: #1a7f4b; --warn: #a15c00; --bad: #b3261e;
+    --chip: #eef1f6; --soft: #f0f4fd; --shadow: 0 1px 2px rgba(20, 30, 50, .08), 0 4px 14px rgba(20, 30, 50, .06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b; --panel: #1b2029; --ink: #e8ecf3; --muted: #9aa6b8; --line: #2c3442;
+      --accent: #7aa2ff; --accent-ink: #0d1320; --ok: #58c98b; --warn: #e3a64a; --bad: #ff8a80;
+      --chip: #262d39; --soft: #1f2838; --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 22px 16px 40px; }
+  header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+  h1 { font-size: 20px; margin: 0; font-weight: 650; }
+  header span { color: var(--muted); }
+  .layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 20px; align-items: start; }
+  .layout > * { min-width: 0; }
+  @media (max-width: 760px) { .layout { grid-template-columns: minmax(0, 1fr); } .card { padding: 18px 16px 16px; } }
+
+  /* The list of steps. One step is on screen at a time. */
+  nav ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  @media (max-width: 760px) { nav ol { grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; padding-bottom: 4px; } }
+  nav button { width: 100%; display: flex; align-items: center; gap: 10px; text-align: left; font: inherit; color: var(--muted);
+    background: none; border: 0; border-radius: 8px; padding: 8px 10px; cursor: pointer; }
+  nav button:hover { background: var(--chip); }
+  nav button[aria-current="step"] { background: var(--panel); color: var(--ink); font-weight: 600; box-shadow: var(--shadow); }
+  nav .n { flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12.5px; font-weight: 700;
+    background: var(--chip); color: var(--muted); }
+  nav button[aria-current="step"] .n { background: var(--accent); color: var(--accent-ink); }
+  nav button.done .n { background: var(--ok); color: #fff; }
+  nav button.bad .n { background: var(--bad); color: #fff; }
+
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); padding: 22px 24px 20px; }
+  .card h2 { font-size: 19px; margin: 0 0 4px; }
+  .lede { color: var(--muted); margin: 0 0 18px; max-width: 62ch; }
+  .field { margin: 0 0 16px; max-width: 560px; }
+  .field > label, .legend { display: block; font-weight: 600; margin-bottom: 4px; }
+  .hint { color: var(--muted); font-size: 13.5px; margin: 3px 0 0; }
+  input[type=text], input[type=password], input[type=number], input[type=url] {
+    width: 100%; font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+  input:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  input[type=number] { max-width: 150px; }
+  .row { display: flex; gap: 0 14px; flex-wrap: wrap; max-width: 720px; } .row .field { flex: 1 1 240px; }
+
+  /* A choice between a few options, shown as cards. */
+  .choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 16px; max-width: 720px; }
+  .choice { position: relative; display: block; border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; cursor: pointer; }
+  .choice input { position: absolute; opacity: 0; }
+  .choice b { display: block; } .choice span { color: var(--muted); font-size: 13.5px; }
+  .choice:has(input:checked) { border-color: var(--accent); background: var(--soft); box-shadow: 0 0 0 1px var(--accent) inset; }
+  .choice:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* An on/off line. */
+  .switches { border: 1px solid var(--line); border-radius: 10px; margin-bottom: 16px; max-width: 720px; }
+  .sw { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-top: 1px solid var(--line); }
+  .sw:first-child { border-top: 0; }
+  .sw .t { flex: 1; } .sw .t b { display: block; } .sw .t span { color: var(--muted); font-size: 13.5px; }
+  .sw input { appearance: none; flex: none; width: 42px; height: 24px; border-radius: 12px; background: var(--line); position: relative; cursor: pointer; margin: 0; transition: background .15s; }
+  .sw input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .15s; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+  .sw input:checked { background: var(--accent); } .sw input:checked::after { left: 21px; }
+  .sw .always { font-size: 12.5px; font-weight: 700; color: var(--warn); background: color-mix(in srgb, var(--warn) 14%, transparent); border-radius: 6px; padding: 3px 9px; }
+  @media (prefers-reduced-motion: reduce) { .sw input, .sw input::after { transition: none; } }
+
+  details { border: 1px solid var(--line); border-radius: 10px; padding: 0 14px; margin: 0 0 16px; max-width: 720px; }
+  summary { cursor: pointer; font-weight: 600; padding: 11px 0; }
+  details[open] summary { border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+  table.models { border-collapse: collapse; width: 100%; margin-bottom: 12px; }
+  table.models td { padding: 5px 0; vertical-align: middle; } table.models td:first-child { width: 46%; padding-right: 12px; }
+
+  .note { background: var(--soft); border-left: 4px solid var(--accent); border-radius: 6px; padding: 10px 14px; margin: 0 0 16px; max-width: 720px; }
+  .note.warn { background: color-mix(in srgb, var(--warn) 12%, transparent); border-color: var(--warn); }
+  .problems { background: color-mix(in srgb, var(--bad) 10%, transparent); border-left: 4px solid var(--bad); border-radius: 6px; padding: 10px 14px; margin: 0 0 16px; max-width: 720px; }
+  .problems ul { margin: 4px 0 0; padding-left: 20px; } .problems button { font: inherit; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
+  .result { margin: 8px 0 0; padding: 8px 12px; border-radius: 8px; font-size: 14px; }
+  .result.ok { background: color-mix(in srgb, var(--ok) 13%, transparent); } .result.bad { background: color-mix(in srgb, var(--bad) 11%, transparent); }
+  .result ul { margin: 0; padding-left: 18px; }
+
+  .btn { font: inherit; font-weight: 600; border-radius: 8px; padding: 8px 16px; cursor: pointer; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn.small { padding: 5px 11px; font-size: 13.5px; font-weight: 500; }
+  .btn[disabled] { opacity: .5; cursor: default; }
+  .actions { display: flex; gap: 10px; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .actions .spacer { flex: 1; }
+
+  .tabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin-bottom: 0; }
+  .tabs button { font: inherit; background: none; border: 0; border-bottom: 3px solid transparent; padding: 8px 12px; cursor: pointer; color: var(--muted); }
+  .tabs button[aria-selected="true"] { color: var(--ink); font-weight: 600; border-bottom-color: var(--accent); }
+  .file { border: 1px solid var(--line); border-top: 0; border-radius: 0 0 10px 10px; margin-bottom: 18px; }
+  .file .bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  .file .bar span { color: var(--muted); font-size: 13.5px; flex: 1 1 240px; }
+  pre { margin: 0; padding: 12px 14px; overflow: auto; max-height: 340px; font: 13px/1.5 ui-monospace, Consolas, monospace; white-space: pre; }
+  ol.steps { padding-left: 22px; margin: 6px 0 0; max-width: 760px; } ol.steps li { margin: 0 0 10px; }
+  code.cmd { display: inline-block; margin-top: 4px; background: var(--chip); border-radius: 6px; padding: 4px 9px; font: 13px ui-monospace, Consolas, monospace; overflow-wrap: anywhere; }
+  table.env { border-collapse: collapse; width: 100%; max-width: 760px; margin-bottom: 16px; }
+  table.env th, table.env td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.env th { font-size: 13px; color: var(--muted); }
+  h3 { font-size: 15.5px; margin: 20px 0 8px; }
+  .gate { max-width: 460px; margin: 60px auto; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>Agentic Factory setup</h1><span id="where"></span></header>
+
+  <div class="card gate" id="gate" hidden>
+    <h2>Enter the setup code</h2>
+    <p class="lede">The code was printed in the terminal when the setup page started. It keeps other people from using this page.</p>
+    <form id="gateForm" autocomplete="off">
+      <div class="field"><label for="code">Setup code</label><input type="password" id="code" autocomplete="off"></div>
+      <div class="problems" id="gateErr" hidden></div>
+      <button class="btn primary" id="codeGo" type="submit">Continue</button>
+    </form>
+  </div>
+
+  <div class="layout" id="app" hidden>
+    <nav aria-label="Setup steps"><ol id="nav"></ol></nav>
+    <main>
+      <form class="card" id="card" novalidate autocomplete="off">
+        <div id="problems" class="problems" hidden role="alert"></div>
+        <div id="body"></div>
+        <div class="actions">
+          <button class="btn" type="button" id="back">Back</button>
+          <span class="spacer"></span>
+          <button class="btn primary" type="submit" id="next">Next</button>
+        </div>
+      </form>
+    </main>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var STEPS = [
+    { id: 'project', title: 'Project' },
+    { id: 'stops', title: 'Where it stops' },
+    { id: 'people', title: 'People' },
+    { id: 'models', title: 'AI models' },
+    { id: 'limits', title: 'Limits' },
+    { id: 'run', title: 'Where it runs' },
+    { id: 'secrets', title: 'Credentials' },
+    { id: 'files', title: 'Your files' }
+  ];
+  var code = '', opts = null, at = 0, form = null, built = null, tab = 0, reached = 0, badSteps = {};
+  // Credentials stay in this page's memory only. They are sent to the setup page's own server to
+  // be written into the .env file, and to nothing else.
+  var secrets = { ai: '', token: '', viewPassword: '', slack: '', users: {} };
+  var $ = function (id) { return document.getElementById(id); };
+
+  function esc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function api(path, body) {
+    var init = { method: body ? 'POST' : 'GET', headers: { 'x-setup-code': code } };
+    if (body) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(body); }
+    return fetch(path, init).then(function (res) { return res.json().then(function (data) { return { status: res.status, data: data }; }); });
+  }
+  function platformName() { return form.platform === 'gitlab' ? 'GitLab' : 'GitHub'; }
+  function requestName() { return form.platform === 'gitlab' ? 'merge request' : 'pull request'; }
+
+  // ---------------------------------------------------------------- small builders
+  function field(id, label, value, hint, extra) {
+    return '<div class="field"><label for="' + id + '">' + esc(label) + '</label><input id="' + id + '" value="' + esc(value) + '" ' + (extra || 'type="text"') + '>' +
+      (hint ? '<p class="hint">' + hint + '</p>' : '') + '</div>';
+  }
+  function choice(name, value, title, text, current) {
+    return '<label class="choice"><input type="radio" name="' + name + '" value="' + value + '"' + (current === value ? ' checked' : '') + '><b>' + esc(title) + '</b><span>' + esc(text) + '</span></label>';
+  }
+  function sw(id, title, text, on) {
+    return '<label class="sw"><span class="t"><b>' + esc(title) + '</b><span>' + esc(text) + '</span></span><input type="checkbox" role="switch" id="' + id + '"' + (on ? ' checked' : '') + '></label>';
+  }
+  function fixed(title, text) {
+    return '<div class="sw"><span class="t"><b>' + esc(title) + '</b><span>' + esc(text) + '</span></span><span class="always">Always on</span></div>';
+  }
+  function val(id) { var el = $(id); return el ? el.value.trim() : ''; }
+  function on(id) { var el = $(id); return el ? el.checked : false; }
+  function picked(name) { var el = document.querySelector('input[name="' + name + '"]:checked'); return el ? el.value : ''; }
+  function deciders() {
+    var all = [];
+    function add(list) { String(list || '').split(/[,\n]/).forEach(function (n) { n = n.trim().replace(/^@/, ''); if (n && n !== '*' && n !== 'reporter' && all.indexOf(n) < 0) all.push(n); }); }
+    if (form.gates.requirements) add(form.people.requirements);
+    if (form.gates.design) add(form.people.design);
+    add(form.people.merge); add(form.people.release); add(form.people.answer);
+    return all;
+  }
+
+  // ---------------------------------------------------------------- the steps
+  var VIEW = {
+    project: function () {
+      return '<h2>Which project should the factory work on?</h2>' +
+        '<p class="lede">One factory works on one repository. It reads the tickets there and opens its changes there.</p>' +
+        '<div class="legend">Where are the tickets and the code?</div><div class="choices">' +
+        choice('platform', 'github', 'GitHub', 'Issues and pull requests', form.platform) +
+        choice('platform', 'gitlab', 'GitLab', 'Issues and merge requests, also self-hosted', form.platform) + '</div>' +
+        field('project', 'Project name', form.project, 'A short name, used in file names and on the status page.') +
+        field('repoUrl', 'Repository URL', form.repoUrl, 'The address you would use to clone it, for example https://github.com/your-org/your-app.git', 'type="url" spellcheck="false"') +
+        field('baseBranch', 'Main branch', form.baseBranch, 'The branch changes are merged into.', 'type="text" spellcheck="false"') +
+        field('botUser', "The factory's account name", form.botUser, 'The user name of the account whose token the factory will use. Best is an account made for the factory.', 'type="text" spellcheck="false"') +
+        '<div class="switches">' + sw('singleAccount', 'One-person trial', "The factory uses my own account. Code is then approved by a comment, because an account cannot approve its own change. For a trial only.", form.singleAccount) + '</div>';
+    },
+    stops: function () {
+      return '<h2>Where should the factory stop and ask a person?</h2>' +
+        '<p class="lede">At a stop, nothing moves until a named person approves. Fewer stops is faster. More stops is safer while you build trust.</p>' +
+        '<div class="switches">' +
+        sw('gReq', 'After requirements', 'A person reads the requirements the factory wrote before it designs.', form.gates.requirements) +
+        sw('gDes', 'After design', 'A person reads the design before the factory builds.', form.gates.design) +
+        fixed('Before merging code', 'A person approves the ' + requestName() + '. This stop cannot be switched off.') +
+        fixed('Before release', 'A person approves the release. This stop cannot be switched off.') + '</div>' +
+        '<h3>Checks the factory does by itself</h3><div class="switches">' +
+        sw('sRev', 'Review its own work', 'After building, the AI reviews and fixes its own change.', form.stages.review) +
+        sw('sVer', 'Second AI review', 'A separate AI, which cannot edit, reviews the change before a person sees it.', form.stages.independentReview) +
+        sw('sPw', 'Browser tests', 'Write and run browser tests. For projects with a user interface that already use Playwright.', form.stages.playwright) + '</div>';
+    },
+    people: function () {
+      var hint = 'User names on ' + platformName() + ', separated by commas.';
+      var h = '<h2>Who decides?</h2><p class="lede">Only the people named here can approve. An approval from anyone else is ignored.</p>';
+      if (form.gates.requirements) h += field('pReq', 'Approves requirements', form.people.requirements, hint, 'type="text" spellcheck="false"');
+      if (form.gates.design) h += field('pDes', 'Approves design', form.people.design, hint, 'type="text" spellcheck="false"');
+      h += field('pMer', 'Approves code', form.people.merge, hint, 'type="text" spellcheck="false"') +
+        field('pRel', 'Approves release', form.people.release, hint, 'type="text" spellcheck="false"') +
+        '<details><summary>More people (optional)</summary>' +
+        field('pAns', 'May answer the factory\'s questions', form.people.answer, 'The person who raised the ticket can always answer. Add others here.', 'type="text" spellcheck="false"') +
+        field('pEsc', 'Told when nobody responds', form.people.escalation, 'Named in a reminder when an approval or answer has waited too long.', 'type="text" spellcheck="false"') +
+        '</details>';
+      return h;
+    },
+    models: function () {
+      var list = '<datalist id="modelHints">' + opts.modelHints.map(function (m) { return '<option value="' + esc(m) + '">'; }).join('') + '</datalist>';
+      var enabled = opts.stages.filter(function (s) {
+        if (s.name === 'review') return form.stages.review;
+        if (s.name === 'verify') return form.stages.independentReview;
+        if (s.name === 'playwright') return form.stages.playwright;
+        return true;
+      });
+      var any = enabled.some(function (s) { return form.models[s.name]; });
+      return '<h2>Which AI model does the work?</h2>' +
+        '<p class="lede">One model can do everything. You can also give a lighter step a cheaper model, or the second review a different one.</p>' + list +
+        field('mDefault', 'Model for all steps', form.models.default || '', 'Leave empty to use the default of the AI tool. Otherwise a model name such as <code>sonnet</code> or <code>opus</code>.', 'type="text" list="modelHints" spellcheck="false" placeholder="default of the AI tool"') +
+        '<details' + (any ? ' open' : '') + '><summary>Choose a different model for some steps</summary><table class="models">' +
+        enabled.map(function (s) {
+          return '<tr><td><label for="m_' + s.name + '">' + esc(s.label) + '</label></td><td><input type="text" id="m_' + s.name + '" list="modelHints" spellcheck="false" placeholder="same as above" value="' + esc(form.models[s.name] || '') + '"></td></tr>';
+        }).join('') + '</table></details>' +
+        '<p class="hint">The name is passed to the AI tool as it is. A name that does not exist makes that step fail when it runs.</p>';
+    },
+    limits: function () {
+      return '<h2>How much may it spend and do at once?</h2>' +
+        '<p class="lede">These are hard stops. When one is reached the factory stops and hands the ticket to people.</p>' +
+        '<div class="row">' +
+        field('lTicket', 'Cost limit per ticket (USD)', form.limits.costPerTicketUsd, 'One ticket never costs more than this.', 'type="number" min="0.01" step="any"') +
+        field('lDay', 'Cost limit per day (USD)', form.limits.costPerDayUsd, 'No new work starts once the day reaches this.', 'type="number" min="0.01" step="any"') + '</div>' +
+        field('conc', 'Tickets worked on at once', form.concurrency, 'From 1 to 5. Tickets waiting for a person do not count.', 'type="number" min="1" max="5" step="1"') +
+        '<div class="switches">' + sw('slack', 'Slack alerts', 'Send a message with a link when the factory needs someone. Needs a Slack webhook address.', form.slack) + '</div>';
+    },
+    run: function () {
+      var cloud = form.target === 'containerapps';
+      return '<h2>Where will the factory run?</h2><p class="lede">The same image runs everywhere. This only changes the files and steps you get.</p><div class="choices">' +
+        choice('target', 'local', 'This computer', 'Docker Desktop, for a trial', form.target) +
+        choice('target', 'server', 'A server or VM', 'Docker on Linux, for example an Azure VM', form.target) +
+        choice('target', 'containerapps', 'Azure Container Apps', 'Azure runs it; secrets in Key Vault', form.target) + '</div>' +
+        field('image', 'Image', form.image, 'The factory image to run. Either a registry address, which Docker downloads (for example <code>ghcr.io/your-org/orbit-factory:0.1.0</code>), or the name of an image already on that machine (for example <code>orbit-factory:dev</code>). A server needs the registry address.', 'type="text" spellcheck="false" placeholder="ghcr.io/your-org/orbit-factory:0.1.0"') +
+        (cloud ? '' : field('port', 'Status page port', form.port, 'The status page opens on this port.', 'type="number" min="1" max="65535" step="1"'));
+    },
+    secrets: function () {
+      var ai = '<div class="legend">Which AI credential?</div><div class="choices">' +
+        choice('aiKey', 'api', 'Anthropic API key', 'For a shared or server factory', form.aiKey) +
+        choice('aiKey', 'subscription', 'Claude Code token', 'One-person trial only', form.aiKey) + '</div>';
+      if (form.target === 'containerapps') {
+        return '<h2>Credentials</h2><p class="lede">On Azure Container Apps the credentials live in Key Vault, so nothing is typed here. The next step lists the secrets to create.</p>' + ai;
+      }
+      var names = deciders();
+      var h = '<h2>Credentials</h2><p class="lede">What you type here goes only into the <code>.env</code> file you get on the next step. You can leave it all empty and fill that file in by hand later.</p>' + ai +
+        field('sAi', form.aiKey === 'api' ? 'Anthropic API key' : 'Claude Code token', secrets.ai, '', 'type="password" autocomplete="off"') +
+        field('sToken', platformName() + ' token', secrets.token, form.platform === 'gitlab'
+          ? 'A project access token with the <code>api</code> and <code>write_repository</code> scopes.'
+          : 'A fine-grained token limited to this one repository, with read and write for contents, issues and pull requests.', 'type="password" autocomplete="off"') +
+        '<button class="btn small" type="button" id="test">Test this token</button><div id="testOut"></div>' +
+        '<h3>Status page sign-in</h3><p class="hint" style="margin:0 0 10px">Each person who decides gets a name and a password. At least 8 characters, no spaces.</p>';
+      if (!names.length) h += '<div class="note warn">No people are named yet. Go back to "People" first.</div>';
+      h += '<div class="row">';
+      names.forEach(function (n, i) {
+        h += field('u_' + i, n, secrets.users[n] || '', '', 'type="password" autocomplete="off" data-user="' + esc(n) + '"');
+      });
+      h += '</div>';
+      if (names.length) h += '<button class="btn small" type="button" id="gen">Make passwords for me</button> <label style="margin-left:10px"><input type="checkbox" id="show"> Show what is typed</label>';
+      h += '<details style="margin-top:16px"><summary>More (optional)</summary>' +
+        field('sView', 'Shared password to look without deciding', secrets.viewPassword, 'For people who only watch the board.', 'type="password" autocomplete="off"') +
+        (form.slack ? field('sSlack', 'Slack webhook address', secrets.slack, '', 'type="password" autocomplete="off"') : '') + '</details>';
+      return h;
+    },
+    files: function () {
+      if (!built) return '<h2>Your files</h2><p class="lede">Preparing…</p>';
+      var f = built.files[tab] || built.files[0];
+      var h = '<h2>Your files are ready</h2><p class="lede">' + (form.target === 'containerapps'
+        ? 'One settings file, and the list of secrets to create in Azure.'
+        : 'Three files. Put them together in one folder on the machine that runs the factory.') + '</p>' +
+        '<div class="tabs" role="tablist">' + built.files.map(function (x, i) {
+          return '<button type="button" role="tab" aria-selected="' + (i === tab) + '" data-tab="' + i + '">' + esc(x.name) + '</button>';
+        }).join('') + '</div><div class="file"><div class="bar"><span>' + esc(f.what) + '</span>' +
+        (f.secret ? '<button class="btn small" type="button" id="reveal">Show values</button>' : '') +
+        '<button class="btn small" type="button" id="copy">Copy</button><button class="btn small" type="button" id="dl">Download</button></div>' +
+        '<pre id="pre">' + esc(f.secret ? mask(f.content) : f.content) + '</pre></div>' +
+        '<div><button class="btn primary" type="button" id="dlAll">Download all files</button>' +
+        (opts.canSave ? ' <button class="btn" type="button" id="save">Save to the folder</button>' : '') + '</div><div id="saveOut"></div>';
+      if (form.target === 'containerapps') {
+        h += '<h3>Credentials to create</h3><table class="env"><tr><th>Name</th><th>What it is</th></tr>' + built.env.map(function (e) {
+          return '<tr><td><code>' + esc(e.name) + '</code>' + (e.required ? '' : ' (optional)') + '</td><td>' + esc(e.what) + '</td></tr>';
+        }).join('') + '</table>';
+      }
+      h += '<h3>What to do next</h3><ol class="steps">' + built.steps.map(function (s) {
+        return '<li>' + esc(s.text) + (s.command ? '<br><code class="cmd">' + esc(s.command) + '</code>' : '') + '</li>';
+      }).join('') + '</ol>';
+      return h;
+    }
+  };
+  function mask(text) { return text.split('\n').map(function (l) { return /^[A-Z_]+=.+/.test(l) ? l.replace(/=.*/, '=••••••••') : l; }).join('\n'); }
+
+  // Read what is on screen back into the answers.
+  var READ = {
+    project: function () {
+      form.platform = picked('platform') || form.platform; form.project = val('project'); form.repoUrl = val('repoUrl');
+      form.baseBranch = val('baseBranch'); form.botUser = val('botUser'); form.singleAccount = on('singleAccount');
+    },
+    stops: function () {
+      form.gates = { requirements: on('gReq'), design: on('gDes') };
+      form.stages = { review: on('sRev'), independentReview: on('sVer'), playwright: on('sPw') };
+    },
+    people: function () {
+      if ($('pReq')) form.people.requirements = val('pReq');
+      if ($('pDes')) form.people.design = val('pDes');
+      form.people.merge = val('pMer'); form.people.release = val('pRel'); form.people.answer = val('pAns'); form.people.escalation = val('pEsc');
+    },
+    models: function () {
+      form.models.default = val('mDefault');
+      opts.stages.forEach(function (s) { var el = $('m_' + s.name); if (el) form.models[s.name] = el.value.trim(); });
+    },
+    limits: function () {
+      form.limits = { costPerTicketUsd: Number(val('lTicket')), costPerDayUsd: Number(val('lDay')) };
+      form.concurrency = Number(val('conc')); form.slack = on('slack');
+    },
+    run: function () {
+      form.target = picked('target') || form.target; form.image = val('image');
+      if ($('port')) form.port = Number(val('port'));
+    },
+    secrets: function () {
+      form.aiKey = picked('aiKey') || form.aiKey;
+      if ($('sAi')) secrets.ai = val('sAi');
+      if ($('sToken')) secrets.token = val('sToken');
+      if ($('sView')) secrets.viewPassword = val('sView');
+      if ($('sSlack')) secrets.slack = val('sSlack');
+      document.querySelectorAll('input[data-user]').forEach(function (el) { secrets.users[el.getAttribute('data-user')] = el.value.trim(); });
+    },
+    files: function () {}
+  };
+
+  // ---------------------------------------------------------------- drawing and moving
+  function showProblems(list) {
+    var box = $('problems');
+    if (!list || !list.length) { box.hidden = true; box.innerHTML = ''; return; }
+    var here = STEPS[at].id;
+    box.innerHTML = '<b>' + (list.length === 1 ? 'One thing to fix' : list.length + ' things to fix') + '</b><ul>' + list.map(function (p) {
+      var i = STEPS.findIndex(function (s) { return s.id === p.step; });
+      var link = i >= 0 && p.step !== here ? ' <button type="button" data-go="' + i + '">Go to "' + esc(STEPS[i].title) + '"</button>' : '';
+      return '<li>' + esc(p.message) + link + '</li>';
+    }).join('') + '</ul>';
+    box.hidden = false;
+  }
+  function draw() {
+    var step = STEPS[at];
+    $('where').textContent = 'Step ' + (at + 1) + ' of ' + STEPS.length;
+    $('nav').innerHTML = STEPS.map(function (s, i) {
+      var cls = badSteps[s.id] ? 'bad' : (i < reached && i !== at ? 'done' : '');
+      return '<li><button type="button" class="' + cls + '" data-go="' + i + '"' + (i === at ? ' aria-current="step"' : '') + (i > reached ? ' disabled' : '') +
+        '><span class="n">' + (cls === 'done' ? '✓' : i + 1) + '</span>' + esc(s.title) + '</button></li>';
+    }).join('');
+    $('body').innerHTML = VIEW[step.id]();
+    $('back').hidden = at === 0;
+    $('next').hidden = step.id === 'files';
+    $('next').textContent = at === STEPS.length - 2 ? 'Make my files' : 'Next';
+    var first = $('body').querySelector('h2');
+    if (first) { first.tabIndex = -1; first.focus({ preventScroll: true }); }
+    window.scrollTo(0, 0);
+  }
+  function go(i) {
+    READ[STEPS[at].id]();
+    if (i > reached) return;
+    showProblems([]);
+    at = i;
+    if (STEPS[at].id === 'files') { build(); return; }
+    draw();
+  }
+  function build() {
+    built = null; draw();
+    api('/api/build', { form: form, secrets: secrets }).then(function (r) {
+      if (r.status === 200) { built = r.data; badSteps = {}; tab = 0; draw(); return; }
+      var list = (r.data && r.data.problems) || [{ step: 'files', message: (r.data && r.data.error) || 'The files could not be made.' }];
+      badSteps = {}; list.forEach(function (p) { badSteps[p.step] = true; });
+      var i = STEPS.findIndex(function (s) { return s.id === list[0].step; });
+      at = i >= 0 ? i : at - 1; draw(); showProblems(list);
+    }).catch(function () { at -= 1; draw(); showProblems([{ step: '', message: 'The setup page did not answer. Is it still running in the terminal?' }]); });
+  }
+  function next() {
+    var id = STEPS[at].id;
+    READ[id]();
+    $('next').disabled = true;
+    api('/api/check', { form: form, secrets: secrets }).then(function (r) {
+      $('next').disabled = false;
+      if (r.status === 401) { askCode('The setup code is no longer accepted.'); return; }
+      var mine = ((r.data && r.data.problems) || []).filter(function (p) { return p.step === id; });
+      if (mine.length) { badSteps[id] = true; draw(); showProblems(mine); return; }
+      delete badSteps[id];
+      reached = Math.max(reached, at + 1);
+      go(at + 1);
+    }).catch(function () { $('next').disabled = false; showProblems([{ step: '', message: 'The setup page did not answer. Is it still running in the terminal?' }]); });
+  }
+  function download(name, content) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([content], { type: 'text/plain' }));
+    a.download = name === '.env' ? 'factory.env' : name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  }
+  function password() {
+    var chars = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789', out = '', bytes = new Uint8Array(18);
+    crypto.getRandomValues(bytes);
+    for (var i = 0; i < bytes.length; i += 1) out += chars[bytes[i] % chars.length];
+    return out;
+  }
+
+  // ---------------------------------------------------------------- events
+  $('card').addEventListener('submit', function (e) { e.preventDefault(); if (STEPS[at].id !== 'files') next(); });
+  $('back').addEventListener('click', function () { go(at - 1); });
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('button'); if (!t) return;
+    if (t.hasAttribute('data-go')) { go(Number(t.getAttribute('data-go'))); return; }
+    if (t.hasAttribute('data-tab')) { tab = Number(t.getAttribute('data-tab')); draw(); return; }
+    var f = built && built.files[tab];
+    if (t.id === 'reveal' && f) { var shown = t.textContent === 'Hide values'; $('pre').textContent = shown ? mask(f.content) : f.content; t.textContent = shown ? 'Show values' : 'Hide values'; }
+    if (t.id === 'copy' && f) { navigator.clipboard.writeText(f.content).then(function () { t.textContent = 'Copied'; setTimeout(function () { t.textContent = 'Copy'; }, 1500); }); }
+    if (t.id === 'dl' && f) download(f.name, f.content);
+    if (t.id === 'dlAll' && built) built.files.forEach(function (x, i) { setTimeout(function () { download(x.name, x.content); }, i * 400); });
+    if (t.id === 'save') save(false);
+    if (t.id === 'saveOver') save(true);
+    if (t.id === 'gen') { READ.secrets(); deciders().forEach(function (n) { if (!secrets.users[n]) secrets.users[n] = password(); }); draw(); $('show').checked = true; reveal(true); }
+    if (t.id === 'test') test(t);
+  });
+  document.addEventListener('change', function (e) {
+    if (e.target.id === 'show') reveal(e.target.checked);
+    // These change what the rest of the step shows.
+    if (e.target.name === 'target') { READ.run(); draw(); }
+    if (e.target.name === 'aiKey') { READ.secrets(); draw(); }
+  });
+  function reveal(show) { document.querySelectorAll('#body input[type=password], #body input[data-shown]').forEach(function (el) { el.type = show ? 'text' : 'password'; el.setAttribute('data-shown', '1'); }); }
+  function test(btn) {
+    READ.secrets(); btn.disabled = true; $('testOut').innerHTML = '<p class="hint">Asking ' + platformName() + '…</p>';
+    api('/api/test', { form: form, secrets: secrets }).then(function (r) {
+      btn.disabled = false;
+      var d = r.data || {};
+      $('testOut').innerHTML = '<div class="result ' + (d.ok ? 'ok' : 'bad') + '"><ul>' + (d.lines || [d.error || 'No answer.']).map(function (l) { return '<li>' + esc(l) + '</li>'; }).join('') + '</ul></div>';
+    }).catch(function () { btn.disabled = false; $('testOut').innerHTML = '<div class="result bad">The setup page did not answer.</div>'; });
+  }
+  function save(overwrite) {
+    api('/api/save', { form: form, secrets: secrets, overwrite: overwrite }).then(function (r) {
+      var d = r.data || {}, out = $('saveOut');
+      if (r.status === 200) out.innerHTML = '<div class="result ok">Saved ' + esc(d.written.join(', ')) + ' in ' + esc(d.folder) + '.</div>';
+      else if (r.status === 409) out.innerHTML = '<div class="result bad">Already in the folder: ' + esc(d.existing.join(', ')) + '. <button class="btn small" type="button" id="saveOver">Replace them</button></div>';
+      else out.innerHTML = '<div class="result bad">' + esc(d.error || 'Could not save.') + '</div>';
+    });
+  }
+
+  // ---------------------------------------------------------------- start
+  function askCode(message) {
+    $('app').hidden = true; $('gate').hidden = false;
+    $('gateErr').hidden = !message; $('gateErr').textContent = message || '';
+    $('code').focus();
+  }
+  function start() {
+    api('/api/options').then(function (r) {
+      if (r.status !== 200) { askCode(code ? 'That code was not accepted.' : ''); return; }
+      opts = r.data;
+      form = opts.defaults;
+      if (!form.image && opts.image) form.image = opts.image;
+      ['requirements', 'design', 'merge', 'release', 'answer', 'escalation'].forEach(function (k) { form.people[k] = (form.people[k] || []).join(', '); });
+      $('gate').hidden = true; $('app').hidden = false;
+      draw();
+    }).catch(function () { askCode('The setup page did not answer.'); });
+  }
+  $('gateForm').addEventListener('submit', function (e) { e.preventDefault(); code = $('code').value.trim(); start(); });
+  // The code arrives after the # so it is never sent to a server or kept in a log, and it is
+  // removed from the address bar once read.
+  function takeCode() {
+    var m = location.hash.match(/code=([^&]+)/);
+    if (!m) return false;
+    code = decodeURIComponent(m[1]); history.replaceState(null, '', location.pathname);
+    return true;
+  }
+  takeCode();
+  start();
+  // A new address pasted into a tab that already shows this page changes only the part after
+  // the #, which does not reload the page. Pick the new code up anyway (the setup page was
+  // restarted, so the old code no longer works).
+  window.addEventListener('hashchange', function () { if (takeCode() && !$('gate').hidden) start(); else if (opts === null) start(); });
+})();
+</script>
+</body>
+</html>

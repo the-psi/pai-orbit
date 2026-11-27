@@ -17,6 +17,7 @@ const path = require('node:path');
 const crypto = require('node:crypto');
 const { execFileSync } = require('node:child_process');
 const { GATE_ROLE, inRole, roleNames } = require('../roles');
+const { MODEL_STAGES, modelFor } = require('../config');
 const { safeId } = require('../state');
 
 const PAGE = fs.readFileSync(path.join(__dirname, 'page.html'), 'utf8');
@@ -229,6 +230,51 @@ function createUiServer(opts) {
     };
   }
 
+  /**
+   * How this factory is set up, for the read-only Settings view. The config holds no credentials,
+   * but a repository URL can carry one (https://user:token@host/...), so that part is removed.
+   */
+  function settings() {
+    let repository = String(config.repo.url || '');
+    try {
+      const u = new URL(repository);
+      if (u.username || u.password) { u.username = ''; u.password = ''; repository = u.toString(); }
+    } catch { /* a path or an scp-style address: nothing to remove */ }
+    const who = (role) => (config.roles[role] || []).map((n) => (n === '@reporter' ? 'the person who raised the ticket' : n === '*' ? 'any reviewer' : n));
+    const st = config.stages || {};
+    const on = { review: st.review !== false, verify: st.independentReview === true, playwright: st.playwright === true };
+    const labels = { groom: 'Groom', design: 'Design', build: 'Build', test: 'Test', playwright: 'Browser tests', review: 'Review', verify: 'Second AI review', release: 'Release' };
+    return {
+      project: config.project,
+      repository,
+      branch: config.repo.baseBranch,
+      platform: config.board.type === config.codeHost.type ? config.board.type : `${config.board.type} (tickets), ${config.codeHost.type} (code)`,
+      factoryAccount: config.board.botUser,
+      singleAccountTrial: single,
+      stops: [
+        { name: 'After requirements', on: config.gates.requirements === true, always: false, who: who('requirementsApprover') },
+        { name: 'After design', on: config.gates.design === true, always: false, who: who('designApprover') },
+        { name: 'Before merging code', on: true, always: true, who: who('mergeApprover') },
+        { name: 'Before release', on: true, always: true, who: who('releaseApprover') },
+      ],
+      answers: who('answer'),
+      checks: [
+        { name: 'Reviews its own work', on: on.review },
+        { name: 'Second AI review', on: on.verify },
+        { name: 'Browser tests', on: on.playwright },
+      ],
+      models: MODEL_STAGES.filter((s) => on[s] !== false).map((s) => ({ step: labels[s] || s, model: modelFor(config, s) || 'default of the AI tool' })),
+      limits: {
+        costPerTicketUsd: config.limits.costPerTicketUsd,
+        costPerDayUsd: config.limits.costPerDayUsd,
+        ticketsAtOnce: config.concurrency,
+        checkEverySeconds: config.pollSeconds,
+      },
+      alerts: config.notifier.type === 'slack' ? 'Slack' : 'none (console only)',
+      release: config.release.level,
+    };
+  }
+
   /** Who is asking. `user` is '' for someone who may only look. */
   function identify(req) {
     const open = !password && users.size === 0;
@@ -408,6 +454,7 @@ function createUiServer(opts) {
     try {
       if (url.pathname === '/') return send(res, 200, 'text/html; charset=utf-8', PAGE);
       if (url.pathname === '/api/overview') return json(res, 200, overview(who.user));
+      if (url.pathname === '/api/settings') return json(res, 200, settings());
       const m = url.pathname.match(/^\/api\/tickets\/([^/]+)(\/review)?$/);
       if (m) {
         const id = decodeURIComponent(m[1]);

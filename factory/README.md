@@ -108,6 +108,40 @@ node factory/bin/factory.js once          # releases and closes the ticket
 For a real agent, set `"runner": { "type": "claude-cli" }`. On your own machine it uses the Claude
 Code login you already have.
 
+## Set it up with the setup page
+
+The image has a setup mode. It asks about ten questions in a form and gives you the three files a
+deployment needs: `factory.config.json`, `.env` and `docker-compose.yml`. It needs no config,
+because making one is its job.
+
+```bash
+mkdir my-factory && cd my-factory
+docker run --rm -p 127.0.0.1:8080:8080 -v "$PWD:/out" ghcr.io/<owner>/orbit-factory:<version> setup --out /out
+```
+
+Open the address it prints (it carries a one-time code), fill in the steps, then download the files
+or save them into the folder. Stop it with Ctrl+C and start the factory with `docker compose up -d`.
+
+| Step | What it asks |
+|---|---|
+| Project | GitHub or GitLab, repository URL, main branch, the factory's account |
+| Where it stops | The two optional stops, and the checks the factory does by itself |
+| People | Who approves at each stop |
+| AI models | One model for all steps, or a different one for some |
+| Limits | Cost per ticket and per day, tickets at once, Slack alerts |
+| Where it runs | This computer, a server or VM, or Azure Container Apps |
+| Credentials | The AI key, the platform token (with a "Test this token" button), status page sign-ins |
+| Your files | The files, and the steps to start for the place you chose |
+
+About credentials: what is typed goes only into the `.env` file. The page needs the code from the
+terminal on every call, refuses calls from another site, logs nothing that was typed, writes only
+into the folder it was started with, and does not replace an existing file without asking. For
+Azure Container Apps it asks for no credentials and lists the secrets to create in Key Vault.
+
+The setup page only makes files. It does not change a running factory and does not write to a
+cloud. The status page has a read-only **Settings** button that shows what a running factory was
+set up with.
+
 ## Run it in Docker (laptop or server)
 
 ```bash
@@ -185,6 +219,7 @@ It has not yet been run against a real GitLab server.
 ## Commands
 
 ```
+orbit-factory setup          serve the setup page (needs no config)
 orbit-factory run            start and keep polling
 orbit-factory once           do everything possible now, then exit
 orbit-factory preflight      check the setup
@@ -388,6 +423,7 @@ factory/
 │   ├── preflight.js        setup checks
 │   ├── decision.js         reading approve and reject from a comment
 │   ├── gitlab-api.js       GitLab REST client
+│   ├── setup/              the setup page: form, file builder, server
 │   ├── boards/             local, github, gitlab
 │   ├── codehosts/          local, github, gitlab
 │   ├── runners/            claude-cli, fake

@@ -154,6 +154,20 @@ disk.
 note the commit check relies on, the token scopes, pushing through the credential helper to a real
 server, and behaviour with approval rules and merge pipelines.
 
+### 6. Setup page and Settings view (2026-11-27)
+
+| What | Result |
+|---|---|
+| Answers to files, the checks, the credentials rules, the server's access rules, token testing (`setup.test.js`, 21 tests) | Pass |
+| All eight steps clicked through in a real browser (headless Edge), files made and saved | Pass |
+| The generated config loads in the factory; the generated sign-ins are read by the status page; `docker compose config` accepts the generated compose file | Pass |
+| The image started in `setup` mode with a mounted folder writes the three files into it | Pass |
+| The Settings view on the status page shows stops, people, models and limits, and hides a credential placed in the repository URL | Pass |
+
+**Not proven:** "Test this token" against a real GitHub or GitLab (tested with simulated answers);
+the Azure Container Apps steps, which are instructions and were not carried out; saving into a
+mounted folder on a Linux server, where the folder's owner may differ from the container's user.
+
 ## Defects found and fixed during testing
 
 | # | Found by | Defect | Fix |

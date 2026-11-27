@@ -9,10 +9,16 @@ const { createFactory } = require('../src/index');
 const { preflight } = require('../src/preflight');
 const { StateStore } = require('../src/state');
 const { createUiServer, listenPlan } = require('../src/ui/server');
+const { createSetupServer, setupListenPlan, newCode } = require('../src/setup/server');
 
 const USAGE = `orbit-factory — run pai-orbit unattended, from backlog to release
 
 Usage: orbit-factory <command> [options]
+
+First time
+  setup [--out <dir>] [--port <n>] [--image <name>]
+                          Serve the setup page: answer a few questions, get the config,
+                          the credentials file and the compose file. Needs no config.
 
 Running
   run                     Start the factory and keep polling the board
@@ -97,6 +103,37 @@ async function main(argv) {
   if (command === 'events') {
     const id = need(positional[1], 'ticket id');
     for (const e of new StateStore(dataDir).events(id)) process.stdout.write(`${JSON.stringify(e)}\n`);
+    return 0;
+  }
+
+  // The setup page makes the config, so it must start without one.
+  if (command === 'setup') {
+    const plan = setupListenPlan(flags);
+    const code = newCode();
+    const outDir = flags.out && flags.out !== true ? path.resolve(flags.out) : (process.env.FACTORY_SETUP_OUT || '');
+    const image = flags.image && flags.image !== true ? String(flags.image) : (process.env.FACTORY_IMAGE || '');
+    const server = createSetupServer({ code, outDir, image, log });
+    await new Promise((resolve, reject) => {
+      server.once('error', reject);
+      server.listen(plan.port, plan.host, resolve);
+    });
+    const shown = plan.host === '0.0.0.0' ? 'localhost' : plan.host;
+    process.stdout.write([
+      '',
+      'Agentic Factory setup page is ready. Open this address in your browser:',
+      '',
+      `  http://${shown}:${plan.port}/#code=${code}`,
+      ...(process.env.FACTORY_SANDBOXED ? ['', '  (In Docker: if you published another port with -p, use that port instead.)'] : []),
+      '',
+      outDir ? `Files can be saved into: ${outDir}` : 'Files are offered as downloads (start with --out <dir> to save them into a folder).',
+      'The code in the address keeps other people out. Press Ctrl+C to stop when you have your files.',
+      '',
+    ].join('\n'));
+    await new Promise((resolve) => {
+      const stop = () => server.close(() => resolve());
+      process.on('SIGINT', stop);
+      process.on('SIGTERM', stop);
+    });
     return 0;
   }
 
