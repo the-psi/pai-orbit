@@ -88,7 +88,7 @@ Both the `@media (prefers-color-scheme: dark)` block AND the explicit `:root[dat
 block are required, not redundant. The media query alone only responds to OS-level preference —
 it misses a page or environment that force-sets `data-theme="dark"` independently of OS
 preference (e.g. a viewer or wrapper app that applies the attribute regardless of system theme).
-A structural self-audit this session found exactly this gap: a report styled with only the media
+A structural self-audit found exactly this gap: a report styled with only the media
 query rendered in light colors on an ink-dark-forced environment, unreadable against a dark
 surrounding chrome. Ship both blocks.
 

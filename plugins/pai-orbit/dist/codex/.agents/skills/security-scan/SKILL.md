@@ -1,6 +1,6 @@
 ---
 name: security-scan
-description: Runs an adaptive parallel multi-agent security assessment of any codebase and consolidates it into a severity-ranked, verifiable report. Use when asked for a dependency audit, outdated or EOL package check, CVE/vulnerability scan, secrets or hardcoded-credentials scan, infrastructure/IaC review, CI/CD or supply-chain security review, an SBOM, or any "is this repo secure" / security report request.
+description: Runs an adaptive parallel multi-agent security assessment of any codebase and consolidates it into a severity-ranked, verifiable report. Use when asked for a dependency audit, outdated or EOL package check, CVE/vulnerability scan, secrets or hardcoded-credentials scan, infrastructure/IaC review, CI/CD or supply-chain security review, an SBOM, or any "is this repo secure" / security report request. SKIP when the ask is only to review one branch or PR diff (use `$orbit-review security`) or to fix findings from an existing report (use `/build`).
 ---
 
 # Parallel Security Assessment
@@ -250,8 +250,8 @@ silently-empty field, a stale PDF, or a section that exists in outline only.
    non-placeholder) rather than reading through by eye.
 3. **Counts are asserted, not eyeballed** — anywhere the report states a total (findings count,
    "N/N endpoints covered," a tier breakdown, a verdict split), independently recompute that number
-   from the underlying evidence/scan data and assert equality. A report claiming "286/286 covered"
-   is worth nothing if nobody actually counted the 286 to check.
+   from the underlying evidence/scan data and assert equality. A report claiming "N/N covered"
+   is worth nothing if nobody actually counted the N to check.
 4. **Byte-count-comparison rule compliance** — grep for the patterns `report-format.md` forbids
    ("N bytes" comparisons standing in for real evidence) and manually classify every hit: legitimate
    prose (e.g. quoting a captured `[non-JSON response...]` message, or "byte-for-byte identical"

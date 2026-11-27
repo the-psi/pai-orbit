@@ -177,9 +177,9 @@ Implements Playwright automation from a generated test plan — the automation c
 **Switch to:** `/build` for fixes, `/design` for architecture decisions
 
 Two sub-modes:
-- `/review` — full review: architecture conformance against `constraints.md`, conventions from CLAUDE.md, requirements match, safety
-- `/review security` — security-focused pass: full OWASP Top 10 checklist (injection, auth, authorisation, secrets, input validation, dependencies, cryptography, cloud/IAM). Critical and High findings block merge.
-- `/review full` — both passes in sequence
+- `/review` — full review: architecture conformance against `constraints.md`, conventions from CLAUDE.md, requirements match, safety. Runs the security pass automatically when the diff touches auth, routes, input, uploads, outbound calls, logging, CI/CD or IaC — no flag needed
+- `/review security` — security-focused pass: OWASP checklist (injection, auth incl. JWT config, authorisation incl. role guards on every changed route and API version, business logic, secrets, input validation incl. mass assignment and uploads, SSRF and deserialization, API hardening, client-side, logging, CI/CD and IaC, dependencies, cryptography, cloud/IAM), then — only after the user says yes — read-only live verification of the changed routes against a local instance with a throwaway account. Critical and High findings block merge.
+- `/review full` — both passes, always
 
 Produces sign-off documents the architect or tech lead can reference as an approval record.
 
@@ -279,7 +279,7 @@ Code simplification pass — reviews recently changed code for over-engineering,
 
 ### `/security-scan`
 
-Whole-repository security assessment — runs an adaptive set of parallel subagents (dependencies per ecosystem with native audit plus OSV.dev cross-check, app code, CI/CD, IaC, secrets sweep; an extended tier adds auth, upload, business logic, client, data, and live DAST against an authorized target) and consolidates one severity-ranked report. Findings are CONFIRMED or PLAUSIBLE, each with `file:line`; the report also lists what passed and what was out of scope. Deep reviews add an adversarial verification wave and a mandatory self-audit. Output goes to `security-assessment/` in the target project (`FINDINGS.md` as source, rendered to HTML/PDF with Playwright). Broader than `/review security`, which checks only a branch diff.
+Whole-repository security assessment — runs an adaptive set of parallel subagents (dependencies per ecosystem with native audit plus OSV.dev cross-check, app code, CI/CD, IaC, secrets sweep; an extended tier adds auth, upload, business logic, client, data, and live DAST against an authorized target) and consolidates one severity-ranked report. Findings are CONFIRMED or PLAUSIBLE, each with `file:line`; the report also lists what passed and what was out of scope. Deep reviews add an adversarial verification wave and a mandatory self-audit. Output goes to `security-assessment/` in the target project (`FINDINGS.md` as source, rendered to HTML/PDF with Playwright). Broader than `/review security`, which checks only a branch diff (and live-checks only the routes that diff changed, on a local instance).
 
 ---
 
