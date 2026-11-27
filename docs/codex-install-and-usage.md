@@ -18,6 +18,8 @@ npx github:the-psi/pai-orbit init codex
 
 That's it. Works on macOS, Linux, WSL, and native Windows PowerShell. **Requires Node.js 18+** on your machine — npx fetches the repo, then a small Node CLI copies files into your project. No `curl`, no shell script, no platform-specific binary.
 
+The CLI copies the files from the `pai-orbit-codex.tar.gz` asset of the matching GitHub Release (`v<version>`); GitHub counts that download, which is how pai-orbit tracks installs per coding agent. No data about you or your project is sent. If the download fails (offline, firewall), it prints `using bundled files` and installs from the copy npx already fetched.
+
 ### Pin a specific release
 
 Append a git ref (branch, tag, or SHA) with `#`:
@@ -27,9 +29,12 @@ npx github:the-psi/pai-orbit#<tag> init codex
 ```
 
 ```bash
-# Install from a pre-merge branch:
-npx github:the-psi/pai-orbit#feat/codex-adapter init codex
+# Install from a pre-merge branch (bundled files, so you get that branch's dist/):
+PAI_ORBIT_OFFLINE=1 npx github:the-psi/pai-orbit#feat/codex-adapter init codex
 ```
+
+(PowerShell: `$env:PAI_ORBIT_OFFLINE=1; npx github:the-psi/pai-orbit#feat/codex-adapter init codex`.)
+Without `PAI_ORBIT_OFFLINE=1`, a branch install downloads the release asset for the version in that branch's `package.json`, not the branch's own `dist/`.
 
 ### Re-install / upgrade
 

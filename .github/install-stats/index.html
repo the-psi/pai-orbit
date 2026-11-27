@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>pai-orbit install stats</title>
+<link rel="icon" type="image/svg+xml" href="../brand/pai-orbit-icon.svg">
+<meta name="description" content="Installs of pai-orbit per coding agent, from GitHub release downloads and repo clones.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    /* Agent colours follow each brand (validated colour-blind safe with labels + tables):
+       Claude clay, OpenAI green for Codex (OpenAI brand is black), Copilot purple,
+       Cursor = ink (its logo is black/white; its orange accent is too close to Claude clay). */
+    --s-claude: #d97757;   /* Claude Code — brand clay */
+    --s-codex:  #10a37f;   /* Codex — OpenAI green */
+    --s-copilot:#8534f3;   /* GitHub Copilot — brand purple */
+    --s-cursor: var(--text-primary); /* Cursor — ink, like its logo */
+    --on-fill: #ffffff;
+    --on-yellow: #0b0b0b;
+    --hover-wash: rgba(11,11,11,0.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #0d0d0d; --surface: #1a1a19;
+      --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #898781;
+      --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+      --s-claude: #d4714f; --s-codex: #10a37f; --s-copilot: #8534f3; --s-cursor: var(--text-primary);
+      --hover-wash: rgba(255,255,255,0.06);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19;
+    --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --s-claude: #d4714f; --s-codex: #10a37f; --s-copilot: #8534f3; --s-cursor: var(--text-primary);
+    --hover-wash: rgba(255,255,255,0.06);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--text-primary);
+    font: 15px/1.5 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1 { font-family: "Space Grotesk", "Inter", sans-serif; letter-spacing: -0.01em; }
+  .brand { display: inline-block; margin-bottom: 14px; }
+  .logo { height: 34px; width: auto; display: block; }
+  .logo-dark { display: none; }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .logo-light { display: none; }
+    :root:where(:not([data-theme="light"])) .logo-dark { display: block; }
+  }
+  :root[data-theme="dark"] .logo-light { display: none; }
+  :root[data-theme="dark"] .logo-dark { display: block; }
+  :root[data-theme="light"] .logo-light { display: block; }
+  :root[data-theme="light"] .logo-dark { display: none; }
+  main { max-width: 1120px; margin: 0 auto; padding: 32px 16px 64px; }
+  header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  h1 { font-size: 24px; font-weight: 600; margin: 0 0 4px; }
+  h2 { font-size: 16px; font-weight: 600; margin: 0; }
+  .sub { color: var(--text-secondary); margin: 0; }
+  .muted { color: var(--text-muted); font-size: 13px; }
+  button {
+    font: inherit; font-size: 13px; color: var(--text-primary); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; cursor: pointer;
+  }
+  button:hover { background: var(--hover-wash); }
+  button[aria-pressed="true"] { font-weight: 600; border-color: var(--text-muted); }
+  button:focus-visible, .hit:focus-visible { outline: 2px solid var(--text-secondary); outline-offset: 2px; }
+
+  .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 24px 0; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .tile .label { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); font-size: 13px; }
+  .tile .value { font-size: 32px; font-weight: 600; margin: 4px 0 0; }
+  .tile .delta { color: var(--text-secondary); font-size: 13px; }
+  .swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+
+  .filters { display: flex; gap: 8px; align-items: center; margin: 8px 0 16px; flex-wrap: wrap; }
+  .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; min-width: 0; }
+  .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--text-secondary); margin: 4px 0 8px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .key-line { width: 14px; height: 2px; border-radius: 1px; }
+  .chart { position: relative; width: 100%; }
+  .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .note { margin: 8px 0 0; color: var(--text-muted); font-size: 13px; }
+  .empty { color: var(--text-muted); font-size: 14px; padding: 24px 0; }
+
+  .tooltip {
+    position: absolute; pointer-events: none; z-index: 2; min-width: 140px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12); padding: 8px 10px; font-size: 13px; display: none;
+  }
+  .tooltip .t-title { color: var(--text-secondary); margin-bottom: 4px; }
+  .tooltip .t-row { display: flex; align-items: center; gap: 8px; }
+  .tooltip .t-row b { font-weight: 600; min-width: 2ch; }
+  .tooltip .t-row span { color: var(--text-secondary); }
+
+  details { margin-top: 8px; }
+  summary { cursor: pointer; color: var(--text-secondary); font-size: 13px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 8px; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--grid); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  th { color: var(--text-secondary); font-weight: 600; }
+
+  .segbar { display: flex; gap: 2px; height: 28px; margin: 12px 0 8px; }
+  .segbar .seg { border-radius: 4px; display: flex; align-items: center; padding-left: 8px; font-size: 13px; font-weight: 600; min-width: 0; white-space: nowrap; overflow: visible; }
+
+  @media (max-width: 860px) {
+    .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <a class="brand" href="../" aria-label="pai orbit home">
+        <img class="logo logo-light" src="../brand/pai-orbit-logo-light.svg" alt="pai orbit">
+        <img class="logo logo-dark" src="../brand/pai-orbit-logo-dark.svg" alt="pai orbit">
+      </a>
+      <h1>Install stats</h1>
+      <p class="sub">Installs per coding agent, counted by GitHub. No tracking code runs in the plugin.</p>
+      <p class="muted" id="updated"></p>
+    </div>
+    <button id="theme" type="button" aria-label="Switch light or dark theme">Theme</button>
+  </header>
+
+  <section class="tiles" id="tiles" aria-label="Totals"></section>
+
+  <div class="filters" role="group" aria-label="Date range">
+    <span class="muted">Range</span>
+    <button type="button" data-range="30">Last 30 days</button>
+    <button type="button" data-range="90">Last 90 days</button>
+    <button type="button" data-range="0">All time</button>
+  </div>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Installs over time</h2>
+      <span class="muted">Cumulative release downloads (installs + updates)</span>
+    </div>
+    <div class="legend" id="legend-cum"></div>
+    <div class="chart" id="chart-cum"></div>
+    <details><summary>Show data table</summary><div id="table-cum"></div></details>
+  </section>
+
+  <div class="grid2">
+    <section class="card">
+      <div class="card-head"><h2>New installs per week</h2></div>
+      <div class="legend" id="legend-week"></div>
+      <div class="chart" id="chart-week"></div>
+      <details><summary>Show data table</summary><div id="table-week"></div></details>
+    </section>
+    <section class="card">
+      <div class="card-head"><h2>Share by coding agent</h2><span class="muted">All time</span></div>
+      <div id="share"></div>
+      <div class="legend" id="legend-share"></div>
+      <h2 style="margin-top:24px">Downloads per version</h2>
+      <div class="legend" id="legend-ver"></div>
+      <div class="chart" id="chart-ver"></div>
+      <details><summary>Show data table</summary><div id="table-ver"></div></details>
+    </section>
+  </div>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>Repo clones per day: unique machines</h2>
+      <span class="muted">Cursor + team + bots — trend only, not an install count</span>
+    </div>
+    <div class="legend" id="legend-clones"></div>
+    <div class="chart" id="chart-clones"></div>
+    <p class="note" id="clones-note"></p>
+    <details><summary>Show data table</summary><div id="table-clones"></div></details>
+  </section>
+</main>
+
+<script>
+"use strict";
+
+// ---- entities: color follows the agent, never its rank -------------------
+const AGENTS = [
+  { key: "claude-code", name: "Claude Code", color: "var(--s-claude)",  ink: "#0b0b0b" },
+  { key: "codex",       name: "Codex",       color: "var(--s-codex)",   ink: "#0b0b0b" },
+  { key: "copilot",     name: "Copilot",     color: "var(--s-copilot)", ink: "#ffffff" },
+];
+const CURSOR = { name: "Cursor (repo clones)", color: "var(--s-cursor)" };
+const NS = "http://www.w3.org/2000/svg";
+let RANGE = 0; // 0 = all time
+let DATA = null;
+
+// ---- theme toggle (wins over OS setting both ways) -----------------------
+const root = document.documentElement;
+function currentTheme() {
+  const set = root.getAttribute("data-theme");
+  if (set) return set;
+  return matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+document.getElementById("theme").addEventListener("click", () => {
+  root.setAttribute("data-theme", currentTheme() === "dark" ? "light" : "dark");
+  try { localStorage.setItem("theme", root.getAttribute("data-theme")); } catch (e) {}
+  render();
+});
+try { const t = localStorage.getItem("theme"); if (t) root.setAttribute("data-theme", t); } catch (e) {}
+const qTheme = new URLSearchParams(location.search).get("theme");
+if (qTheme === "light" || qTheme === "dark") root.setAttribute("data-theme", qTheme);
+
+// ---- helpers --------------------------------------------------------------
+const fmt = (n) => Number(n).toLocaleString("en-US");
+const dayMs = 86400000;
+const toDate = (s) => new Date(s + "T00:00:00Z");
+const iso = (d) => d.toISOString().slice(0, 10);
+const short = (s) => toDate(s).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+function el(tag, attrs = {}, parent) {
+  const n = document.createElementNS(NS, tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+function h(tag, props = {}, parent) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (k === "text") n.textContent = v; else if (k === "style") n.style.cssText = v; else n.setAttribute(k, v);
+  }
+  if (parent) parent.appendChild(n);
+  return n;
+}
+// Clean integer axis: step from 1/2/5 × 10^k (and 25, 250…), ~4 intervals.
+function niceScale(v) {
+  const raw = Math.max(1, v) / 4;
+  let step = 1;
+  outer: for (let p = 1; p < 1e9; p *= 10) {
+    for (const m of [1, 2, 2.5, 5]) {
+      const s = m * p;
+      if (!Number.isInteger(s)) continue;
+      if (s >= raw) { step = s; break outer; }
+    }
+  }
+  return { max: step * Math.max(1, Math.ceil(Math.max(1, v) / step)), step };
+}
+function gridAndTicks(svg, sc, y, m, W) {
+  for (let v = 0; v <= sc.max; v += sc.step) {
+    const yy = y(v);
+    el("line", { x1: m.l, x2: W - m.r, y1: yy, y2: yy, stroke: v ? "var(--grid)" : "var(--axis)", "stroke-width": 1 }, svg);
+    el("text", { x: m.l - 8, y: yy + 4, "text-anchor": "end", "font-size": 11, fill: "var(--text-muted)", style: "font-variant-numeric:tabular-nums" }, svg).textContent = fmt(v);
+  }
+}
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const head = lines.shift().split(",");
+  return lines.filter(Boolean).map((l) => {
+    const c = l.split(","); const o = {};
+    head.forEach((k, i) => { o[k] = c[i]; });
+    return o;
+  });
+}
+function legend(id, items, kind) {
+  const box = document.getElementById(id); box.replaceChildren();
+  for (const it of items) {
+    const s = h("span", {}, box);
+    h("i", { class: (it.kind || kind) === "line" ? "key-line" : "swatch", style: `background:${it.color}` }, s);
+    s.appendChild(document.createTextNode(it.name));
+  }
+}
+function table(id, headers, rows) {
+  const box = document.getElementById(id); box.replaceChildren();
+  const t = h("table", {}, box); const tr = h("tr", {}, h("thead", {}, t));
+  headers.forEach((x, i) => h("th", { text: x, class: i ? "num" : "" }, tr));
+  const tb = h("tbody", {}, t);
+  for (const r of rows) { const row = h("tr", {}, tb); r.forEach((x, i) => h("td", { text: x, class: i ? "num" : "" }, row)); }
+}
+
+// ---- tooltip --------------------------------------------------------------
+function tooltipFor(container) {
+  const tip = h("div", { class: "tooltip", role: "status" }, container);
+  return {
+    show(x, y, title, rows) {
+      tip.replaceChildren();
+      h("div", { class: "t-title", text: title }, tip);
+      for (const r of rows) {
+        const row = h("div", { class: "t-row" }, tip);
+        h("i", { class: "key-line", style: `background:${r.color || "transparent"}` }, row); // blank key keeps rows aligned
+        h("b", { text: r.value }, row);
+        h("span", { text: r.label }, row);
+      }
+      tip.style.display = "block";
+      const cw = container.clientWidth, tw = tip.offsetWidth;
+      tip.style.left = Math.min(Math.max(0, x + 12), Math.max(0, cw - tw)) + "px";
+      tip.style.top = Math.max(0, y - tip.offsetHeight - 8) + "px";
+    },
+    hide() { tip.style.display = "none"; },
+  };
+}
+
+// ---- data shaping ----------------------------------------------------------
+function shape(releases, clones) {
+  // Per day, total downloads per agent = sum over versions of that day's snapshot.
+  const byDay = {};
+  for (const r of releases) {
+    byDay[r.date] = byDay[r.date] || {};
+    byDay[r.date][r.agent] = (byDay[r.date][r.agent] || 0) + Number(r.download_count);
+  }
+  const snapDays = Object.keys(byDay).sort();
+  const today = snapDays[snapDays.length - 1] || iso(new Date());
+  // Fill every calendar day from first snapshot to today, carrying values forward.
+  const days = [];
+  if (snapDays.length) for (let t = toDate(snapDays[0]).getTime(); t <= toDate(today).getTime(); t += dayMs) days.push(iso(new Date(t)));
+  const cum = {}; const last = {};
+  for (const a of AGENTS) { cum[a.key] = []; last[a.key] = 0; }
+  for (const d of days) for (const a of AGENTS) {
+    if (byDay[d] && byDay[d][a.key] !== undefined) last[a.key] = byDay[d][a.key];
+    cum[a.key].push(last[a.key]);
+  }
+  // Latest snapshot per version.
+  const latest = releases.filter((r) => r.date === today);
+  const versions = [...new Set(latest.map((r) => r.version))].sort((a, b) =>
+    a.slice(1).split(".").map(Number).reduce((s, n, i) => s || n - b.slice(1).split(".").map(Number)[i], 0));
+  const perVersion = versions.map((v) => {
+    const o = { version: v };
+    for (const a of AGENTS) o[a.key] = latest.filter((r) => r.version === v && r.agent === a.key).reduce((s, r) => s + Number(r.download_count), 0);
+    return o;
+  });
+  // est = unique machines minus CI jobs: CI job count is exact, but GitHub doesn't say
+  // which machines were CI, so the true value lies between unique - ci and unique - 1.
+  const cl = clones.map((c) => {
+    const unique = Number(c.unique_cloners), ci = Number(c.ci_clones);
+    return { date: c.date, clones: Number(c.est_install_clones), unique, ci, raw: Number(c.clones),
+             est: Math.max(0, unique - ci), hi: ci > 0 ? Math.max(0, unique - 1) : unique };
+  });
+  const firstActive = cl.findIndex((c) => c.raw > 0);
+  return { days, cum, today, perVersion, clones: firstActive < 0 ? [] : cl.slice(firstActive), start: snapDays[0] || today };
+}
+function inRange(dates) {
+  if (!RANGE || !dates.length) return dates.map((_, i) => i);
+  const cut = iso(new Date(toDate(dates[dates.length - 1]).getTime() - (RANGE - 1) * dayMs));
+  return dates.map((d, i) => (d >= cut ? i : -1)).filter((i) => i >= 0);
+}
+
+// ---- tiles ------------------------------------------------------------------
+function renderTiles(D) {
+  const box = document.getElementById("tiles"); box.replaceChildren();
+  const n = D.days.length;
+  for (const a of AGENTS) {
+    const s = D.cum[a.key]; const now = s[n - 1] || 0;
+    const weekAgoIdx = n - 8; const delta = weekAgoIdx >= 0 ? now - s[weekAgoIdx] : null;
+    const t = h("div", { class: "tile" }, box);
+    const l = h("div", { class: "label" }, t);
+    h("i", { class: "swatch", style: `background:${a.color}` }, l); l.appendChild(document.createTextNode(a.name));
+    h("div", { class: "value", text: fmt(now) }, t);
+    h("div", { class: "delta", text: delta === null ? `since ${short(D.start)}` : `+${fmt(delta)} last 7 days` }, t);
+  }
+  const c = D.clones.slice(-7);
+  const t = h("div", { class: "tile" }, box);
+  const l = h("div", { class: "label" }, t);
+  h("i", { class: "swatch", style: `background:${CURSOR.color}` }, l); l.appendChild(document.createTextNode(CURSOR.name));
+  // Average per day: summing daily uniques would count the same machine every day.
+  h("div", { class: "value", text: c.length ? `~${fmt(Math.round(c.reduce((s, x) => s + x.est, 0) / c.length))}` : "–" }, t);
+  h("div", { class: "delta", text: `unique machines per day, CI removed, avg of last ${c.length || 7} days · trend only` }, t);
+}
+
+// ---- line chart (cumulative) ------------------------------------------------
+function lineChart(id, dates, series, opts = {}) {
+  const box = document.getElementById(id); box.replaceChildren();
+  if (dates.length === 0) { h("div", { class: "empty", text: "No data yet." }, box); return; }
+  const W = Math.max(320, box.clientWidth), H = opts.height || 260;
+  const m = { t: 12, r: opts.endLabels ? 96 : 16, b: 28, l: 40 };
+  const pw = W - m.l - m.r, ph = H - m.t - m.b;
+  const sc = niceScale(Math.max(opts.reference || 0, ...series.flatMap((s) => s.values), ...(opts.bars ? opts.bars.values : [])));
+  const x = (i) => m.l + (dates.length === 1 ? pw / 2 : (i * pw) / (dates.length - 1));
+  const y = (v) => m.t + ph - (v / sc.max) * ph;
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": opts.label || "" }, box);
+  gridAndTicks(svg, sc, y, m, W);
+  if (opts.bars) {
+    // Context bars on the same count axis (same unit as the line, so one axis is honest).
+    const bw = Math.min(16, Math.max(4, (dates.length > 1 ? pw / (dates.length - 1) : pw) * 0.4));
+    opts.bars.values.forEach((v, i) => {
+      if (!v) return;
+      const x0 = Math.max(m.l, Math.min(W - m.r - bw, x(i) - bw / 2)), y1 = y(v), hgt = y(0) - y1, r = Math.min(4, hgt / 2, bw / 2);
+      el("path", { d: `M${x0},${y1 + hgt}V${y1 + r}Q${x0},${y1} ${x0 + r},${y1}H${x0 + bw - r}Q${x0 + bw},${y1} ${x0 + bw},${y1 + r}V${y1 + hgt}Z`, fill: opts.bars.color }, svg);
+    });
+  }
+  const ticks = Math.min(dates.length, Math.max(2, Math.floor(pw / 90)));
+  for (let k = 0; k < ticks; k++) {
+    const i = ticks === 1 ? 0 : Math.round((k * (dates.length - 1)) / (ticks - 1));
+    el("text", { x: x(i), y: H - 8, "text-anchor": "middle", "font-size": 11, fill: "var(--text-muted)" }, svg).textContent = short(dates[i]);
+  }
+  if (opts.reference !== undefined) {
+    const yy = y(opts.reference);
+    el("line", { x1: m.l, x2: W - m.r, y1: yy, y2: yy, stroke: "var(--text-muted)", "stroke-width": 1 }, svg);
+    el("text", { x: W - m.r, y: yy - 6, "text-anchor": "end", "font-size": 11, fill: "var(--text-secondary)" }, svg).textContent = opts.referenceLabel;
+  }
+  for (const s of series) {
+    const d = s.values.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("");
+    if (s.values.length > 1) el("path", { d, fill: "none", stroke: s.color, "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+    const li = s.values.length - 1;
+    el("circle", { cx: x(li), cy: y(s.values[li]), r: 4, fill: s.color, stroke: "var(--surface)", "stroke-width": 2 }, svg);
+  }
+  if (opts.endLabels) {
+    // Direct end labels in text ink. Series ending on the same value share one label
+    // ("Codex, Copilot 7"); if distinct labels would still collide, leave it to legend + tooltip.
+    const groups = {};
+    for (const s of series) { const v = s.values[s.values.length - 1]; (groups[v] = groups[v] || []).push(s.name); }
+    const ends = Object.entries(groups).map(([v, names]) => ({ v: Number(v), names, yy: y(Number(v)) })).sort((a, b) => a.yy - b.yy);
+    const collide = ends.some((e, i) => i && e.yy - ends[i - 1].yy < 14);
+    if (!collide) for (const e of ends) {
+      el("text", { x: x(dates.length - 1) + 10, y: e.yy + 4, "font-size": 12, fill: "var(--text-secondary)" }, svg).textContent = `${e.names.join(", ")} ${fmt(e.v)}`;
+    }
+  }
+  // Crosshair + tooltip: snaps to nearest date, lists every series.
+  const tip = tooltipFor(box);
+  const cross = el("line", { y1: m.t, y2: m.t + ph, stroke: "var(--axis)", "stroke-width": 1, visibility: "hidden" }, svg);
+  const hit = el("rect", { x: m.l, y: m.t, width: pw, height: ph, fill: "transparent", tabindex: 0, class: "hit", "aria-label": "Chart values; use arrow keys" }, svg);
+  let cur = dates.length - 1;
+  const show = (i) => {
+    cur = i; const cx = x(i);
+    cross.setAttribute("x1", cx); cross.setAttribute("x2", cx); cross.setAttribute("visibility", "visible");
+    const scale = box.clientWidth / W;
+    tip.show(cx * scale, m.t * scale + 24, opts.tipTitle ? opts.tipTitle(i) : short(dates[i]),
+      series.map((s) => ({ color: s.color, value: fmt(s.values[i]), label: s.name })).concat(opts.tipExtra ? opts.tipExtra(i) : []));
+  };
+  const nearest = (evt) => {
+    const r = svg.getBoundingClientRect(); const px = ((evt.clientX - r.left) / r.width) * W;
+    return dates.length === 1 ? 0 : Math.max(0, Math.min(dates.length - 1, Math.round(((px - m.l) / pw) * (dates.length - 1))));
+  };
+  hit.addEventListener("pointermove", (e) => show(nearest(e)));
+  hit.addEventListener("pointerleave", () => { tip.hide(); cross.setAttribute("visibility", "hidden"); });
+  hit.addEventListener("focus", () => show(cur));
+  hit.addEventListener("blur", () => { tip.hide(); cross.setAttribute("visibility", "hidden"); });
+  hit.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft") { show(Math.max(0, cur - 1)); e.preventDefault(); }
+    if (e.key === "ArrowRight") { show(Math.min(dates.length - 1, cur + 1)); e.preventDefault(); }
+  });
+}
+
+// ---- stacked column chart ----------------------------------------------------
+function stackedColumns(id, cats, series, opts = {}) {
+  const box = document.getElementById(id); box.replaceChildren();
+  if (!cats.length) { h("div", { class: "empty", text: "No data yet." }, box); return; }
+  const W = Math.max(280, box.clientWidth), H = opts.height || 220;
+  const m = { t: 20, r: 8, b: 28, l: 36 };
+  const pw = W - m.l - m.r, ph = H - m.t - m.b;
+  const totals = cats.map((_, i) => series.reduce((s, se) => s + se.values[i], 0));
+  const sc = niceScale(Math.max(1, ...totals));
+  const y = (v) => m.t + ph - (v / sc.max) * ph;
+  const band = pw / cats.length, bw = Math.min(24, band * 0.6);
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": opts.label || "" }, box);
+  gridAndTicks(svg, sc, y, m, W);
+  const tip = tooltipFor(box);
+  const every = Math.max(1, Math.ceil(cats.length / Math.floor(pw / 64)));
+  cats.forEach((c, i) => {
+    const cx = m.l + band * i + band / 2;
+    if (i % every === 0) el("text", { x: cx, y: H - 8, "text-anchor": "middle", "font-size": 11, fill: "var(--text-muted)" }, svg).textContent = opts.catLabel ? opts.catLabel(c) : c;
+    const g = el("g", { tabindex: 0, class: "hit", "aria-label": `${opts.catLabel ? opts.catLabel(c) : c}: ${series.map((s) => `${s.name} ${s.values[i]}`).join(", ")}` }, svg);
+    el("rect", { x: cx - band / 2, y: m.t, width: band, height: ph, fill: "transparent" }, g);
+    let base = 0; const segs = series.map((s) => ({ s, v: s.values[i] })).filter((p) => p.v > 0);
+    segs.forEach((p, k) => {
+      const top = k === segs.length - 1;
+      const y0 = y(base), y1 = y(base + p.v); base += p.v;
+      const hgt = Math.max(1, y0 - y1 - (k ? 2 : 0)); // 2px surface gap between stacked segments
+      const r = top ? Math.min(4, hgt / 2, bw / 2) : 0; // 4px rounded data-end, square at baseline
+      const x0 = cx - bw / 2, yt = y1;
+      const d = `M${x0},${yt + hgt}V${yt + r}Q${x0},${yt} ${x0 + r},${yt}H${x0 + bw - r}Q${x0 + bw},${yt} ${x0 + bw},${yt + r}V${yt + hgt}Z`;
+      el("path", { d, fill: p.s.color }, g);
+    });
+    if (totals[i] > 0) el("text", { x: cx, y: y(totals[i]) - 6, "text-anchor": "middle", "font-size": 11, fill: "var(--text-secondary)" }, g).textContent = fmt(totals[i]);
+    const show = () => {
+      const scale = box.clientWidth / W; g.style.opacity = "0.85";
+      tip.show(cx * scale, y(totals[i]) * scale, opts.catLabel ? opts.catLabel(c) : c,
+        series.map((s) => ({ color: s.color, value: fmt(s.values[i]), label: s.name })));
+    };
+    g.addEventListener("pointerenter", show); g.addEventListener("focus", show);
+    const hide = () => { tip.hide(); g.style.opacity = "1"; };
+    g.addEventListener("pointerleave", hide); g.addEventListener("blur", hide);
+  });
+}
+
+// ---- tall segmented bar (share) ------------------------------------------------
+function segmentedBar(id, parts) {
+  const box = document.getElementById(id); box.replaceChildren();
+  const total = parts.reduce((s, p) => s + p.value, 0);
+  if (!total) { h("div", { class: "empty", text: "No data yet." }, box); return; }
+  const bar = h("div", { class: "segbar", role: "img", "aria-label": parts.map((p) => `${p.name} ${p.value} (${Math.round((p.value / total) * 100)}%)`).join(", ") }, box);
+  for (const p of parts) {
+    if (!p.value) continue;
+    const pct = Math.round((p.value / total) * 100);
+    const seg = h("div", { class: "seg", style: `flex:${p.value} 1 0; background:${p.color}; color:${p.ink}`, title: `${p.name}: ${fmt(p.value)} (${pct}%)` }, bar);
+    seg.textContent = `${pct}%`;
+    // Measure: drop the inline label if it doesn't fit (value stays in title + table).
+    requestAnimationFrame(() => { if (seg.scrollWidth > seg.clientWidth) seg.textContent = ""; });
+  }
+}
+
+// ---- render ----------------------------------------------------------------------
+function weekStart(d) { const t = toDate(d); const wd = (t.getUTCDay() + 6) % 7; return iso(new Date(t.getTime() - wd * dayMs)); }
+function render() {
+  if (!DATA) return;
+  const D = DATA;
+  document.getElementById("updated").textContent = `Updated ${D.today} · tracking since ${D.start}`;
+  document.querySelectorAll("[data-range]").forEach((b) => b.setAttribute("aria-pressed", String(Number(b.dataset.range) === RANGE)));
+  renderTiles(D);
+
+  // Installs over time (cumulative).
+  const idx = inRange(D.days); const dates = idx.map((i) => D.days[i]);
+  const series = AGENTS.map((a) => ({ name: a.name, color: a.color, values: idx.map((i) => D.cum[a.key][i]) }));
+  legend("legend-cum", AGENTS, "line");
+  lineChart("chart-cum", dates, series, { endLabels: true, label: "Cumulative installs per coding agent" });
+  table("table-cum", ["Date", ...AGENTS.map((a) => a.name)], dates.map((d, k) => [d, ...series.map((s) => fmt(s.values[k]))]));
+
+  // New installs per week (first day's value = everything since tracking started).
+  const weeks = {}; const order = [];
+  dates.forEach((d, k) => {
+    const i = idx[k]; const w = weekStart(d);
+    if (!weeks[w]) { weeks[w] = {}; order.push(w); AGENTS.forEach((a) => (weeks[w][a.key] = 0)); }
+    for (const a of AGENTS) { const s = D.cum[a.key]; weeks[w][a.key] += i === 0 ? s[0] : s[i] - s[i - 1]; }
+  });
+  const wSeries = AGENTS.map((a) => ({ name: a.name, color: a.color, values: order.map((w) => weeks[w][a.key]) }));
+  legend("legend-week", AGENTS, "rect");
+  stackedColumns("chart-week", order, wSeries, { catLabel: (w) => `Wk of ${short(w)}`, label: "New installs per week by coding agent" });
+  table("table-week", ["Week of", ...AGENTS.map((a) => a.name)], order.map((w) => [w, ...AGENTS.map((a) => fmt(weeks[w][a.key]))]));
+
+  // Share (all time) + per version (latest snapshot; not range-scoped).
+  const n = D.days.length;
+  segmentedBar("share", AGENTS.map((a) => ({ name: a.name, color: a.color, ink: a.ink, value: n ? D.cum[a.key][n - 1] : 0 })));
+  legend("legend-share", AGENTS, "rect");
+  legend("legend-ver", AGENTS, "rect");
+  stackedColumns("chart-ver", D.perVersion.map((v) => v.version), AGENTS.map((a) => ({ name: a.name, color: a.color, values: D.perVersion.map((v) => v[a.key]) })), { height: 200, label: "Downloads per release version" });
+  table("table-ver", ["Version", ...AGENTS.map((a) => a.name)], D.perVersion.map((v) => [v.version, ...AGENTS.map((a) => fmt(v[a.key]))]));
+
+  // Clones: unique machines with CI removed (line) + CI jobs removed (grey bars, exact),
+  // with the typical quiet day as a reference line.
+  const cIdx = inRange(D.clones.map((c) => c.date)); const cl = cIdx.map((i) => D.clones[i]);
+  const ests = cl.map((c) => c.est).sort((a, b) => a - b);
+  const typical = cl.length >= 7 ? ests[Math.floor((ests.length - 1) / 2)] : undefined;
+  legend("legend-clones", [
+    { name: "Unique machines, CI removed (approx.)", color: CURSOR.color },
+    { name: "CI jobs removed (exact)", color: "var(--text-muted)", kind: "rect" },
+  ], "line");
+  lineChart("chart-clones", cl.map((c) => c.date), [{ name: "unique machines, CI removed (approx.)", color: CURSOR.color, values: cl.map((c) => c.est) }], {
+    height: 220, reference: typical, referenceLabel: typical !== undefined ? `Typical quiet day ~${typical}` : "",
+    bars: { values: cl.map((c) => c.ci), color: "var(--text-muted)" },
+    label: "Unique machines cloning the repo per day, CI removed, with CI jobs removed as bars",
+    tipExtra: (i) => [
+      { value: `${fmt(cl[i].est)}–${fmt(cl[i].hi)}`, label: "range (CI machines not identified)" },
+      { value: fmt(cl[i].unique), label: "raw unique machines" },
+      { color: "var(--text-muted)", value: fmt(cl[i].ci), label: "CI jobs removed" },
+      { value: fmt(cl[i].clones), label: "clones, CI removed" },
+    ],
+  });
+  document.getElementById("clones-note").textContent =
+    "CI job counts are exact (GitHub Actions API). GitHub doesn't say which machines were CI, so unique machines minus CI jobs is approximate; the tooltip shows the possible range. Bots and team clones are still included." +
+    (typical === undefined ? " Typical quiet day appears once there are 7 days of data." : " Days well above the typical quiet day suggest real installs.");
+  table("table-clones", ["Date", "Unique, CI removed (approx.)", "Range", "Raw unique", "CI jobs removed", "Clones, CI removed"],
+    cl.slice().reverse().map((c) => [c.date, fmt(c.est), `${fmt(c.est)}–${fmt(c.hi)}`, fmt(c.unique), fmt(c.ci), fmt(c.clones)]));
+}
+
+document.querySelectorAll("[data-range]").forEach((b) => b.addEventListener("click", () => { RANGE = Number(b.dataset.range); render(); }));
+let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(render, 150); });
+
+Promise.all(["releases.csv", "clones.csv"].map((f) => fetch(f, { cache: "no-store" }).then((r) => (r.ok ? r.text() : "")).catch(() => "")))
+  .then(([rel, cl]) => {
+    DATA = shape(rel ? parseCSV(rel) : [], cl ? parseCSV(cl) : []);
+    render();
+  });
+</script>
+</body>
+</html>

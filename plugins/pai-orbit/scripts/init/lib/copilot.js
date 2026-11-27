@@ -11,6 +11,7 @@ const { execFileSync } = require('node:child_process');
 
 const promptsModule = require('./prompts');
 const render = require('./render');
+const { resolveDist } = require('../release-dist');
 
 const PAI_ORBIT_BAK_PREFIX = '.github/pai-orbit.bak';
 
@@ -537,7 +538,7 @@ function findDistDir(ctx) {
     );
     process.exit(1);
   }
-  return candidate;
+  return resolveDist('copilot', candidate);
 }
 
 function pickPrecommitInstaller(answers, ctx) {

@@ -25,8 +25,11 @@ const path = require('node:path');
 
 const SCRIPT_DIR = __dirname;
 const PLUGIN_DIR = path.resolve(SCRIPT_DIR, '..', '..');
-const DIST_DIR = path.join(PLUGIN_DIR, 'dist', 'codex');
+const BUNDLED_DIST_DIR = path.join(PLUGIN_DIR, 'dist', 'codex');
+// Reassigned in runInstall() to the downloaded release dir when available.
+let DIST_DIR = BUNDLED_DIST_DIR;
 const REPO_ROOT = path.resolve(SCRIPT_DIR, '..', '..', '..', '..');
+const { resolveDist } = require(path.join(PLUGIN_DIR, 'scripts', 'init', 'release-dist.js'));
 
 function readPackageVersion() {
   try {
@@ -104,6 +107,7 @@ function runInstall(target, { overwrite }) {
   }
 
   assertDistPresent();
+  DIST_DIR = resolveDist('codex', BUNDLED_DIST_DIR);
 
   const cwd = process.cwd();
   const entries = fs.readdirSync(DIST_DIR);
