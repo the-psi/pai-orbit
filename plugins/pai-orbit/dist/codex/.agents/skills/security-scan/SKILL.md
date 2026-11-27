@@ -1,6 +1,6 @@
 ---
 name: security-scan
-description: Runs an adaptive parallel multi-agent security assessment of any codebase and consolidates it into a severity-ranked, verifiable report. Use when asked for a dependency audit, outdated or EOL package check, CVE/vulnerability scan, secrets or hardcoded-credentials scan, infrastructure/IaC review, CI/CD or supply-chain security review, an SBOM, or any "is this repo secure" / security report request.
+description: Runs an adaptive parallel multi-agent security assessment of any codebase and consolidates it into a severity-ranked, verifiable report. Use when asked for a dependency audit, outdated or EOL package check, CVE/vulnerability scan, secrets or hardcoded-credentials scan, infrastructure/IaC review, CI/CD or supply-chain security review, an SBOM, or any "is this repo secure" / security report request. SKIP when the ask is only to review one branch or PR diff (use `$orbit-review security`) or to fix findings from an existing report (use `/build`).
 ---
 
 # Parallel Security Assessment

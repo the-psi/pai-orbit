@@ -1,6 +1,6 @@
 ---
 name: security-scan-retest
-description: Validates whether a dev team's fix tracker (its "fixed" or "resolved" claims) actually closed the findings from a prior security assessment, by cross-checking the fixed-issues tracker against the original report's exact citations, reading the current codebase, and non-destructively re-testing live where safe. Use when asked to re-validate/retest security fixes, check a fix tracker against a security report, cross-check a dev team's "resolved" claims, or produce a remediation-validation report for a new release/codebase drop of a project that already had a security assessment done against it.
+description: Validates whether a dev team's fix tracker (its "fixed" or "resolved" claims) actually closed the findings from a prior security assessment, by cross-checking the fixed-issues tracker against the original report's exact citations, reading the current codebase, and non-destructively re-testing live where safe. Use when asked to re-validate/retest security fixes, check a fix tracker against a security report, cross-check a dev team's "resolved" claims, or produce a remediation-validation report for a new release/codebase drop of a project that already had a security assessment done against it. SKIP when there is no earlier report and fix tracker to check (use `security-scan` for a first scan) or when the ask is to review a branch or PR diff (use `/review security`).
 ---
 
 # Security Fix Retesting / Remediation Validation
