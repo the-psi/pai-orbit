@@ -104,10 +104,12 @@ syft <image:tag> -o cyclonedx-json      # SBOM
 ```
 
 ## 5. SBOM generation
+Write SBOMs to `<SCRATCHPAD>` (or `<docs root>/reports/security-assessment/evidence/`), never to the project root.
 ```bash
-syft dir:. -o cyclonedx-json=sbom.cdx.json      # any ecosystem
-cdxgen -o sbom.json                              # multi-language
-npm sbom --sbom-format cyclonedx                 # npm native
+OUT=<SCRATCHPAD>   # or <docs root>/reports/security-assessment/evidence
+syft dir:. -o cyclonedx-json="$OUT/sbom.cdx.json"   # any ecosystem
+cdxgen -o "$OUT/sbom.json"                           # multi-language
+npm sbom --sbom-format cyclonedx > "$OUT/sbom.npm.cdx.json"   # npm native
 dotnet CycloneDX <solution>                      # .NET
 ```
 Record the format (CycloneDX / SPDX), the generator, and which manifests it covered.

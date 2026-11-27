@@ -250,8 +250,8 @@ silently-empty field, a stale PDF, or a section that exists in outline only.
    non-placeholder) rather than reading through by eye.
 3. **Counts are asserted, not eyeballed** — anywhere the report states a total (findings count,
    "N/N endpoints covered," a tier breakdown, a verdict split), independently recompute that number
-   from the underlying evidence/scan data and assert equality. A report claiming "286/286 covered"
-   is worth nothing if nobody actually counted the 286 to check.
+   from the underlying evidence/scan data and assert equality. A report claiming "N/N covered"
+   is worth nothing if nobody actually counted the N to check.
 4. **Byte-count-comparison rule compliance** — grep for the patterns `report-format.md` forbids
    ("N bytes" comparisons standing in for real evidence) and manually classify every hit: legitimate
    prose (e.g. quoting a captured `[non-JSON response...]` message, or "byte-for-byte identical"

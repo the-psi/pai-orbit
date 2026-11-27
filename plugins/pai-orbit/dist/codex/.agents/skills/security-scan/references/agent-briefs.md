@@ -157,7 +157,7 @@ report the raw-hits → triaged-findings funnel with the reduction reasons.
 
 # Extended deep-dive briefs (coverage-gap tier)
 
-The A1–A6 / DEP·APP·CICD·IAC·SWEEP set is the static baseline. When the target is
+The DEP·APP·CICD·IAC·SWEEP set is the static baseline. When the target is
 higher-value (money- or data-moving, multi-tenant, regulated) OR the user asks for a
 "complete / deep" review, add the deep-dive agents below. They map to
 `coverage-checklist.md`; each still obeys the shared preamble (redact, `file:line`,
@@ -319,7 +319,7 @@ value. If no headless-browser tool is available, fall back to `curl` for the GET
 were not captured).
 
 ## ACTIVE-VALIDATION — authorized, non-destructive live proof-of-concept
-Distinct from DAST-PASSIVE below: this dimension SENDS requests that exercise a specific
+Distinct from DAST-PASSIVE above: this dimension SENDS requests that exercise a specific
 suspected vulnerability, using fixed/deterministic payloads, to convert a static finding into a
 LIVE-VALIDATED one. Only run this when (a) the target host and authorization are verified from
 the repo's own config or the user's explicit instruction naming that host as their own

@@ -89,7 +89,7 @@ whole report its credibility.
    unable to restore a project so transitives unscanned; duplicate lockfiles and which was used;
    no runtime/DAST testing; no access to production configuration or live cloud state. When the
    extended tier (BFLA/upload/SSRF deep-dive) was not run, add one explicit line scoping what a
-   follow-up pass would need — an ID-prefix scheme for its findings and the CONFIRMED-in-code vs
+   follow-up pass would need — the finding families above (no new prefix letters) and the CONFIRMED-in-code vs
    NEEDS-DYNAMIC tagging convention it would use — rather than silently omitting the tier.
 4. **Findings** — severity descending, grouped by family, CONFIRMED before PLAUSIBLE.
 5. **Secrets & credential exposure** (`S*`) — mandatory dedicated section whenever any `S*`
@@ -212,7 +212,7 @@ whole report its credibility.
       DAST results are otherwise reported — the threat-assessment reader should not have to jump
       to the DAST section to see what live checks changed about the exposure picture.
     - State plainly what this section does NOT establish (no live exploitation attempted beyond
-      what §Active Validation covers; no proof of active compromise) — this section reasons
+      what the ACTIVE-VALIDATION brief in `agent-briefs.md` covers; no proof of active compromise) — this section reasons
       about chains from confirmed findings, it does not claim to have executed them end-to-end
       unless each step is separately marked LIVE-VALIDATED.
     - **Test-data disclosure** — if active validation created any test data (see gotcha #18),

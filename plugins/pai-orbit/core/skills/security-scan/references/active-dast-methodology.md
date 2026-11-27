@@ -78,9 +78,10 @@ Two things worth being explicit about for anyone new to this framework:
   fits chronologically; `SKILL.md`'s spawn table and the dimension briefs never treat it as
   something spawned independently of those two.
 
-- **The orchestrator never runs dimension agents one at a time** — every agent selected for a given
-  phase launches together, in a single message, so they execute concurrently. The diagram's
-  side-by-side columns are literal, not illustrative.
+- **The orchestrator launches a phase's agents together** — every agent selected for a given
+  phase starts in a single message, so they execute concurrently. The diagram's side-by-side
+  columns are literal, not illustrative. (Only when the tool cannot launch subagents in parallel
+  does `SKILL.md`'s sequential fallback apply.)
 - **This document's script is a Phase 1 producer, not a Phase 2/3 concern** — everything below
   (identifier resolution, tiering, evidence redaction, etc.) is about making that one agent's output
   as high-signal as possible before it ever reaches the orchestrator's consolidation step.
@@ -147,7 +148,7 @@ explicit sign-off on a larger budget, not an assumed default.
 BEFORE any other logic, no exceptions: `delete|remove|clear|cancel|purge|drop|reset|disburse|payout|
 wire.?transfer|execute.?payment|submit.?payment` (extend per-domain as the surface suggests). Only
 `GET` is used for reads. `POST` is used ONLY for endpoints verified as non-mutating search/filter/
-report-style (§4) — every other POST/PUT/DELETE/PATCH gets zero live invocation, full stop. See
+report-style (§5) — every other POST/PUT/DELETE/PATCH gets zero live invocation, full stop. See
 gotcha #18 if the user has explicitly authorized minimal test-data creation on a confirmed-internal
 target — that's a narrow, separate authorization and this script's default posture is stricter than
 that: it does not create data at all.
@@ -156,7 +157,7 @@ that: it does not create data at all.
 with SOME evidence entry — either real live-test results, or an explicit `excluded` entry stating the
 reason (e.g. `"excluded: presumed state-mutating (matched blocklist keyword 'cancel'), zero live
 requests"`). Never silently drop an endpoint from the output just because it wasn't tested — the
-exclusion itself is documented evidence of scope, and is what lets the report claim "286/286
+exclusion itself is documented evidence of scope, and is what lets the report claim "N/N
 candidate endpoints resolved, none silently skipped" instead of an unverifiable partial scan.
 
 **Explicit user authorization.** The script refuses to run without `LOGIN_URL`/credentials supplied
@@ -171,7 +172,7 @@ A differential test ("my own resource" vs. "an adjacent id") is only meaningful 
 is real. Build a `name → value` map of the account's own actual identifiers and reuse it everywhere.
 
 **Seed the map from login + initial load.** Capture ids that appear in the login response and the
-first authenticated page load via regex against field names, e.g. `"brandId":\s*(\d+)`. This gets the
+first authenticated page load via regex against field names, e.g. `"tenantId":\s*(\d+)`. This gets the
 tenant-scoping id(s) essentially for free (zero extra requests).
 
 **Widen it with a few bounded list calls.** Make a small number of additional GETs against obvious
@@ -189,7 +190,7 @@ qualified-name regex misses, or most list-endpoint responses will fail to resolv
 parameter name `{id}` means a completely different resource type on different endpoints — a product
 id on one, a stock-plan id on another. Resolving a bare `id` into the shared map and reusing it
 everywhere silently applies the wrong resource type almost everywhere it's used. Only resolve NAMED,
-qualified identifiers (`stockUnitId`, `warehouseId`, `orderId`, etc.) into the shared map; leave bare
+qualified identifiers (`orderId`, `accountId`, `projectId`, etc.) into the shared map; leave bare
 `id` unresolved and fill it per-endpoint with a benign literal fallback (see below) instead.
 
 **Fill every parameter by name, not position.** For every request, fill each path/query parameter by
@@ -227,7 +228,7 @@ any signal, while real testable endpoints went untested purely on doc-order luck
   back to a synthetic placeholder; the test still runs, but a "no differential" result here is weaker
   evidence than Tier 1's, because "my own resource" wasn't actually real. Say so in the evidence entry.
 - **Tier 3 — read endpoints with no testable parameter at all.** Still worth an auth-boundary check
-  (§7 rollup); no ownership differential is possible.
+  (§8 rollup); no ownership differential is possible.
 - **Tier 4 (lowest, last) — everything else**, specifically endpoints that are provably going to
   receive zero live checks anyway under this script's own rules (non-search-shaped mutating POSTs,
   etc.). These belong at the bottom of the queue precisely because they're the excluded-with-reason
@@ -318,7 +319,7 @@ etc.) — this section is about WHAT to keep and present, not a different redact
 ## 8. Reporting implications
 
 - Every endpoint in the surface description appears in the evidence output exactly once — real
-  results or an explicit excluded-with-reason entry (§2). Report this as a stat, e.g. "286/286
+  results or an explicit excluded-with-reason entry (§2). Report this as a stat, e.g. "N/N
   candidate endpoints resolved, none silently skipped" — full coverage with honest exclusion is
   itself evidence of thoroughness.
 - Aggregate an auth-boundary-enforcement rollup across the WHOLE run (how many endpoints correctly

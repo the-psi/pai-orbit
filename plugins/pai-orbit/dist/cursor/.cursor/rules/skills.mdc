@@ -753,7 +753,7 @@ python3 <docs root>/processes/_render/swimlane.py index <docs root>/processes
 
 ---
 name: security-scan-retest
-description: Validates whether a dev team's fix tracker (its "Completed and Deployed" claims) actually closed the findings from a prior security assessment, by cross-checking the fixed-issues tracker against the original report's exact citations, reading the current codebase, and non-destructively re-testing live where safe. Use when asked to re-validate/retest security fixes, check a fix tracker against a security report, cross-check a dev team's "resolved" claims, or produce a remediation-validation report for a new release/codebase drop of a project that already had a security assessment done against it.
+description: Validates whether a dev team's fix tracker (its "fixed" or "resolved" claims) actually closed the findings from a prior security assessment, by cross-checking the fixed-issues tracker against the original report's exact citations, reading the current codebase, and non-destructively re-testing live where safe. Use when asked to re-validate/retest security fixes, check a fix tracker against a security report, cross-check a dev team's "resolved" claims, or produce a remediation-validation report for a new release/codebase drop of a project that already had a security assessment done against it.
 ---
 
 # Security Fix Retesting / Remediation Validation
@@ -783,11 +783,11 @@ Writes to: `<docs root>/reports/security-retest/` — the validation reports (PD
 - **Test environment access**: a UAT/staging URL (or a local instance the user started) and a dedicated low-privilege test account's
   credentials (supplied by the user, or ask). Never use prod
   creds or a real customer account.
-- Confirm with the user **before any live testing**: is destructive testing acceptable in this
-  environment (data loss doesn't matter), or must everything be strictly read-only/non-destructive?
-  Default to non-destructive unless told otherwise, and even with destructive permission, SQLi
-  verification should still use the non-destructive single-quote differential first — a write test
-  needs its own justification, not just "we're allowed to."
+- Confirm with the user **before any live testing**. Probes never change state; the only
+  exception is minimal, tagged, disclosed test-data creation under security-scan's gotcha #18, and
+  only if the user explicitly allows it for this environment. Ask just that: may a few disposable
+  test records be created, or must everything stay strictly read-only? Default to read-only, and
+  SQLi verification always uses the non-destructive single-quote differential first.
 - Note whether the project has `.git` history available. If not (a plain extracted archive), every
   "fixed/removed" verdict is a **snapshot comparison**, not a diff — state this as an explicit
   scope limitation in the final report (see §7).
@@ -1252,8 +1252,8 @@ silently-empty field, a stale PDF, or a section that exists in outline only.
    non-placeholder) rather than reading through by eye.
 3. **Counts are asserted, not eyeballed** — anywhere the report states a total (findings count,
    "N/N endpoints covered," a tier breakdown, a verdict split), independently recompute that number
-   from the underlying evidence/scan data and assert equality. A report claiming "286/286 covered"
-   is worth nothing if nobody actually counted the 286 to check.
+   from the underlying evidence/scan data and assert equality. A report claiming "N/N covered"
+   is worth nothing if nobody actually counted the N to check.
 4. **Byte-count-comparison rule compliance** — grep for the patterns `report-format.md` forbids
    ("N bytes" comparisons standing in for real evidence) and manually classify every hit: legitimate
    prose (e.g. quoting a captured `[non-JSON response...]` message, or "byte-for-byte identical"
