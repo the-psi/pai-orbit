@@ -21,21 +21,27 @@ const { safeId } = require('../state');
 
 const PAGE = fs.readFileSync(path.join(__dirname, 'page.html'), 'utf8');
 
-// Where a ticket sits on the board. A ticket waiting at a gate stays in the column of the work
-// that is waiting, with a badge, so the board still reads left to right.
-const COLUMNS = ['Groom', 'Design', 'Build', 'Test and review', 'Merge', 'Release', 'Done', 'Returned to people'];
+// Where a ticket sits on the board: five columns, by phase. A ticket waiting at a gate stays in
+// the phase of the work that is waiting, so the board still reads left to right.
+const COLUMNS = ['Plan', 'Build', 'Ship', 'Done', 'Returned'];
 const STAGE_COLUMN = {
-  intake: 'Groom', groom: 'Groom', design: 'Design', build: 'Build', test: 'Test and review',
-  playwright: 'Test and review', review: 'Test and review', verify: 'Test and review', pr: 'Merge', merge: 'Merge',
-  release: 'Release', done: 'Done',
+  intake: 'Plan', groom: 'Plan', design: 'Plan',
+  build: 'Build', test: 'Build', playwright: 'Build', review: 'Build', verify: 'Build',
+  pr: 'Ship', merge: 'Ship', release: 'Ship', done: 'Done',
 };
-const GATE_COLUMN = { requirements: 'Groom', design: 'Design', merge: 'Merge', release: 'Release' };
+const GATE_COLUMN = { requirements: 'Plan', design: 'Plan', merge: 'Ship', release: 'Ship' };
+
+// The seven steps a person follows on a card. Several factory stages share a step.
+const STEPS = ['Groom', 'Design', 'Build', 'Test', 'Review', 'Merge', 'Release'];
+const STAGE_STEP = {
+  intake: 0, groom: 0, design: 1, build: 2, test: 3, playwright: 3, review: 4, verify: 4, pr: 5, merge: 5, release: 6, done: 7,
+};
 
 function columnOf(run) {
   if (run.status === 'done') return 'Done';
-  if (['declined', 'handed_back', 'taken_over'].includes(run.status)) return 'Returned to people';
-  if (run.status === 'waiting_approval' && run.pending) return GATE_COLUMN[run.pending.gate] || STAGE_COLUMN[run.stage] || 'Groom';
-  return STAGE_COLUMN[run.stage] || 'Groom';
+  if (['declined', 'handed_back', 'taken_over'].includes(run.status)) return 'Returned';
+  if (run.status === 'waiting_approval' && run.pending) return GATE_COLUMN[run.pending.gate] || STAGE_COLUMN[run.stage] || 'Plan';
+  return STAGE_COLUMN[run.stage] || 'Plan';
 }
 
 /** The stage the agent is in right now, if a stage has started and not yet ended. */
@@ -61,9 +67,17 @@ function summarise(run, events, live = []) {
   else if (run.status === 'declined') state = 'Declined by the factory';
   else if (run.status === 'handed_back') state = 'Handed back to people';
   else if (run.status === 'taken_over') state = 'Taken over by a person';
+  // One of five states, which is what the card's colour shows.
+  const returned = ['declined', 'handed_back', 'taken_over'].includes(run.status);
+  const tone = run.status === 'done' ? 'done' : returned ? 'returned' : needsPerson ? 'needs' : working ? 'working' : 'queued';
+  const stepIndex = run.status === 'done' ? STEPS.length : Math.min(STEPS.length, STAGE_STEP[run.stage] === undefined ? 0 : STAGE_STEP[run.stage]);
   return {
     id: run.ticketId,
     title: run.title,
+    tone,
+    stepNames: STEPS,
+    stepIndex,
+    stepName: stepIndex < STEPS.length ? STEPS[stepIndex] : 'Released',
     url: run.url || '',
     column: columnOf(run),
     status: run.status,
@@ -435,4 +449,4 @@ function listenPlan(config, env = process.env) {
   return { host, port, password, users, problem };
 }
 
-module.exports = { createUiServer, listenPlan, parseUsers, summarise, timeline, describe, columnOf, COLUMNS };
+module.exports = { createUiServer, listenPlan, parseUsers, summarise, timeline, describe, columnOf, COLUMNS, STEPS };

@@ -51,13 +51,20 @@ test('the overview lists every ticket with its column, state and totals', async 
   assert.deepEqual(o.gates, { requirements: true, design: false, merge: true, release: true });
   const by = Object.fromEntries(o.tickets.map((x) => [x.id, x]));
   assert.equal(by['1'].column, 'Build');
+  assert.equal(by['1'].tone, 'working');
+  assert.deepEqual([by['1'].stepIndex, by['1'].stepName, by['1'].stepNames.length], [2, 'Build', 7]);
+  assert.deepEqual(o.columns, ['Plan', 'Build', 'Ship', 'Done', 'Returned']);
   assert.equal(by['1'].state, 'Working: build');
   assert.ok(by['1'].workingSince, 'a started, unfinished stage shows as working now');
   assert.equal(by['1'].startedGroomed, true);
-  assert.equal(by['2'].column, 'Groom');
+  assert.equal(by['2'].column, 'Plan');
+  assert.equal(by['2'].tone, 'needs');
   assert.equal(by['2'].state, 'Waiting for approval: requirements');
   assert.equal(by['2'].needsPerson, true);
-  assert.equal(by['3'].column, 'Returned to people');
+  assert.equal(by['3'].column, 'Returned');
+  assert.equal(by['3'].tone, 'returned');
+  assert.equal(by['4'].tone, 'needs');
+  assert.equal(by['4'].column, 'Plan');
   assert.equal(by['3'].reason, 'Too vague');
   assert.equal(by['4'].state, 'Waiting for an answer (design)');
   assert.deepEqual(by['4'].questions, ['Which rate?']);
@@ -142,13 +149,21 @@ test('listenPlan: this machine only by default; a password is required to listen
 });
 
 test('columns and event wording', () => {
-  assert.equal(columnOf({ status: 'waiting_approval', stage: 'merge', pending: { gate: 'merge' } }), 'Merge');
-  assert.equal(columnOf({ status: 'running', stage: 'review' }), 'Test and review');
-  assert.equal(columnOf({ status: 'handed_back', stage: 'build' }), 'Returned to people');
+  assert.equal(columnOf({ status: 'waiting_approval', stage: 'merge', pending: { gate: 'merge' } }), 'Ship');
+  assert.equal(columnOf({ status: 'running', stage: 'review' }), 'Build');
+  assert.equal(columnOf({ status: 'running', stage: 'verify' }), 'Build');
+  assert.equal(columnOf({ status: 'running', stage: 'release' }), 'Ship');
+  assert.equal(columnOf({ status: 'running', stage: 'design' }), 'Plan');
+  assert.equal(columnOf({ status: 'handed_back', stage: 'build' }), 'Returned');
   assert.equal(describe({ type: 'stage_end', stage: 'test', status: 'failed' }), 'Agent could not finish test');
   assert.equal(describe({ type: 'stage_end', stage: 'build', problem: 'timeout', detail: 'no result within 120 minutes' }), 'Agent stopped in build: timeout (no result within 120 minutes)');
   assert.equal(describe({ type: 'approved', gate: 'design', by: 'lead' }), 'Approved: design by lead');
-  assert.equal(summarise({ ticketId: '9', status: 'running', stage: 'design' }, []).state, 'Queued for the next stage');
+  const queued = summarise({ ticketId: '9', status: 'running', stage: 'design' }, []);
+  assert.equal(queued.state, 'Queued for the next stage');
+  assert.equal(queued.tone, 'queued');
+  const done = summarise({ ticketId: '9', status: 'done', stage: 'done' }, []);
+  assert.deepEqual([done.tone, done.stepIndex, done.stepName], ['done', 7, 'Released']);
+  assert.deepEqual([summarise({ ticketId: '9', status: 'waiting_approval', stage: 'merge', pending: { kind: 'approval', gate: 'merge', since: 'x' } }, []).stepName], ['Merge']);
 });
 
 test('sign-in address: refuses the view-only sign-in so the browser asks again, and sends a named person back', async (t) => {

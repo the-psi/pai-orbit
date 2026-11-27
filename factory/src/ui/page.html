@@ -38,8 +38,8 @@
   .banner.error { background: color-mix(in srgb, var(--bad) 16%, transparent); color: var(--bad); }
   .banner.trial { background: var(--chip); color: var(--muted); font-weight: 500; }
   main { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 12px 16px 8px; }
-  /* Eight columns share the width, so nothing is cut off; below ~1250px the board scrolls sideways. */
-  .board { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(8, minmax(148px, 1fr)); gap: 10px; overflow-x: auto; overflow-y: hidden; }
+  /* Five columns share the width; on a narrow window the board scrolls sideways. */
+  .board { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(5, minmax(200px, 1fr)); gap: 12px; overflow-x: auto; overflow-y: hidden; }
   .board.none { display: block; }
   .col { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: color-mix(in srgb, var(--panel) 55%, transparent); border: 1px solid var(--line); border-radius: 10px; }
   .col.has { background: color-mix(in srgb, var(--panel) 80%, transparent); }
@@ -149,6 +149,32 @@
   .note { padding: 9px 12px; border-radius: 8px; background: var(--chip); }
   .note.ok { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); font-weight: 600; }
   .note.bad { background: color-mix(in srgb, var(--bad) 14%, transparent); color: var(--bad); }
+
+  /* A card's colour is its state. The badge says the same in words, so colour is never the only cue. */
+  :root { --needs: #b45309; --working: #2459d6; --queued: #5d6878; --okc: #1a7f4b; --ret: #b3261e; }
+  @media (prefers-color-scheme: dark) { :root { --needs: #f0b35a; --working: #7aa2ff; --queued: #9aa6b8; --okc: #58c98b; --ret: #ff8a80; } }
+  .card { border-left-width: 1px; padding: 10px 12px 11px; }
+  .card.t-needs { --c: var(--needs); } .card.t-working { --c: var(--working); } .card.t-queued { --c: var(--queued); }
+  .card.t-done { --c: var(--okc); } .card.t-returned { --c: var(--ret); }
+  .card[class*="t-"] { background: color-mix(in srgb, var(--c) 9%, var(--panel)); border-color: color-mix(in srgb, var(--c) 38%, var(--line)); }
+  .card[class*="t-"]:hover, .card[class*="t-"]:focus-visible { border-color: var(--c); }
+  .card.t-needs { box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent), var(--shadow); }
+  .badge { display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: var(--c, var(--queued)); border-radius: 4px; padding: 2px 7px; }
+  @media (prefers-color-scheme: dark) { .badge { color: #12151b; } }
+  .chead { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .chead .id { margin-left: auto; }
+  .state, .state.working, .state.person, .state.done, .state.returned { color: var(--ink); font-weight: 500; }
+  .steps { display: flex; align-items: center; margin: 9px 0 4px; }
+  .steps i { flex: none; width: 9px; height: 9px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--c) 45%, var(--line)); background: var(--panel); }
+  .steps i.on { background: var(--c); border-color: var(--c); }
+  .steps i.now { background: var(--panel); border-color: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 28%, transparent); }
+  .steps b { flex: 1; height: 2px; background: color-mix(in srgb, var(--c) 30%, var(--line)); }
+  .steps b.on { background: var(--c); }
+  .stepname { font-size: 12px; color: var(--muted); }
+  .cta { color: var(--c); }
+  .key { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 12px; color: var(--muted); align-items: center; }
+  .key span { display: inline-flex; align-items: center; gap: 6px; }
+  .key i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
 </style>
 </head>
 <body>
@@ -161,6 +187,13 @@
     <span class="updated" id="updated">Loading…</span>
   </div>
   <div class="facts" id="facts"></div>
+  <div class="key" aria-label="What the card colours mean">
+    <span><i style="background:var(--needs)"></i>Needs you</span>
+    <span><i style="background:var(--working)"></i>Agent working</span>
+    <span><i style="background:var(--queued)"></i>Queued</span>
+    <span><i style="background:var(--okc)"></i>Done</span>
+    <span><i style="background:var(--ret)"></i>Returned to people</span>
+  </div>
   <div id="banners"></div>
 </header>
 <main>
@@ -209,7 +242,7 @@
   }
   function tone(t) {
     if (t.status === 'done') return 'done';
-    if (t.column === 'Returned to people') return 'returned';
+    if (t.column === 'Returned') return 'returned';
     if (t.needsPerson) return 'person';
     if (t.workingSince) return 'working';
     return '';
@@ -247,16 +280,42 @@
     if (o.singleAccountTrial) b.appendChild(el('div', 'banner trial', 'Single-account trial mode is on: the factory and the approver share one account.'));
   }
 
+  var BADGE = { needs: 'Needs you', working: 'Working', queued: 'Queued', done: 'Done', returned: 'Returned' };
+
+  // Seven dots: filled up to the step the ticket has reached, with the current one ringed.
+  function stepDots(t) {
+    var wrap = el('div', 'steps');
+    var names = t.stepNames || [];
+    var finished = t.stepIndex >= names.length;
+    names.forEach(function (name, i) {
+      if (i > 0) wrap.appendChild(el('b', i <= t.stepIndex ? 'on' : null));
+      var dot = el('i', finished || i < t.stepIndex ? 'on' : (i === t.stepIndex ? 'now' : null));
+      dot.title = name;
+      wrap.appendChild(dot);
+    });
+    wrap.setAttribute('role', 'img');
+    wrap.setAttribute('aria-label', finished ? 'All ' + names.length + ' steps done' : 'Step ' + (t.stepIndex + 1) + ' of ' + names.length + ': ' + t.stepName);
+    return wrap;
+  }
+
   function card(t) {
-    var c = el('button', 'card ' + tone(t));
+    var c = el('button', 'card t-' + (t.tone || 'queued'));
     c.type = 'button';
-    c.appendChild(el('div', 'id', '#' + t.id + (t.startedGroomed ? ' · already groomed' : '')));
+    var head = el('div', 'chead');
+    head.appendChild(el('span', 'badge', BADGE[t.tone] || 'Queued'));
+    head.appendChild(el('span', 'id', '#' + t.id + (t.startedGroomed ? ' · groomed by a person' : '')));
+    c.appendChild(head);
     c.appendChild(el('div', 'title', t.title || '(no title)'));
-    var s = el('div', 'state ' + tone(t));
+    var s = el('div', 'state');
     if (t.workingSince) s.appendChild(el('span', 'pulse'));
     s.appendChild(document.createTextNode(t.state + (t.workingSince ? ' · ' + ago(t.workingSince) : '') + (t.needsPerson && t.waitingSince ? ' · ' + ago(t.waitingSince) : '')));
     c.appendChild(s);
     if (t.doingNow) c.appendChild(el('div', 'doing', t.doingNow));
+    if (t.tone !== 'done') {
+      c.appendChild(stepDots(t));
+      var total = (t.stepNames || []).length;
+      c.appendChild(el('div', 'stepname', (t.tone === 'returned' ? 'Stopped at step ' : 'Step ') + Math.min(total, t.stepIndex + 1) + ' of ' + total + ' · ' + t.stepName));
+    }
     var m = el('div', 'meta');
     m.appendChild(el('span', null, money(t.costUsd)));
     if (t.activeMinutes) m.appendChild(el('span', null, t.activeMinutes + ' min of agent time'));
@@ -279,7 +338,8 @@
       var h = el('h2'); h.appendChild(el('span', null, name)); h.appendChild(el('span', 'n', String(items.length)));
       col.appendChild(h);
       var cards = el('div', 'cards');
-      items.sort(function (a, b) { return String(b.updatedAt).localeCompare(String(a.updatedAt)); }).forEach(function (t) { cards.appendChild(card(t)); });
+      var order = { needs: 0, working: 1, queued: 2, returned: 3, done: 4 };
+      items.sort(function (a, b) { return (order[a.tone] - order[b.tone]) || String(b.updatedAt).localeCompare(String(a.updatedAt)); }).forEach(function (t) { cards.appendChild(card(t)); });
       col.appendChild(cards);
       board.appendChild(col);
     });
