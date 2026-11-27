@@ -36,9 +36,18 @@
   "runner": {
     "type": "claude-cli",
     "command": "claude",
-    "model": "",
     "permissionMode": "acceptEdits",
-    "reviewModel": "",
+    "models": {
+      "default": "",
+      "groom": "",
+      "design": "",
+      "build": "",
+      "test": "",
+      "playwright": "",
+      "review": "",
+      "verify": "",
+      "release": ""
+    },
     "envPassthrough": []
   },
   "stages": {

@@ -46,12 +46,14 @@ const DEFAULTS = Object.freeze({
   runner: {
     type: 'claude-cli', // claude-cli | fake
     command: 'claude',
-    model: '',
     pluginDir: '', // defaults to this repo's plugins/pai-orbit/dist/claude-code
     pluginName: 'pai-orbit',
     permissionMode: 'acceptEdits',
-    // Model for the independent review. Different from `model` gives a real second opinion.
-    reviewModel: '',
+    // The one place models are chosen. `default` is used by every stage that has no entry of
+    // its own; with `default` empty too, the agent CLI's own default model is used.
+    // `verify` is the independent review: a model different from the one that built the change
+    // gives a real second opinion. Example: { default: 'sonnet', groom: 'haiku', verify: 'opus' }.
+    models: { default: '', groom: '', design: '', build: '', test: '', playwright: '', review: '', verify: '', release: '' },
     // Wire orbit's bash-guard hook into every run: true | false | 'auto' (on except on Windows,
     // where the hook's bash + python3 are usually missing).
     bashGuard: 'auto',
@@ -138,6 +140,18 @@ const DEFAULTS = Object.freeze({
 });
 
 const RELEASE_LEVELS = ['tag', 'staging', 'production'];
+// The stages an agent runs, which are the ones a model can be chosen for.
+const MODEL_STAGES = ['groom', 'design', 'build', 'test', 'playwright', 'review', 'verify', 'release'];
+
+/**
+ * The model a stage runs on: its own entry in runner.models, else runner.models.default.
+ * Empty means the agent CLI's own default.
+ */
+function modelFor(cfg, stageName) {
+  const models = (cfg.runner && cfg.runner.models) || {};
+  const pick = (name) => (typeof models[name] === 'string' ? models[name].trim() : '');
+  return pick(stageName) || pick('default');
+}
 
 function isObject(v) {
   return v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -200,6 +214,19 @@ function validate(cfg, raw = {}) {
   if (cfg.runner.permissionMode === 'bypassPermissions' && !process.env.FACTORY_SANDBOXED) {
     problems.push('runner.permissionMode bypassPermissions is allowed only inside the factory container (FACTORY_SANDBOXED=1)');
   }
+  // Defaults are merged in before this runs, so a wrong type is only visible in what was supplied.
+  const rawModels = raw && isObject(raw.runner) ? raw.runner.models : undefined;
+  if ((rawModels !== undefined && !isObject(rawModels)) || !isObject(cfg.runner.models)) {
+    problems.push('runner.models must be an object of stage name to model name');
+  } else {
+    for (const [name, value] of Object.entries(cfg.runner.models)) {
+      if (name !== 'default' && !MODEL_STAGES.includes(name)) problems.push(`runner.models.${name}: unknown stage (expected default or one of ${MODEL_STAGES.join(', ')})`);
+      else if (typeof value !== 'string') problems.push(`runner.models.${name} must be a model name, or empty`);
+    }
+  }
+  // Models are chosen in one place. The two older settings are refused, not silently ignored.
+  if ('model' in cfg.runner) problems.push('runner.model is not a setting; use runner.models.default');
+  if ('reviewModel' in cfg.runner) problems.push('runner.reviewModel is not a setting; use runner.models.verify');
   if (!RELEASE_LEVELS.includes(cfg.release.level)) problems.push(`release.level must be one of ${RELEASE_LEVELS.join(', ')}`);
   if (typeof cfg.trial.singleAccount !== 'boolean') problems.push('trial.singleAccount must be true or false');
   num('ui.port', cfg.ui.port, 1, 65535);
@@ -273,4 +300,4 @@ function fromObject(raw, baseDir = process.cwd()) {
   return cfg;
 }
 
-module.exports = { DEFAULTS, load, fromObject, validate, merge, RELEASE_LEVELS };
+module.exports = { DEFAULTS, load, fromObject, validate, merge, RELEASE_LEVELS, MODEL_STAGES, modelFor };

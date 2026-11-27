@@ -81,7 +81,7 @@ function createFactory(config, opts) {
     : new ClaudeCliRunner({
       bashGuardPath: guardOn && fs.existsSync(guard) ? guard : '',
       command: config.runner.command,
-      model: config.runner.model,
+      model: config.runner.models.default,
       pluginDir: config.runner.pluginDir,
       permissionMode: config.runner.permissionMode,
       allowedTools: config.runner.allowedTools,

@@ -15,6 +15,7 @@ const { workingMsBetween, workingDayHours } = require('./calendar');
 const { slugify } = require('./workspace');
 const { inRole, roleNames } = require('./roles');
 const { FACTORY_MARK, decisionOf, isFactoryComment } = require('./decision');
+const { modelFor } = require('./config');
 
 const HOUR = 3600 * 1000;
 
@@ -349,7 +350,8 @@ class Factory {
     const verifying = stageName === 'verify';
     const before = verifying ? await this.workspace.headSha(dir) : '';
     this.store.save(run);
-    this.store.event(run.ticketId, 'stage_start', { stage: stageName, attempt: run.attempts[stageName], resumed: Boolean(resumeId) });
+    const model = modelFor(this.config, stageName);
+    this.store.event(run.ticketId, 'stage_start', { stage: stageName, attempt: run.attempts[stageName], resumed: Boolean(resumeId), model: model || 'default' });
 
     const outcome = await this.runner.run({
       stage: stageName,
@@ -362,7 +364,8 @@ class Factory {
       transcriptPath: this.store.transcriptPath(run.ticketId, stageName, run.attempts[stageName]),
       livePath: this.store.livePath(run.ticketId),
       signal: chain ? chain.abort.signal : undefined,
-      ...(verifying ? { model: this.config.runner.reviewModel || undefined, denyTools: ['Edit', 'Write', 'MultiEdit', 'NotebookEdit'] } : {}),
+      model: model || undefined,
+      ...(verifying ? { denyTools: ['Edit', 'Write', 'MultiEdit', 'NotebookEdit'] } : {}),
     });
     if (verifying) {
       // Whatever it did, the branch goes back to what it was reviewing. A reviewer that edits the
@@ -501,7 +504,7 @@ class Factory {
       verdict: wantsChanges ? 'request_changes' : 'approve',
       findings: review.findings,
       summary: result.summary || '',
-      model: this.config.runner.reviewModel || 'the default model',
+      model: modelFor(this.config, 'verify') || 'the default model',
       round,
       at: this.now().toISOString(),
       unresolved: false,

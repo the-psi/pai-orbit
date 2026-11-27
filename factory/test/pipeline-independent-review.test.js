@@ -6,7 +6,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { makeRig } = require('./helpers');
 
-const ON = { stages: { playwright: false, review: true, independentReview: true }, runner: { type: 'fake', reviewModel: 'second-model' } };
+const ON = { stages: { playwright: false, review: true, independentReview: true }, runner: { type: 'fake', models: { verify: 'second-model' } } };
 const verdict = (v, findings = [], extra = {}) => ({ result: { status: 'done', summary: 'Reviewed.', review: { verdict: v, findings } }, ...extra });
 const BLOCK = { severity: 'blocking', file: 'src/feature.txt', text: 'The empty-name case is not handled.' };
 const NOTE = { severity: 'note', file: 'README.md', text: 'Consider documenting this.' };

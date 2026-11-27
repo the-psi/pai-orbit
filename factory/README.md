@@ -205,6 +205,7 @@ orbit-factory stop <id>      stop one ticket and hand it back
 |---|---|---|
 | `repo.url`, `repo.baseBranch` | The project the factory works on | required, `main` |
 | `board.type`, `codeHost.type` | `github`, `gitlab` or `local` | `local` |
+| `runner.models` | The AI model, for all stages (`default`) or per stage. See "Which model runs which stage" | the agent CLI's default |
 | `roles.*` | Who may answer and who may approve at each gate | reporter answers; approvers must be named |
 | `gates.requirements`, `gates.design` | The two optional gates | off |
 | `limits.costPerTicketUsd` | Hard stop for one ticket | 50 |
@@ -219,6 +220,28 @@ The merge and release gates are not settings. A config that tries to set `gates.
 `gates.release` is rejected.
 
 The cost defaults are estimates, not measurements. Reset them after the first 10–20 real tickets.
+
+## Which model runs which stage
+
+One setting, `runner.models`:
+
+```json
+"runner": {
+  "models": { "default": "sonnet", "groom": "haiku", "build": "opus", "verify": "opus" }
+}
+```
+
+| Key | Meaning |
+|---|---|
+| `default` | The model for every stage that has no entry of its own |
+| `groom`, `design`, `build`, `test`, `playwright`, `review`, `release` | The model for that stage |
+| `verify` | The model for the independent review |
+
+With nothing set, every stage uses the agent CLI's own default model. A model name is whatever
+the agent CLI accepts for `--model`; the factory passes it through and does not check it, so a
+wrong name fails that stage. An unknown key in `runner.models` is rejected when the config is
+loaded. The model each stage started on is recorded in the ticket's audit trail and shown in its
+history on the status page.
 
 ## How the gates are enforced
 
@@ -240,12 +263,12 @@ approves the merge a second opinion. It never approves a merge itself.
 
 ```json
 "stages": { "independentReview": true },
-"runner": { "reviewModel": "opus" },
+"runner": { "models": { "verify": "opus" } },
 "limits": { "independentReviewRounds": 2 }
 ```
 
 - It starts fresh, with none of the build's context, and should use a different model
-  (`runner.reviewModel`) from the one that wrote the code.
+  (`runner.models.verify`) from the one that wrote the code.
 - It cannot edit: the edit tools are removed for this stage, and the branch is put back exactly as
   it was afterwards, whatever the reviewer did.
 - It returns a verdict (approve or request changes) and findings, each marked blocking or note.

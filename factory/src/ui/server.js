@@ -109,7 +109,7 @@ function describe(e) {
     case 'claimed': return 'The factory picked up the ticket';
     case 'groomed_ticket': return `Already groomed: using ${e.requirements}`;
     case 'stage': return `Moved to${stage}`;
-    case 'stage_start': return `Agent started${stage}${e.resumed ? ' (continuing the earlier session)' : ''}${e.attempt > 1 ? `, attempt ${e.attempt}` : ''}`;
+    case 'stage_start': return `Agent started${stage}${e.model && e.model !== 'default' ? ` on model ${e.model}` : ''}${e.resumed ? ' (continuing the earlier session)' : ''}${e.attempt > 1 ? `, attempt ${e.attempt}` : ''}`;
     case 'stage_end': {
       if (e.problem) return `Agent stopped in${stage}: ${e.problem}${e.detail ? ` (${e.detail})` : ''}`;
       const how = { done: 'finished', needs_input: 'needs an answer', declined: 'declined the ticket', failed: 'could not finish' }[e.status] || e.status;
