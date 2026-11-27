@@ -95,7 +95,11 @@ Before design discussion for ticketed work, checks open stories for requirement 
 **Writes:** Code (in sub-repos), docs/domain/product-capabilities.md  
 **Switch to:** `/design` for non-trivial design questions, `/groom` for unclear requirements, `/plan` for priority questions
 
-Before branch setup and code edits for ticketed work, checks open stories for requirement changes, overlaps, or duplicates and pauses for the developer to classify plausible matches. Reads CLAUDE.md and relevant docs before starting. Checks the task board. Spawns sub-agents per service for parallel work. Before switching modes mid-session, saves a handoff note to `docs/wip/session-capture-<date>.md`. After shipping: moves the board item via `/board` `transition(build)` (does not close it — the issue closes on merge), creates issues for newly discovered tasks, updates product-capabilities.md, records design choices as ADRs.
+Before branch setup and code edits for ticketed work, checks open stories for requirement changes, overlaps, or duplicates and pauses for the developer to classify plausible matches. Reads CLAUDE.md and relevant docs before starting. Checks the task board. For builds over 3 files the primary agent orchestrates parallel code / tests / docs streams (per repo; dependent tasks in order, independent tasks together, change reports reconciled at each layer, one verification run after merge); ≤ 3 files run without an orchestrator. Works on every adapter, within each tool's agent cap (excess tasks wait; tools without parallel agents run the same order sequentially). Before switching modes mid-session, saves a handoff note to `docs/wip/session-capture-<date>.md`. After shipping: moves the board item via `/board` `transition(build)` (does not close it — the issue closes on merge), creates issues for newly discovered tasks, updates product-capabilities.md, records design choices as ADRs.
+
+**Security findings:** given a security findings file (a security assessment report, or a `.xlsx` / `.csv` tracker of security findings; it asks first if unclear), `/build` triages each against the code, asks the owner once to confirm the plan, fixes by root-cause group on a branch with a PR, with an attack test per `code`-lane finding (failing before, passing after) and the suite run after each group, marks fixes that change login, access or tokens `Fixed - owner review required`, lists ops work (credential rotation, history purge) as a checklist, and writes results to a **copy** of the tracker. Working files go to `docs/wip/security-fix-<date>/`. The rules, and a bundled `secret_scan.py` that checks produced files and the staged diff (including `.xlsx`, `.docx`, `.pptx` and other binary files) for leaked secret values without printing them, and reports content it knows it could not read instead of calling it clean (its known blind spots are listed in the script), live in `core/reference/security-findings.md`.
+
+Usage: `/build Goal: fix the findings in <path-to-findings.xlsx or .csv>`. Add "fix everything, don't ask" to skip the confirmation; the plan is still written to `triage.md`, and the owner confirms it in the PR review. Afterwards, complete `ops-actions.md` (e.g. rotate leaked keys) and run `/review security` in a fresh session (or have a person review); findings stay "Fixed - pending verification" until then, and the PR is not merged until the owner approves the fixes listed under "Do not merge" and the independent review passes. Working files stay uncommitted unless the owner says so.
 
 ---
 
@@ -273,9 +277,21 @@ Code simplification pass — reviews recently changed code for over-engineering,
 
 ---
 
+### `/security-scan`
+
+Whole-repository security assessment — runs an adaptive set of parallel subagents (dependencies per ecosystem with native audit plus OSV.dev cross-check, app code, CI/CD, IaC, secrets sweep; an extended tier adds auth, upload, business logic, client, data, and live DAST against an authorized target) and consolidates one severity-ranked report. Findings are CONFIRMED or PLAUSIBLE, each with `file:line`; the report also lists what passed and what was out of scope. Deep reviews add an adversarial verification wave and a mandatory self-audit. Output goes to `security-assessment/` in the target project (`FINDINGS.md` as source, rendered to HTML/PDF with Playwright). Broader than `/review security`, which checks only a branch diff.
+
+---
+
+### `/security-scan-retest`
+
+Remediation validation — checks a dev team's fix tracker against the original assessment report, the current code, and non-destructive live re-tests on a test environment. Gives each finding a verdict (fixed — live confirmed / code only, partially fixed, still vulnerable, mitigated not resolved, inconclusive, open) backed by verbatim code quotes or live observations. Live HTTP requests are made one at a time by the orchestrator, never by subagents. Produces technical and plain-English reports, a rebuttal report if findings are disputed, and a stakeholder email (PDFs via `wkhtmltopdf`).
+
+---
+
 ## Agents
 
-Agents are spawned by modes (primarily `/build`) for parallel sub-repo work.
+Agents are spawned by modes (primarily `/build`) for parallel work across repos and code / tests / docs streams; the primary agent spawns them directly (no nesting).
 
 ### `docs-writer`
 

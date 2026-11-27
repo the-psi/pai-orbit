@@ -2,7 +2,7 @@
 
 A structured developer methodology harness for Claude Code that enforces disciplined working modes, prevents context loss, and produces local-first documentation at every stage of development.
 
-**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.13.0
+**Author:** Pratham Software (PSI) | **License:** MIT | **Version:** 1.15.0
 
 ---
 
@@ -29,7 +29,7 @@ pai-orbit/                          # repo = marketplace
 │       ├── core/                   # tool-agnostic source of truth
 │       │   ├── plugin.json
 │       │   ├── modes/              # /arch, /build, /catchup, /design, /domain, /groom, /plan, /playwright, /ux, /data
-│       │   ├── skills/             # analysis, board, data-model, epic, git, process-map, simplify
+│       │   ├── skills/             # analysis, board, data-model, epic, git, process-map, security-scan, security-scan-retest, simplify
 │       │   ├── agents/             # docs-writer, cross-repo-impact
 │       │   ├── hooks/              # bash-guard, lint-python, lint-ts, arch-drift-guard
 │       │   ├── reference/          # shared instruction fragments read by modes/skills/agents at runtime
@@ -107,7 +107,7 @@ Each `/command` locks Claude into a distinct headspace. Modes do not bleed into 
 
 Skills are multi-step procedures callable from any mode. Each skill lives in `plugins/pai-orbit/core/skills/<name>/`.
 
-Key skills: `/git`, `/board`, `/analysis`, `/data-model`, `/epic`, `/process-map`, `/simplify`.
+Key skills: `/git`, `/board`, `/analysis`, `/data-model`, `/epic`, `/process-map`, `/security-scan`, `/security-scan-retest`, `/simplify`.
 
 ### Agents
 
@@ -216,7 +216,7 @@ For GitHub Copilot (VS Code), single command from the project root (requires Nod
 npx github:the-psi/pai-orbit init copilot
 ```
 
-Installs 32 invokable prompts, 5 auto-attaching instructions files, and the rule book at `.github/copilot-instructions.md`. Also supports `update copilot` and `migrate copilot`. See [docs/copilot-install-and-usage.md](docs/copilot-install-and-usage.md) for the full walkthrough (Business vs Free tier behaviour, `/setup` in Chat, pre-commit hook templates).
+Installs 34 invokable prompts, 5 auto-attaching instructions files, and the rule book at `.github/copilot-instructions.md`. Also supports `update copilot` and `migrate copilot`. See [docs/copilot-install-and-usage.md](docs/copilot-install-and-usage.md) for the full walkthrough (Business vs Free tier behaviour, `/setup` in Chat, pre-commit hook templates).
 
 ---
 

@@ -218,8 +218,10 @@ for skill_dir in "$CORE_DIR"/skills/*/; do
   # switch-out targets — those must become $orbit-plan, $orbit-review on Codex).
   while IFS= read -r -d '' f; do
     rewrite_paths_in_place "$f"
-    rewrite_slash_cross_refs "$f"
     append_reference_appendix "$f"
+    # After the appendix, so inlined reference text gets the same
+    # /plan → $orbit-plan and /review → $orbit-review rewrite.
+    rewrite_slash_cross_refs "$f"
   done < <(find "$dest_dir" \( -name '*.md' -o -name '*.mdc' -o -name '*.template' \) -print0)
 done
 
@@ -269,8 +271,9 @@ YAML
 
   # Standard path rewrites + cross-reference rewrites on every mode body
   rewrite_paths_in_place "$skill_md"
-  rewrite_slash_cross_refs "$skill_md"
   append_reference_appendix "$skill_md"
+  # After the appendix, so inlined reference text is rewritten too.
+  rewrite_slash_cross_refs "$skill_md"
 }
 
 # Emit all 15 mode skills. plan → orbit-plan; review → orbit-review.
@@ -457,7 +460,7 @@ The rename is preventive: \`/plan\` and \`\\\$plan\` live in different namespace
 
 ## Multi-agent primitives (Codex-native)
 
-Codex enables five collaboration tools via \`features.multi_agent\` (stable, default true): \`spawn_agent\`, \`send_input\`, \`resume_agent\`, \`wait_agent\`, \`close_agent\`. The primary agent orchestrates subagents through these tools; use \`/agent\` to switch active agent threads. pai-orbit ships \`docs-writer\` and \`cross-repo-impact\` as native Codex subagents in \`.codex/agents/\`.
+Codex enables five collaboration tools via \`features.multi_agent\` (stable, default true): \`spawn_agent\`, \`send_input\`, \`resume_agent\`, \`wait_agent\`, \`close_agent\`. The primary agent orchestrates subagents through these tools; use \`/agent\` to switch active agent threads. pai-orbit ships \`docs-writer\` and \`cross-repo-impact\` as native Codex subagents in \`.codex/agents/\`. /build splits work into code, tests and docs streams that the primary agent spawns directly (subagents never spawn children). Codex caps open agent threads and \`spawn_agent\` errors at the cap instead of queueing, so the orchestrator keeps open agents within the cap, closes finished ones with \`close_agent\`, and holds excess tasks until a slot frees.
 
 ## Hooks
 

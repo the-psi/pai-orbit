@@ -204,7 +204,7 @@ Example — columns Backlog, Ready, In progress, In review, Done: groom → Read
 | ID gone | flag as broken; re-run the suggestion for that mode |
 | A new column matches a mode's synonyms better | flag as an optional change; default keeps the saved row |
 
-Show only the flagged rows; keep every row the user does not change. A table with non-standard headers (hand-written) is read by position — mode, target, ID — and rewritten with the canonical headers, rows kept. If the section is absent (a project set up before 1.13.0), run the full flow above.
+Show only the flagged rows; keep every row the user does not change. A table with non-standard headers (hand-written) is read by position — mode, target, ID — and rewritten with the canonical headers, rows kept. If the section is absent (a project set up before 1.15.0), run the full flow above.
 
 ---
 
@@ -444,7 +444,7 @@ If either is missing, check `.codex/agents/docs-writer.toml` and `.codex/agents/
 
 ### 5. Initialise `.codex/config.toml`
 
-The adapter ships a `.codex/config.toml` template with pai-orbit's default approval policy (`on-request`), sandbox mode (`workspace-write`), and multi-agent bounds (`max_threads=4`, `max_depth=2`). Review these before your first session and adjust if your team runs in a stricter or more permissive posture.
+The adapter ships a `.codex/config.toml` template with pai-orbit's default approval policy (`on-request`), sandbox mode (`workspace-write`), and multi-agent bounds (`max_threads=4`, `max_depth=2`; `/build` runs a flat orchestrator within these, spawning task agents directly and closing finished ones). Review these before your first session and adjust if your team runs in a stricter or more permissive posture.
 
 Any MCP servers you use (GitHub, Slack, Linear, etc.) can be added to the `[mcp_servers.<name>]` blocks in the same file. pai-orbit ships no MCP integrations by default.
 

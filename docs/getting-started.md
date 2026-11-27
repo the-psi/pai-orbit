@@ -45,7 +45,7 @@ Legacy copy-rules install (lossy): `plugins/pai-orbit/dist/cursor/` — use only
 
 ### GitHub Copilot (VS Code)
 
-Full slash-command adapter — 32 invokable prompts (16 modes, 7 skills, 7 service-builder agents, 2 named agents: `/docs-writer` and `/cross-repo-impact`) + 5 auto-attaching instructions files + slim rule book at `.github/copilot-instructions.md`. Install with:
+Full slash-command adapter — 34 invokable prompts (16 modes, 9 skills, 7 service-builder agents, 2 named agents: `/docs-writer` and `/cross-repo-impact`) + 5 auto-attaching instructions files + slim rule book at `.github/copilot-instructions.md`. Install with:
 
 ```bash
 npx github:the-psi/pai-orbit init copilot
