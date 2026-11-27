@@ -1,0 +1,115 @@
+{
+  "project": "my-project",
+  "repo": {
+    "url": "",
+    "baseBranch": "main"
+  },
+  "docsRoot": "docs",
+  "board": {
+    "type": "local",
+    "readyLabel": "factory-ready",
+    "ownedLabel": "factory-owned",
+    "waitingLabel": "factory-waiting",
+    "declinedLabel": "factory-declined",
+    "groomedLabel": "factory-groomed",
+    "botUser": "orbit-factory",
+    "columns": {
+      "groom": "In progress",
+      "design": "In progress",
+      "pr": "In review",
+      "done": "Done"
+    }
+  },
+  "codeHost": {
+    "type": "local",
+    "mergeMethod": "squash"
+  },
+  "gitlab": {
+    "tokenEnv": "GITLAB_TOKEN",
+    "apiUrl": "",
+    "project": ""
+  },
+  "notifier": {
+    "type": "console",
+    "webhookEnv": "FACTORY_SLACK_WEBHOOK_URL"
+  },
+  "runner": {
+    "type": "claude-cli",
+    "command": "claude",
+    "permissionMode": "acceptEdits",
+    "models": {
+      "default": "",
+      "groom": "",
+      "design": "",
+      "build": "",
+      "test": "",
+      "playwright": "",
+      "review": "",
+      "verify": "",
+      "release": ""
+    },
+    "envPassthrough": []
+  },
+  "stages": {
+    "playwright": false,
+    "review": true,
+    "independentReview": false
+  },
+  "gates": {
+    "requirements": true,
+    "design": true
+  },
+  "roles": {
+    "answer": ["@reporter", "product-owner"],
+    "requirementsApprover": ["product-owner"],
+    "designApprover": ["tech-lead"],
+    "mergeApprover": ["tech-lead"],
+    "releaseApprover": ["release-manager"],
+    "escalation": ["team-lead"]
+  },
+  "limits": {
+    "costPerTicketUsd": 50,
+    "costWarnShare": 0.7,
+    "costPerStageUsd": 15,
+    "costPerDayUsd": 200,
+    "activeHoursPerTicket": 8,
+    "hoursPerStage": 2,
+    "reworkCyclesPerGate": 3,
+    "testFixAttempts": 3,
+    "stageRetries": 1,
+    "independentReviewRounds": 2
+  },
+  "waiting": {
+    "reminderHours": 4,
+    "escalationHours": 8,
+    "maxParkedDays": 5
+  },
+  "calendar": {
+    "timeZone": "UTC",
+    "days": [1, 2, 3, 4, 5],
+    "startHour": 9,
+    "endHour": 18
+  },
+  "concurrency": 2,
+  "suitability": {
+    "sensitiveLabels": ["security", "auth", "payments", "billing", "pii", "migration", "infrastructure"],
+    "epicLabels": ["epic"],
+    "maxAcceptanceCriteria": 8,
+    "maxFiles": 15,
+    "maxChangedLines": 600,
+    "maxServices": 1
+  },
+  "release": {
+    "level": "tag",
+    "envPassthrough": []
+  },
+  "pollSeconds": 60,
+  "ui": {
+    "enabled": false,
+    "host": "127.0.0.1",
+    "port": 8080
+  },
+  "trial": {
+    "singleAccount": false
+  }
+}

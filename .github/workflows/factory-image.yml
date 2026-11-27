@@ -1,0 +1,125 @@
+name: factory-image
+
+# Builds the Agentic Factory image and publishes it to GitHub Container Registry.
+#
+# A version tag publishes:  git tag factory-v0.1.0 && git push origin factory-v0.1.0
+#   -> ghcr.io/<owner>/orbit-factory:0.1.0  (and :latest for a plain x.y.z version)
+#
+# A pull request that touches the factory only BUILDS the image, to prove the Dockerfile still
+# works. Nothing is published from a pull request.
+#
+# The image holds the factory code, the built pai-orbit plugin and the agent CLI. It holds no
+# credentials and no project config: those are given when a container starts. See
+# docs/decisions/2026-11-27-agentic-factory-image-on-ghcr.md.
+
+on:
+  push:
+    tags:
+      - "factory-v*"
+  pull_request:
+    paths:
+      - "factory/**"
+      - "plugins/pai-orbit/dist/claude-code/**"
+      - ".github/workflows/factory-image.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Refuse to build if a credentials file is in the build context
+        run: |
+          found="$(find factory -name '.env' -o -name '.env.*' ! -name '.env.example' -o -name 'factory.config.json' | head -5)"
+          if [ -n "$found" ]; then
+            echo "::error::Credential or deployment config files are in the repository: $found"
+            exit 1
+          fi
+
+      - name: Work out the image name and tags
+        id: meta
+        run: |
+          owner="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          image="ghcr.io/${owner}/orbit-factory"
+          publish=false
+          tags=""
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            version="${GITHUB_REF_NAME#factory-v}"
+            if ! echo "${version}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$'; then
+              echo "::error::Tag ${GITHUB_REF_NAME} is not factory-v<major>.<minor>.<patch>[-suffix]"
+              exit 1
+            fi
+            publish=true
+            tags="${image}:${version}"
+            # A pre-release (0.1.0-rc.1) never moves :latest.
+            if echo "${version}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+              tags="${tags},${image}:latest"
+            fi
+          else
+            version="0.0.0-dev"
+            tags="${image}:build-check"
+          fi
+          {
+            echo "image=${image}"
+            echo "version=${version}"
+            echo "publish=${publish}"
+            echo "tags=${tags}"
+            echo "first=${tags%%,*}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: steps.meta.outputs.publish == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build the image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: factory/Dockerfile
+          load: true
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            FACTORY_IMAGE=${{ steps.meta.outputs.publish == 'true' && steps.meta.outputs.first || '' }}
+          labels: |
+            org.opencontainers.image.title=orbit-factory
+            org.opencontainers.image.description=Agentic Factory for pai-orbit
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.meta.outputs.version }}
+            org.opencontainers.image.licenses=MIT
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Check the image starts and carries no credentials file
+        run: |
+          first="$(echo '${{ steps.meta.outputs.tags }}' | cut -d, -f1)"
+          docker run --rm "${first}" help
+          leaked="$(docker run --rm --entrypoint sh "${first}" -c "find /opt/orbit -name '.env' -o -name 'factory.config.json' | head -5")"
+          if [ -n "${leaked}" ]; then
+            echo "::error::The image contains credential or config files: ${leaked}"
+            exit 1
+          fi
+
+      - name: Publish the image
+        if: steps.meta.outputs.publish == 'true'
+        run: |
+          for tag in $(echo '${{ steps.meta.outputs.tags }}' | tr ',' ' '); do
+            docker push "${tag}"
+          done
+          echo "Published: ${{ steps.meta.outputs.tags }}" >> "${GITHUB_STEP_SUMMARY}"

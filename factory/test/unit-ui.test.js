@@ -1,0 +1,187 @@
+'use strict';
+// The status page: read-only, password-protected when reachable from outside, and accurate.
+
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { StateStore } = require('../src/state');
+const { fromObject } = require('../src/config');
+const { createUiServer, listenPlan, columnOf, describe, summarise } = require('../src/ui/server');
+
+const config = fromObject({
+  project: 'demo', repo: { url: 'x' },
+  roles: { answer: ['@reporter'], requirementsApprover: ['po'], mergeApprover: ['lead'], releaseApprover: ['rel'] },
+  gates: { requirements: true },
+});
+
+function rig(t, opts = {}) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'orbit-factory-ui-'));
+  const store = new StateStore(dir);
+  const server = createUiServer({ store, config, password: opts.password });
+  t.after(() => { server.close(); fs.rmSync(dir, { recursive: true, force: true, maxRetries: 3 }); });
+  return new Promise((resolve) => {
+    server.listen(0, '127.0.0.1', () => {
+      const base = `http://127.0.0.1:${server.address().port}`;
+      resolve({ store, base, get: (p, init) => fetch(base + p, init) });
+    });
+  });
+}
+
+function seed(store) {
+  store.save({ ticketId: '1', title: 'Add bulk discount', url: 'https://example.com/issues/1', status: 'running', stage: 'build', costUsd: 0.4, activeMs: 120000, stageCost: { design: 0.1, build: 0.3 }, branch: 'factory/1-x', groomed: true, createdAt: '2026-11-26T10:00:00.000Z', pr: null, pending: null });
+  store.event('1', 'claimed', {});
+  store.event('1', 'stage_start', { stage: 'build', attempt: 1 });
+  store.save({ ticketId: '2', title: 'Add Germany', url: 'javascript:alert(1)', status: 'waiting_approval', stage: 'groom', costUsd: 0.2, activeMs: 30000, createdAt: '2026-11-26T10:01:00.000Z', pending: { kind: 'approval', gate: 'requirements', since: '2026-11-26T10:05:00.000Z' } });
+  store.event('2', 'stage_end', { stage: 'groom', status: 'done', costUsd: 0.2, durationMs: 30000, summary: 'Wrote requirements.', assumptions: [{ decision: 'Rate is 19%', basis: 'ticket text' }] });
+  store.event('2', 'approval_needed', { gate: 'requirements' });
+  store.save({ ticketId: '3', title: 'Vague', status: 'declined', stage: 'groom', costUsd: 0.09, declineReason: 'Too vague', createdAt: '2026-11-26T10:02:00.000Z', pending: null });
+  store.save({ ticketId: '4', title: 'Stuck', status: 'waiting_answer', stage: 'design', costUsd: 0.1, createdAt: '2026-11-26T10:03:00.000Z', pending: { kind: 'answer', stage: 'design', since: '2026-11-26T10:06:00.000Z', questions: [{ question: 'Which rate?', why: 'tax' }] } });
+  store.addSpend(0.79);
+}
+
+test('the overview lists every ticket with its column, state and totals', async (t) => {
+  const r = await rig(t);
+  seed(r.store);
+  const o = await (await r.get('/api/overview')).json();
+  assert.equal(o.project, 'demo');
+  assert.equal(o.spentTodayUsd, 0.79);
+  assert.equal(o.dailyLimitUsd, 200);
+  assert.deepEqual(o.gates, { requirements: true, design: false, merge: true, release: true });
+  const by = Object.fromEntries(o.tickets.map((x) => [x.id, x]));
+  assert.equal(by['1'].column, 'Build');
+  assert.equal(by['1'].tone, 'working');
+  assert.deepEqual([by['1'].stepIndex, by['1'].stepName, by['1'].stepNames.length], [2, 'Build', 7]);
+  assert.deepEqual(o.columns, ['Plan', 'Build', 'Ship', 'Done', 'Returned']);
+  assert.equal(by['1'].state, 'Working: build');
+  assert.ok(by['1'].workingSince, 'a started, unfinished stage shows as working now');
+  assert.equal(by['1'].startedGroomed, true);
+  assert.equal(by['2'].column, 'Plan');
+  assert.equal(by['2'].tone, 'needs');
+  assert.equal(by['2'].state, 'Waiting for approval: requirements');
+  assert.equal(by['2'].needsPerson, true);
+  assert.equal(by['3'].column, 'Returned');
+  assert.equal(by['3'].tone, 'returned');
+  assert.equal(by['4'].tone, 'needs');
+  assert.equal(by['4'].column, 'Plan');
+  assert.equal(by['3'].reason, 'Too vague');
+  assert.equal(by['4'].state, 'Waiting for an answer (design)');
+  assert.deepEqual(by['4'].questions, ['Which rate?']);
+});
+
+test('a ticket page gives a readable timeline with the agent\'s report and its decisions', async (t) => {
+  const r = await rig(t);
+  seed(r.store);
+  const d = await (await r.get('/api/tickets/2')).json();
+  assert.equal(d.ticket.id, '2');
+  const end = d.timeline.find((e) => e.type === 'stage_end');
+  assert.equal(end.text, 'Agent finished groom');
+  assert.equal(end.summary, 'Wrote requirements.');
+  assert.deepEqual(end.assumptions, [{ decision: 'Rate is 19%', basis: 'ticket text' }]);
+  assert.equal(end.seconds, 30);
+  assert.equal(d.timeline.at(-1).text, 'Waiting for approval: requirements');
+  assert.equal((await r.get('/api/tickets/999')).status, 404);
+});
+
+test('without a named sign-in nothing can be changed: no route accepts a write', async (t) => {
+  const r = await rig(t);
+  seed(r.store);
+  const before = JSON.stringify(r.store.all());
+  for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
+    for (const p of ['/', '/api/overview', '/api/tickets/1', '/api/tickets/1/approve', '/api/pause', '/api/tickets/2/decision', '/api/tickets/4/decision']) {
+      const res = await r.get(p, { method, body: method === 'DELETE' ? undefined : '{}' });
+      assert.ok([403, 404, 405].includes(res.status), `${method} ${p} -> ${res.status}`);
+    }
+  }
+  assert.equal(JSON.stringify(r.store.all()), before);
+  assert.equal(r.store.control().paused, false);
+  assert.deepEqual(r.store.decisions('2'), [], 'no decision was recorded');
+  assert.deepEqual(r.store.decisions('4'), []);
+});
+
+test('with a password set, nothing is served without it', async (t) => {
+  const r = await rig(t, { password: 'open sesame' });
+  seed(r.store);
+  for (const p of ['/', '/api/overview', '/api/tickets/1']) {
+    const res = await r.get(p);
+    assert.equal(res.status, 401, p);
+    assert.match(res.headers.get('www-authenticate'), /Basic/);
+    assert.ok(!(await res.text()).includes('bulk discount'));
+  }
+  const wrong = await r.get('/api/overview', { headers: { authorization: `Basic ${Buffer.from('me:nope').toString('base64')}` } });
+  assert.equal(wrong.status, 401);
+  const right = await r.get('/api/overview', { headers: { authorization: `Basic ${Buffer.from('anyone:open sesame').toString('base64')}` } });
+  assert.equal(right.status, 200);
+  assert.equal((await r.get('/healthz')).status, 200, 'the health check needs no password');
+});
+
+test('the page is one self-contained file and loads nothing from elsewhere', async (t) => {
+  const r = await rig(t);
+  const res = await r.get('/');
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get('content-type'), /text\/html/);
+  assert.match(res.headers.get('content-security-policy'), /default-src 'none'/);
+  assert.equal(res.headers.get('x-frame-options'), 'DENY');
+  const html = await res.text();
+  assert.ok(html.includes('Agentic Factory'));
+  assert.ok(!/<script[^>]+src=|<link[^>]+href=|https?:\/\/(?!factory\.local)/i.test(html.replace(/\^https\?:\\\/\\\//g, '')), 'no external script, style or address');
+  assert.ok(!/innerHTML|insertAdjacentHTML|document\.write/.test(html), 'ticket text is never inserted as HTML');
+});
+
+test('no secret reaches the browser', async (t) => {
+  const r = await rig(t);
+  seed(r.store);
+  const text = JSON.stringify(await (await r.get('/api/overview')).json()) + JSON.stringify(await (await r.get('/api/tickets/1')).json());
+  assert.ok(!/token|password|secret|sessionId|sessions/i.test(text), text.slice(0, 200));
+});
+
+test('listenPlan: this machine only by default; a password is required to listen more widely', () => {
+  const plain = listenPlan(config, {});
+  assert.deepEqual([plain.host, plain.port, plain.password, plain.users.size, plain.problem], ['127.0.0.1', 8080, '', 0, '']);
+  const named = listenPlan(config, { FACTORY_UI_HOST: '0.0.0.0', FACTORY_UI_USERS: 'asha:s1, ravi:s2,broken,:x' });
+  assert.equal(named.problem, '');
+  assert.deepEqual([...named.users.keys()], ['asha', 'ravi']);
+  assert.match(listenPlan(config, { FACTORY_UI_HOST: '0.0.0.0' }).problem, /neither FACTORY_UI_PASSWORD nor FACTORY_UI_USERS is set/);
+  const open = listenPlan(config, { FACTORY_UI_HOST: '0.0.0.0', FACTORY_UI_PASSWORD: 'pw', FACTORY_UI_PORT: '9000' });
+  assert.equal(open.problem, '');
+  assert.equal(open.port, 9000);
+});
+
+test('columns and event wording', () => {
+  assert.equal(columnOf({ status: 'waiting_approval', stage: 'merge', pending: { gate: 'merge' } }), 'Ship');
+  assert.equal(columnOf({ status: 'running', stage: 'review' }), 'Build');
+  assert.equal(columnOf({ status: 'running', stage: 'verify' }), 'Build');
+  assert.equal(columnOf({ status: 'running', stage: 'release' }), 'Ship');
+  assert.equal(columnOf({ status: 'running', stage: 'design' }), 'Plan');
+  assert.equal(columnOf({ status: 'handed_back', stage: 'build' }), 'Returned');
+  assert.equal(describe({ type: 'stage_end', stage: 'test', status: 'failed' }), 'Agent could not finish test');
+  assert.equal(describe({ type: 'stage_end', stage: 'build', problem: 'timeout', detail: 'no result within 120 minutes' }), 'Agent stopped in build: timeout (no result within 120 minutes)');
+  assert.equal(describe({ type: 'approved', gate: 'design', by: 'lead' }), 'Approved: design by lead');
+  const queued = summarise({ ticketId: '9', status: 'running', stage: 'design' }, []);
+  assert.equal(queued.state, 'Queued for the next stage');
+  assert.equal(queued.tone, 'queued');
+  const done = summarise({ ticketId: '9', status: 'done', stage: 'done' }, []);
+  assert.deepEqual([done.tone, done.stepIndex, done.stepName], ['done', 7, 'Released']);
+  assert.deepEqual([summarise({ ticketId: '9', status: 'waiting_approval', stage: 'merge', pending: { kind: 'approval', gate: 'merge', since: 'x' } }, []).stepName], ['Merge']);
+});
+
+test('sign-in address: refuses the view-only sign-in so the browser asks again, and sends a named person back', async (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'orbit-factory-ui-'));
+  const store = new StateStore(dir);
+  const server = createUiServer({ store, config, password: 'look', users: new Map([['po', 'secret']]) });
+  t.after(() => { server.close(); fs.rmSync(dir, { recursive: true, force: true, maxRetries: 3 }); });
+  await new Promise((resolve) => { server.listen(0, '127.0.0.1', resolve); });
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const as = (name, pass) => ({ redirect: 'manual', headers: { authorization: `Basic ${Buffer.from(`${name}:${pass}`).toString('base64')}` } });
+  const viewer = await fetch(`${base}/signin`, as('whoever', 'look'));
+  assert.equal(viewer.status, 401);
+  assert.match(viewer.headers.get('www-authenticate'), /Basic/);
+  const named = await fetch(`${base}/signin?ticket=5`, as('po', 'secret'));
+  assert.equal(named.status, 302);
+  assert.equal(named.headers.get('location'), '/#review=5');
+  assert.equal((await fetch(`${base}/signin`, as('po', 'secret'))).headers.get('location'), '/');
+  assert.equal((await fetch(`${base}/signin`, as('po', 'wrong'))).status, 401);
+  // A person's own password is not accepted under someone else's name.
+  assert.equal((await fetch(`${base}/signin`, as('lead', 'secret'))).status, 401);
+});

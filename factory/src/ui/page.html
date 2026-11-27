@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agentic Factory</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --panel: #ffffff; --ink: #1c2330; --muted: #5d6878; --line: #dfe3ea;
+    --accent: #2459d6; --ok: #1a7f4b; --warn: #a15c00; --bad: #b3261e; --person: #7a3fc4;
+    --chip: #eef1f6; --shadow: 0 1px 2px rgba(20, 30, 50, .08), 0 4px 14px rgba(20, 30, 50, .06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b; --panel: #1b2029; --ink: #e8ecf3; --muted: #9aa6b8; --line: #2c3442;
+      --accent: #7aa2ff; --ok: #58c98b; --warn: #e3a64a; --bad: #ff8a80; --person: #c39bff;
+      --chip: #262d39; --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex; flex-direction: column; overflow: hidden; }
+  header { flex: none; padding: 12px 16px 10px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  .top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; }
+  h1 { font-size: 17px; margin: 0; font-weight: 650; }
+  .project { color: var(--muted); }
+  .spacer { flex: 1; }
+  .updated { color: var(--muted); font-size: 12px; }
+  .facts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .fact { background: var(--chip); border-radius: 8px; padding: 6px 12px; min-width: 120px; flex: 1 1 130px; max-width: 320px; }
+  .fact b { display: block; font-size: 16px; font-weight: 650; }
+  .fact span { color: var(--muted); font-size: 12px; }
+  .bar { height: 4px; background: var(--line); border-radius: 2px; margin-top: 5px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--accent); }
+  .banner { margin-top: 10px; padding: 7px 10px; border-radius: 8px; font-weight: 600; }
+  .banner.paused { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+  .banner.error { background: color-mix(in srgb, var(--bad) 16%, transparent); color: var(--bad); }
+  .banner.trial { background: var(--chip); color: var(--muted); font-weight: 500; }
+  main { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 12px 16px 8px; }
+  /* Five columns share the width; on a narrow window the board scrolls sideways. */
+  .board { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(5, minmax(200px, 1fr)); gap: 12px; overflow-x: auto; overflow-y: hidden; }
+  .board.none { display: block; }
+  .col { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: color-mix(in srgb, var(--panel) 55%, transparent); border: 1px solid var(--line); border-radius: 10px; }
+  .col.has { background: color-mix(in srgb, var(--panel) 80%, transparent); }
+  .col h2 { flex: none; font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 0; padding: 10px 12px 8px; display: flex; justify-content: space-between; gap: 6px; border-bottom: 1px solid var(--line); }
+  .col h2 .n { background: var(--chip); border-radius: 9px; padding: 0 7px; font-weight: 600; }
+  .col.has h2 { color: var(--ink); }
+  .cards { flex: 1; min-height: 0; overflow-y: auto; padding: 8px; }
+  .legend { flex: none; }
+  @media (max-width: 760px) {
+    html, body { height: auto; } body { overflow: visible; }
+    .board { grid-template-columns: 1fr; overflow: visible; }
+    .col:not(.has) { display: none; }
+    .cards { overflow: visible; }
+  }
+  .card { width: 100%; text-align: left; font: inherit; color: inherit; background: var(--panel); border: 1px solid var(--line); border-left: 4px solid var(--line); border-radius: 8px; padding: 9px 10px; margin-bottom: 8px; cursor: pointer; box-shadow: var(--shadow); display: block; }
+  .card:hover, .card:focus-visible { border-color: var(--accent); outline: none; }
+  .card.working { border-left-color: var(--accent); }
+  .card.person { border-left-color: var(--person); }
+  .card.done { border-left-color: var(--ok); }
+  .card.returned { border-left-color: var(--bad); }
+  .card .id { color: var(--muted); font-size: 12px; }
+  .card .title { font-weight: 600; margin: 1px 0 6px; overflow-wrap: anywhere; }
+  .state { font-size: 12.5px; }
+  .state.working { color: var(--accent); }
+  .state.person { color: var(--person); font-weight: 600; }
+  .state.done { color: var(--ok); }
+  .state.returned { color: var(--bad); }
+  .meta { color: var(--muted); font-size: 12px; margin-top: 6px; display: flex; flex-wrap: wrap; gap: 2px 10px; }
+  .meta span { white-space: nowrap; }
+  .doing { margin-top: 5px; font-size: 12.5px; color: var(--ink); background: var(--chip); border-radius: 6px; padding: 4px 7px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .live { list-style: none; margin: 0; padding: 0; max-height: 260px; overflow-y: auto; font-size: 12.5px; }
+  .live li { padding: 3px 0; border-bottom: 1px dashed var(--line); overflow-wrap: anywhere; }
+  .live li:first-child { font-weight: 600; }
+  .live time { color: var(--muted); margin-right: 8px; white-space: nowrap; font-weight: 400; }
+  .pulse { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); margin-right: 5px; animation: pulse 1.4s infinite; }
+  @keyframes pulse { 50% { opacity: .25; } }
+  @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+  .empty { color: var(--muted); padding: 30px 6px; text-align: center; }
+  aside { position: fixed; inset: 0 0 0 auto; width: min(560px, 100%); background: var(--panel); border-left: 1px solid var(--line); box-shadow: var(--shadow); transform: translateX(105%); transition: transform .18s ease; z-index: 5; display: flex; flex-direction: column; }
+  aside.open { transform: none; }
+  @media (prefers-reduced-motion: reduce) { aside { transition: none; } }
+  .ahead { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; gap: 10px; align-items: flex-start; }
+  .ahead h3 { margin: 0; font-size: 16px; overflow-wrap: anywhere; }
+  .close { margin-left: auto; font: inherit; background: var(--chip); color: var(--ink); border: 0; border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+  .abody { padding: 12px 16px 30px; overflow-y: auto; }
+  .links a { color: var(--accent); margin-right: 14px; overflow-wrap: anywhere; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 10px 0 14px; }
+  .kv dt { color: var(--muted); } .kv dd { margin: 0; overflow-wrap: anywhere; }
+  .box { background: var(--chip); border-radius: 8px; padding: 9px 11px; margin: 10px 0; }
+  .box h4 { margin: 0 0 5px; font-size: 13px; }
+  .box ol, .box ul { margin: 0; padding-left: 20px; }
+  .tl { list-style: none; margin: 14px 0 0; padding: 0; border-left: 2px solid var(--line); }
+  .tl li { position: relative; padding: 0 0 12px 16px; }
+  .tl li::before { content: ""; position: absolute; left: -6px; top: 5px; width: 10px; height: 10px; border-radius: 50%; background: var(--muted); border: 2px solid var(--panel); }
+  .tl li.work::before { background: var(--accent); } .tl li.ok::before { background: var(--ok); }
+  .tl li.warn::before { background: var(--warn); } .tl li.bad::before { background: var(--bad); } .tl li.person::before { background: var(--person); }
+  .tl time { color: var(--muted); font-size: 12px; margin-right: 8px; white-space: nowrap; }
+  .tl .more { color: var(--muted); font-size: 12.5px; margin-top: 3px; overflow-wrap: anywhere; }
+  .tl details { margin-top: 4px; font-size: 12.5px; } .tl summary { cursor: pointer; color: var(--muted); }
+  .legend { color: var(--muted); font-size: 12px; margin: 8px 0 0; }
+
+  .me { color: var(--muted); font-size: 12px; }
+  .setbtn { font: inherit; font-size: 12.5px; color: var(--ink); background: var(--chip); border: 1px solid var(--line); border-radius: 7px; padding: 3px 11px; cursor: pointer; }
+  .setbtn:hover { border-color: var(--accent); }
+  .set h4 { margin: 18px 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .set h4:first-child { margin-top: 0; }
+  .set table { width: 100%; border-collapse: collapse; }
+  .set td { padding: 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .set td:first-child { width: 44%; color: var(--muted); padding-right: 10px; }
+  .set .on { color: var(--ok); font-weight: 600; } .set .off { color: var(--muted); }
+  .set .foot { color: var(--muted); font-size: 12.5px; margin-top: 16px; }
+  .cta { margin-top: 7px; font-size: 12.5px; font-weight: 600; color: var(--person); }
+  .cta.sent { color: var(--muted); font-weight: 500; }
+  /* The review screen: one question, one document, one decision. */
+  .review { position: fixed; inset: 0; background: var(--bg); z-index: 10; display: none; flex-direction: column; }
+  .review.open { display: flex; }
+  .rhead { flex: none; background: var(--panel); border-bottom: 1px solid var(--line); padding: 12px 16px 0; }
+  .rtop { display: flex; align-items: flex-start; gap: 12px; }
+  .rtop .back { font: inherit; background: var(--chip); color: var(--ink); border: 0; border-radius: 6px; padding: 6px 12px; cursor: pointer; white-space: nowrap; }
+  .rtop h2 { margin: 0; font-size: 19px; }
+  .rsub { color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; }
+  .rsub a { color: var(--accent); margin-left: 10px; }
+  .tabs { display: flex; gap: 2px; margin-top: 10px; overflow-x: auto; }
+  .tab { font: inherit; color: var(--muted); background: none; border: 0; border-bottom: 3px solid transparent; padding: 8px 12px; cursor: pointer; white-space: nowrap; }
+  .tab:hover { color: var(--ink); }
+  .tab.on { color: var(--ink); font-weight: 600; border-bottom-color: var(--accent); }
+  .rbody { flex: 1; min-height: 0; overflow-y: auto; padding: 18px 16px 30px; }
+  .sheet { max-width: 880px; margin: 0 auto; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px 26px; box-shadow: var(--shadow); }
+  .sheet .path { color: var(--muted); font-size: 12px; margin-bottom: 8px; overflow-wrap: anywhere; }
+  .hint { max-width: 880px; margin: 0 auto 12px; color: var(--muted); }
+  .doc { font-size: 14.5px; line-height: 1.6; overflow-wrap: anywhere; }
+  .doc h2 { font-size: 21px; margin: 0 0 12px; } .doc h3 { font-size: 16.5px; margin: 22px 0 8px; padding-top: 12px; border-top: 1px solid var(--line); }
+  .doc h4, .doc h5, .doc h6 { font-size: 14.5px; margin: 16px 0 6px; }
+  .doc p { margin: 8px 0; } .doc ul, .doc ol { margin: 8px 0; padding-left: 24px; } .doc li { margin: 4px 0; }
+  .doc code { background: var(--chip); border-radius: 4px; padding: 1px 5px; font-size: 13px; font-family: ui-monospace, Consolas, monospace; }
+  .doc pre { background: var(--chip); border-radius: 8px; padding: 10px 12px; overflow-x: auto; } .doc pre code { background: none; padding: 0; }
+  .doc table { border-collapse: collapse; margin: 10px 0; display: block; overflow-x: auto; }
+  .doc th, .doc td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; vertical-align: top; }
+  .doc th { background: var(--chip); }
+  .doc blockquote { margin: 8px 0; padding: 2px 12px; border-left: 3px solid var(--line); color: var(--muted); }
+  .doc hr { border: 0; border-top: 1px solid var(--line); margin: 16px 0; }
+  .item { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; margin: 8px 0; }
+  .item b { display: block; } .item .basis { color: var(--muted); margin-top: 4px; font-size: 13px; }
+  .files { width: 100%; border-collapse: collapse; } .files td { padding: 5px 8px; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+  .files .add { color: var(--ok); white-space: nowrap; text-align: right; } .files .del { color: var(--bad); white-space: nowrap; text-align: right; }
+  .rfoot { flex: none; background: var(--panel); border-top: 1px solid var(--line); padding: 12px 16px; }
+  .rfoot .in { max-width: 880px; margin: 0 auto; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .who { color: var(--muted); font-size: 12.5px; margin-right: auto; }
+  .btn { font: inherit; font-weight: 600; border-radius: 8px; padding: 9px 18px; cursor: pointer; border: 1px solid var(--line); background: var(--panel); color: var(--ink); }
+  .btn.yes { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .btn.no { color: var(--bad); border-color: var(--bad); }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .rfoot textarea { width: 100%; min-height: 84px; margin: 0 0 10px; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; resize: vertical; }
+  .rfoot label { display: block; font-weight: 600; margin-bottom: 6px; }
+  .note { padding: 9px 12px; border-radius: 8px; background: var(--chip); }
+  .note.ok { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); font-weight: 600; }
+  .note.bad { background: color-mix(in srgb, var(--bad) 14%, transparent); color: var(--bad); }
+
+  /* A card's colour is its state. The badge says the same in words, so colour is never the only cue. */
+  :root { --needs: #b45309; --working: #2459d6; --queued: #5d6878; --okc: #1a7f4b; --ret: #b3261e; }
+  @media (prefers-color-scheme: dark) { :root { --needs: #f0b35a; --working: #7aa2ff; --queued: #9aa6b8; --okc: #58c98b; --ret: #ff8a80; } }
+  .card { border-left-width: 1px; padding: 10px 12px 11px; }
+  .card.t-needs { --c: var(--needs); } .card.t-working { --c: var(--working); } .card.t-queued { --c: var(--queued); }
+  .card.t-done { --c: var(--okc); } .card.t-returned { --c: var(--ret); }
+  .card[class*="t-"] { background: color-mix(in srgb, var(--c) 9%, var(--panel)); border-color: color-mix(in srgb, var(--c) 38%, var(--line)); }
+  .card[class*="t-"]:hover, .card[class*="t-"]:focus-visible { border-color: var(--c); }
+  .card.t-needs { box-shadow: 0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent), var(--shadow); }
+  .badge { display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: var(--c, var(--queued)); border-radius: 4px; padding: 2px 7px; }
+  @media (prefers-color-scheme: dark) { .badge { color: #12151b; } }
+  .chead { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .chead .id { margin-left: auto; }
+  .state, .state.working, .state.person, .state.done, .state.returned { color: var(--ink); font-weight: 500; }
+  .steps { display: flex; align-items: center; margin: 9px 0 4px; }
+  .steps i { flex: none; width: 9px; height: 9px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--c) 45%, var(--line)); background: var(--panel); }
+  .steps i.on { background: var(--c); border-color: var(--c); }
+  .steps i.now { background: var(--panel); border-color: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 28%, transparent); }
+  .steps b { flex: 1; height: 2px; background: color-mix(in srgb, var(--c) 30%, var(--line)); }
+  .steps b.on { background: var(--c); }
+  .stepname { font-size: 12px; color: var(--muted); }
+  .cta { color: var(--c); }
+  .key { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 12px; color: var(--muted); align-items: center; }
+  .key span { display: inline-flex; align-items: center; gap: 6px; }
+  .key i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <h1>Agentic Factory</h1>
+    <span class="project" id="project"></span>
+    <span class="spacer"></span>
+    <button class="setbtn" id="setbtn" type="button">Settings</button>
+    <span class="me" id="me"></span>
+    <span class="updated" id="updated">Loading…</span>
+  </div>
+  <div class="facts" id="facts"></div>
+  <div class="key" aria-label="What the card colours mean">
+    <span><i style="background:var(--needs)"></i>Needs you</span>
+    <span><i style="background:var(--working)"></i>Agent working</span>
+    <span><i style="background:var(--queued)"></i>Queued</span>
+    <span><i style="background:var(--okc)"></i>Done</span>
+    <span><i style="background:var(--ret)"></i>Returned to people</span>
+  </div>
+  <div id="banners"></div>
+</header>
+<main>
+  <div class="board" id="board"></div>
+  <p class="legend">A ticket marked "Review" is waiting for a person. Open it to read what is being asked and decide. Every decision is also written on the ticket.</p>
+</main>
+<aside id="panel" aria-hidden="true">
+  <div class="ahead"><div><div class="id" id="pid"></div><h3 id="ptitle"></h3></div><button class="close" id="close">Close</button></div>
+  <div class="abody" id="pbody"></div>
+</aside>
+<section class="review" id="review" aria-hidden="true">
+  <div class="rhead">
+    <div class="rtop">
+      <button class="back" id="rback">← Board</button>
+      <div><h2 id="rtitle"></h2><div class="rsub" id="rsub"></div></div>
+    </div>
+    <div class="tabs" id="rtabs" role="tablist"></div>
+  </div>
+  <div class="rbody" id="rbody"></div>
+  <div class="rfoot"><div class="in" id="rfoot"></div></div>
+</section>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var openId = null;
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined && text !== null) n.textContent = text;
+    return n;
+  }
+  function money(n) { return 'USD ' + Number(n || 0).toFixed(2); }
+  function ago(iso) {
+    if (!iso) return '';
+    var s = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+    if (s < 60) return s + 's';
+    if (s < 3600) return Math.round(s / 60) + ' min';
+    if (s < 172800) return (s / 3600).toFixed(1) + ' h';
+    return Math.round(s / 86400) + ' days';
+  }
+  function clock(iso) {
+    var d = new Date(iso);
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+  function tone(t) {
+    if (t.status === 'done') return 'done';
+    if (t.column === 'Returned') return 'returned';
+    if (t.needsPerson) return 'person';
+    if (t.workingSince) return 'working';
+    return '';
+  }
+  function safeLink(url, label) {
+    if (!/^https?:\/\//i.test(url || '')) return null;
+    var a = el('a', null, label);
+    a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+    return a;
+  }
+
+  function renderFacts(o) {
+    var f = $('facts'); f.textContent = '';
+    var active = o.tickets.filter(function (t) { return ['running', 'waiting_answer', 'waiting_approval'].indexOf(t.status) !== -1; });
+    var working = o.tickets.filter(function (t) { return t.workingSince; }).length;
+    var waiting = o.tickets.filter(function (t) { return t.needsPerson; }).length;
+    var done = o.tickets.filter(function (t) { return t.status === 'done'; }).length;
+    function fact(big, small, share) {
+      var d = el('div', 'fact'); d.appendChild(el('b', null, big)); d.appendChild(el('span', null, small));
+      if (share !== undefined) { var b = el('div', 'bar'); var i = el('i'); i.style.width = Math.min(100, Math.round(share * 100)) + '%'; b.appendChild(i); d.appendChild(b); }
+      f.appendChild(d);
+    }
+    fact(String(working), 'agent working now (limit ' + o.concurrency + ')');
+    fact(String(waiting), waiting === 1 ? 'ticket waiting for a person' : 'tickets waiting for a person');
+    fact(String(active.length), 'in progress');
+    fact(String(done), 'released');
+    fact(money(o.spentTodayUsd), 'spent today of ' + money(o.dailyLimitUsd), o.dailyLimitUsd ? o.spentTodayUsd / o.dailyLimitUsd : 0);
+    var gates = ['requirements', 'design', 'merge', 'release'].filter(function (g) { return o.gates[g]; });
+    fact(String(gates.length), 'approval stops: ' + gates.join(', '));
+  }
+
+  function renderBanners(o) {
+    var b = $('banners'); b.textContent = '';
+    if (o.paused) b.appendChild(el('div', 'banner paused', 'The factory is paused. Stages in flight finish; no new stage starts.'));
+    if (o.singleAccountTrial) b.appendChild(el('div', 'banner trial', 'Single-account trial mode is on: the factory and the approver share one account.'));
+  }
+
+  var BADGE = { needs: 'Needs you', working: 'Working', queued: 'Queued', done: 'Done', returned: 'Returned' };
+
+  // Seven dots: filled up to the step the ticket has reached, with the current one ringed.
+  function stepDots(t) {
+    var wrap = el('div', 'steps');
+    var names = t.stepNames || [];
+    var finished = t.stepIndex >= names.length;
+    names.forEach(function (name, i) {
+      if (i > 0) wrap.appendChild(el('b', i <= t.stepIndex ? 'on' : null));
+      var dot = el('i', finished || i < t.stepIndex ? 'on' : (i === t.stepIndex ? 'now' : null));
+      dot.title = name;
+      wrap.appendChild(dot);
+    });
+    wrap.setAttribute('role', 'img');
+    wrap.setAttribute('aria-label', finished ? 'All ' + names.length + ' steps done' : 'Step ' + (t.stepIndex + 1) + ' of ' + names.length + ': ' + t.stepName);
+    return wrap;
+  }
+
+  function card(t) {
+    var c = el('button', 'card t-' + (t.tone || 'queued'));
+    c.type = 'button';
+    var head = el('div', 'chead');
+    head.appendChild(el('span', 'badge', BADGE[t.tone] || 'Queued'));
+    head.appendChild(el('span', 'id', '#' + t.id + (t.startedGroomed ? ' · groomed by a person' : '')));
+    c.appendChild(head);
+    c.appendChild(el('div', 'title', t.title || '(no title)'));
+    var s = el('div', 'state');
+    if (t.workingSince) s.appendChild(el('span', 'pulse'));
+    s.appendChild(document.createTextNode(t.state + (t.workingSince ? ' · ' + ago(t.workingSince) : '') + (t.needsPerson && t.waitingSince ? ' · ' + ago(t.waitingSince) : '')));
+    c.appendChild(s);
+    if (t.doingNow) c.appendChild(el('div', 'doing', t.doingNow));
+    if (t.tone !== 'done') {
+      c.appendChild(stepDots(t));
+      var total = (t.stepNames || []).length;
+      c.appendChild(el('div', 'stepname', (t.tone === 'returned' ? 'Stopped at step ' : 'Step ') + Math.min(total, t.stepIndex + 1) + ' of ' + total + ' · ' + t.stepName));
+    }
+    var m = el('div', 'meta');
+    m.appendChild(el('span', null, money(t.costUsd)));
+    if (t.activeMinutes) m.appendChild(el('span', null, t.activeMinutes + ' min of agent time'));
+    c.appendChild(m);
+    if (t.needsPerson) {
+      var sent = decided[t.id] && decided[t.id] === t.waitingSince;
+      c.appendChild(el('div', sent ? 'cta sent' : 'cta', sent ? 'Your decision is recorded. The factory will act shortly.' : (t.youCanDecide ? 'Review and decide →' : 'Open the review →')));
+    }
+    c.addEventListener('click', function () { if (t.needsPerson) openReview(t.id); else openTicket(t.id); });
+    return c;
+  }
+
+  function renderBoard(o) {
+    var board = $('board'); board.textContent = '';
+    board.className = o.tickets.length ? 'board' : 'board none';
+    if (!o.tickets.length) { board.appendChild(el('div', 'empty', 'No tickets yet. Add the factory-ready or factory-groomed label to a ticket to start.')); return; }
+    o.columns.forEach(function (name) {
+      var items = o.tickets.filter(function (t) { return t.column === name; });
+      var col = el('section', items.length ? 'col has' : 'col');
+      var h = el('h2'); h.appendChild(el('span', null, name)); h.appendChild(el('span', 'n', String(items.length)));
+      col.appendChild(h);
+      var cards = el('div', 'cards');
+      var order = { needs: 0, working: 1, queued: 2, returned: 3, done: 4 };
+      items.sort(function (a, b) { return (order[a.tone] - order[b.tone]) || String(b.updatedAt).localeCompare(String(a.updatedAt)); }).forEach(function (t) { cards.appendChild(card(t)); });
+      col.appendChild(cards);
+      board.appendChild(col);
+    });
+  }
+
+  function renderTicket(d) {
+    var t = d.ticket;
+    $('pid').textContent = '#' + t.id + ' · ' + t.state;
+    $('ptitle').textContent = t.title || '(no title)';
+    var b = $('pbody'); b.textContent = '';
+    var links = el('div', 'links');
+    var a1 = safeLink(t.url, 'Open the ticket'); if (a1) links.appendChild(a1);
+    var a2 = safeLink(t.pr, 'Open the pull request'); if (a2) links.appendChild(a2);
+    if (links.childNodes.length) b.appendChild(links);
+
+    var kv = el('dl', 'kv');
+    function row(k, v) { if (v === '' || v === undefined || v === null) return; kv.appendChild(el('dt', null, k)); kv.appendChild(el('dd', null, v)); }
+    row('Stage', t.stage);
+    row('Started as', t.startedGroomed ? 'An already groomed ticket (starts at design)' : 'A raw ticket (the factory grooms it)');
+    row('Cost so far', money(t.costUsd));
+    var per = Object.keys(d.stageCost || {}).map(function (k) { return k + ' ' + Number(d.stageCost[k]).toFixed(2); }).join(' · ');
+    row('Cost by stage', per);
+    row('Agent time', t.activeMinutes ? t.activeMinutes + ' min' : '');
+    row('Branch', t.branch);
+    row('Waiting for', t.waitingFor ? t.waitingFor + ' · ' + ago(t.waitingSince) : '');
+    row('Reason', t.reason);
+    b.appendChild(kv);
+
+    if (d.activity && d.activity.length) {
+      var lv = el('div', 'box'); lv.appendChild(el('h4', null, 'What the agent is doing now (' + t.stage + ', ' + d.activity.length + ' steps so far)'));
+      var ll = el('ol', 'live');
+      d.activity.slice().reverse().forEach(function (x) { var li = el('li'); li.appendChild(el('time', null, new Date(x.at).toLocaleTimeString())); li.appendChild(document.createTextNode(x.text)); ll.appendChild(li); });
+      lv.appendChild(ll); b.appendChild(lv);
+    } else if (t.workingSince) {
+      b.appendChild(el('div', 'box', 'The agent has started ' + t.stage + '. Its first step will appear here in a moment.'));
+    }
+
+    if (t.questions && t.questions.length) {
+      var q = el('div', 'box'); q.appendChild(el('h4', null, 'Questions waiting for an answer on the ticket'));
+      var ol = el('ol'); t.questions.forEach(function (x) { ol.appendChild(el('li', null, x)); }); q.appendChild(ol); b.appendChild(q);
+    }
+
+    var tl = el('ol', 'tl');
+    d.timeline.slice().reverse().forEach(function (e) {
+      var li = el('li', e.kind);
+      li.appendChild(el('time', null, clock(e.at)));
+      li.appendChild(document.createTextNode(e.text));
+      var extra = [];
+      if (e.seconds !== undefined) extra.push(e.seconds + 's');
+      if (e.costUsd !== undefined) extra.push(money(e.costUsd));
+      if (extra.length) li.appendChild(el('div', 'more', extra.join(' · ')));
+      if (e.summary) { var ds = el('details'); ds.appendChild(el('summary', null, 'What the agent reported')); ds.appendChild(el('div', 'more', e.summary)); li.appendChild(ds); }
+      if (e.assumptions.length) {
+        var da = el('details'); da.appendChild(el('summary', null, e.assumptions.length + ' decision(s) taken without a person'));
+        var ul = el('ul'); e.assumptions.forEach(function (x) { ul.appendChild(el('li', null, (x.decision || '') + ' — based on: ' + (x.basis || ''))); });
+        da.appendChild(ul); li.appendChild(da);
+      }
+      if (e.questions.length) {
+        var dq = el('details'); dq.appendChild(el('summary', null, 'The questions'));
+        var oq = el('ol'); e.questions.forEach(function (x) { oq.appendChild(el('li', null, (x.question || '') + (x.why ? ' — ' + x.why : ''))); });
+        dq.appendChild(oq); li.appendChild(dq);
+      }
+      tl.appendChild(li);
+    });
+    b.appendChild(tl);
+  }
+
+  function openTicket(id) {
+    openId = id;
+    $('panel').classList.add('open'); $('panel').setAttribute('aria-hidden', 'false');
+    loadTicket();
+  }
+  function closePanel() { openId = null; $('panel').classList.remove('open'); $('panel').setAttribute('aria-hidden', 'true'); }
+  $('close').addEventListener('click', closePanel);
+
+  // Settings: how this factory is set up. Read only; changing it means editing the config file.
+  function openSettings() {
+    openId = null;
+    $('pid').textContent = 'Settings';
+    $('ptitle').textContent = 'How this factory is set up';
+    var b = $('pbody'); b.textContent = 'Loading…';
+    $('panel').classList.add('open'); $('panel').setAttribute('aria-hidden', 'false');
+    fetch('/api/settings', { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (s) {
+        b.textContent = '';
+        var box = el('div', 'set');
+        function group(title, rows) {
+          box.appendChild(el('h4', null, title));
+          var t = el('table');
+          rows.forEach(function (r) {
+            var tr = el('tr'); tr.appendChild(el('td', null, r[0]));
+            var td = el('td', r[2] || null, r[1]); tr.appendChild(td); t.appendChild(tr);
+          });
+          box.appendChild(t);
+        }
+        var onOff = function (v) { return v ? 'On' : 'Off'; };
+        group('Project', [['Name', s.project], ['Repository', s.repository], ['Main branch', s.branch], ['Platform', s.platform], ["Factory's account", s.factoryAccount]].concat(s.singleAccountTrial ? [['One-person trial', 'On', 'on']] : []));
+        group('Where it stops for a person', s.stops.map(function (g) {
+          var text = g.on ? (g.always ? 'Always' : 'On') + (g.who.length ? ' · ' + g.who.join(', ') : '') : 'Off';
+          return [g.name, text, g.on ? 'on' : 'off'];
+        }).concat([['May answer questions', s.answers.join(', ')]]));
+        group('Checks it does by itself', s.checks.map(function (c) { return [c.name, onOff(c.on), c.on ? 'on' : 'off']; }));
+        group('AI model per step', s.models.map(function (m) { return [m.step, m.model]; }));
+        group('Limits', [['Cost per ticket', money(s.limits.costPerTicketUsd)], ['Cost per day', money(s.limits.costPerDayUsd)], ['Tickets at once', String(s.limits.ticketsAtOnce)], ['Checks for tickets every', s.limits.checkEverySeconds + ' s'], ['Alerts', s.alerts], ['Release level', s.release]]);
+        box.appendChild(el('p', 'foot', 'These settings come from the config file and cannot be changed here. To change them, edit the file (or make a new one with the setup page) and restart the factory.'));
+        b.appendChild(box);
+      })
+      .catch(function (err) { b.textContent = 'Could not load the settings: ' + err.message; });
+  }
+  $('setbtn').addEventListener('click', openSettings);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePanel(); });
+
+  function loadTicket() {
+    if (!openId) return;
+    fetch('/api/tickets/' + encodeURIComponent(openId), { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { if (d && openId === d.ticket.id) renderTicket(d); })
+      .catch(function () {});
+  }
+
+
+  // ---------------------------------------------------------------- review screen
+  var decided = {};   // ticket id -> the "waiting since" time the decision was sent for
+
+  // A small Markdown reader. It builds page elements directly, so text from a ticket or a
+  // document can never run as code.
+  function inline(parent, text) {
+    var re = /(`[^`]+`)|(\*\*[^*]+\*\*)|(\[[^\]]+\]\([^)\s]+\))/g, last = 0, m;
+    while ((m = re.exec(text))) {
+      if (m.index > last) parent.appendChild(document.createTextNode(text.slice(last, m.index)));
+      var tok = m[0];
+      if (tok.charAt(0) === '`') parent.appendChild(el('code', null, tok.slice(1, -1)));
+      else if (tok.charAt(0) === '*') { var b = el('strong'); inline(b, tok.slice(2, -2)); parent.appendChild(b); }
+      else { var mm = tok.match(/^\[([^\]]+)\]\(([^)\s]+)\)$/); parent.appendChild(safeLink(mm[2], mm[1]) || document.createTextNode(mm[1])); }
+      last = m.index + tok.length;
+    }
+    if (last < text.length) parent.appendChild(document.createTextNode(text.slice(last)));
+  }
+  function md(text) {
+    var out = el('div', 'doc');
+    var lines = String(text || '').replace(/\r/g, '').split('\n');
+    var i = 0;
+    function cells(l) { var t = l.trim(); if (t.charAt(0) === '|') t = t.slice(1); if (t.charAt(t.length - 1) === '|') t = t.slice(0, -1); return t.split('|').map(function (c) { return c.trim(); }); }
+    function isSep(l) { return l.indexOf('|') !== -1 && /^[\s|:-]+$/.test(l) && l.indexOf('-') !== -1; }
+    function isBlockStart(l) { return /^\s*$/.test(l) || /^#{1,6}\s/.test(l) || /^\s*```/.test(l) || /^\s*([-*]|\d+[.)])\s+/.test(l) || /^\s*>/.test(l); }
+    while (i < lines.length) {
+      var l = lines[i];
+      if (/^\s*$/.test(l)) { i += 1; continue; }
+      if (/^\s*<!--/.test(l)) { while (i < lines.length && lines[i].indexOf('-->') === -1) i += 1; i += 1; continue; }
+      if (/^\s*```/.test(l)) {
+        var buf = []; i += 1;
+        while (i < lines.length && !/^\s*```/.test(lines[i])) { buf.push(lines[i]); i += 1; }
+        i += 1;
+        var pre = el('pre'); pre.appendChild(el('code', null, buf.join('\n'))); out.appendChild(pre); continue;
+      }
+      var h = l.match(/^(#{1,6})\s+(.*)$/);
+      if (h) { var hn = el('h' + Math.min(6, h[1].length + 1)); inline(hn, h[2]); out.appendChild(hn); i += 1; continue; }
+      if (/^\s*(-{3,}|\*{3,})\s*$/.test(l)) { out.appendChild(el('hr')); i += 1; continue; }
+      if (l.indexOf('|') !== -1 && i + 1 < lines.length && isSep(lines[i + 1])) {
+        var table = el('table'), thead = el('thead'), tr = el('tr');
+        cells(l).forEach(function (c) { var th = el('th'); inline(th, c); tr.appendChild(th); });
+        thead.appendChild(tr); table.appendChild(thead);
+        var tb = el('tbody'); i += 2;
+        while (i < lines.length && lines[i].indexOf('|') !== -1 && !/^\s*$/.test(lines[i])) {
+          var r = el('tr'); cells(lines[i]).forEach(function (c) { var td = el('td'); inline(td, c); r.appendChild(td); });
+          tb.appendChild(r); i += 1;
+        }
+        table.appendChild(tb); out.appendChild(table); continue;
+      }
+      if (/^\s*>/.test(l)) {
+        var q = el('blockquote'), qb = [];
+        while (i < lines.length && /^\s*>/.test(lines[i])) { qb.push(lines[i].replace(/^\s*>\s?/, '')); i += 1; }
+        var qp = el('p'); inline(qp, qb.join(' ')); q.appendChild(qp); out.appendChild(q); continue;
+      }
+      var li = l.match(/^(\s*)([-*]|\d+[.)])\s+(.*)$/);
+      if (li) {
+        var list = el(/\d/.test(li[2]) ? 'ol' : 'ul');
+        while (i < lines.length) {
+          var m2 = lines[i].match(/^(\s*)([-*]|\d+[.)])\s+(.*)$/);
+          if (!m2) break;
+          var txt = m2[3]; i += 1;
+          while (i < lines.length && /^\s+\S/.test(lines[i]) && !/^\s*([-*]|\d+[.)])\s+/.test(lines[i])) { txt += ' ' + lines[i].trim(); i += 1; }
+          txt = txt.replace(/^\[ \]\s*/, '☐ ').replace(/^\[[xX]\]\s*/, '☑ ');
+          var item = el('li'); inline(item, txt);
+          if (m2[1].length >= 2) item.style.marginLeft = Math.min(4, Math.floor(m2[1].length / 2)) * 18 + 'px';
+          list.appendChild(item);
+        }
+        out.appendChild(list); continue;
+      }
+      var para = [l]; i += 1;
+      while (i < lines.length && !isBlockStart(lines[i]) && !(lines[i].indexOf('|') !== -1 && i + 1 < lines.length && isSep(lines[i + 1]))) { para.push(lines[i]); i += 1; }
+      var pp = el('p'); inline(pp, para.join(' ')); out.appendChild(pp);
+    }
+    return out;
+  }
+
+  function sheet(node, pathText) {
+    var sh = el('div', 'sheet');
+    if (pathText) sh.appendChild(el('div', 'path', pathText));
+    sh.appendChild(node);
+    return sh;
+  }
+  function hint(text) { return el('p', 'hint', text); }
+
+  function decisionsView(d) {
+    var wrap = el('div');
+    if (!d.reports.length) { wrap.appendChild(sheet(el('p', null, 'The agent left no report for this step.'))); return wrap; }
+    d.reports.forEach(function (r) {
+      var box = el('div');
+      box.appendChild(el('h3', null, 'Stage: ' + r.stage));
+      if (r.summary) box.appendChild(el('p', null, r.summary));
+      if (r.assumptions.length) {
+        box.appendChild(el('h4', null, r.assumptions.length + (r.assumptions.length === 1 ? ' decision' : ' decisions') + ' taken without asking a person'));
+        r.assumptions.forEach(function (a) {
+          var it = el('div', 'item');
+          it.appendChild(el('b', null, a.decision || ''));
+          it.appendChild(el('div', 'basis', 'Based on: ' + (a.basis || 'not stated')));
+          box.appendChild(it);
+        });
+      } else {
+        box.appendChild(el('p', 'basis', 'It reported no decisions of its own for this stage.'));
+      }
+      var doc = el('div', 'doc'); doc.appendChild(box);
+      wrap.appendChild(sheet(doc));
+    });
+    return wrap;
+  }
+
+  function changesView(d) {
+    var wrap = el('div', 'doc');
+    var pr = safeLink(d.ticket.pr, 'Open the pull request to read the code');
+    if (pr) { var p1 = el('p'); p1.appendChild(pr); wrap.appendChild(p1); }
+    if (!d.changes.length) { wrap.appendChild(el('p', null, 'The list of changed files is not available here. Use the pull request.')); return sheet(wrap); }
+    var add = 0, del = 0; d.changes.forEach(function (c) { add += c.added; del += c.removed; });
+    wrap.appendChild(el('p', null, d.changes.length + ' files changed: ' + add + ' lines added, ' + del + ' removed.'));
+    var t = el('table', 'files');
+    d.changes.forEach(function (c) { var r = el('tr'); r.appendChild(el('td', null, c.path)); r.appendChild(el('td', 'add', '+' + c.added)); r.appendChild(el('td', 'del', '−' + c.removed)); t.appendChild(r); });
+    wrap.appendChild(t);
+    return sheet(wrap);
+  }
+
+  function questionsView(d) {
+    var wrap = el('div', 'doc');
+    wrap.appendChild(el('p', null, 'The agent stopped because it will not guess. Answer below and it continues from where it stopped.'));
+    d.questions.forEach(function (q, i) {
+      var it = el('div', 'item');
+      it.appendChild(el('b', null, (i + 1) + '. ' + (q.question || '')));
+      if (q.why) it.appendChild(el('div', 'basis', 'Why it matters: ' + q.why));
+      if (q.options && q.options.length) it.appendChild(el('div', 'basis', 'Suggested options: ' + q.options.join(' · ')));
+      wrap.appendChild(it);
+    });
+    return sheet(wrap);
+  }
+
+  function independentView(ir) {
+    var wrap = el('div', 'doc');
+    var head = el('div', ir.unresolved ? 'note bad' : 'note ok', ir.unresolved
+      ? 'The independent reviewer still asks for changes after ' + ir.round + ' round(s). You decide whether to approve anyway or send it back.'
+      : 'The independent reviewer approved this change' + (ir.round > 1 ? ' after ' + (ir.round - 1) + ' round(s) of fixes.' : '.'));
+    wrap.appendChild(head);
+    wrap.appendChild(el('p', 'basis', 'A second opinion from an agent that did not write the change and could not edit it (' + ir.model + '). It does not replace your approval.'));
+    if (ir.summary) wrap.appendChild(el('p', null, ir.summary));
+    if (!ir.findings.length) wrap.appendChild(el('p', null, 'It raised no findings.'));
+    ir.findings.forEach(function (f) {
+      var it = el('div', 'item');
+      it.appendChild(el('b', null, (f.severity === 'blocking' ? 'Blocking' : 'Note') + (f.file ? ' · ' + f.file : '')));
+      it.appendChild(el('div', null, f.text || ''));
+      wrap.appendChild(it);
+    });
+    return sheet(wrap);
+  }
+
+  function releaseView(d) {
+    var wrap = el('div', 'doc');
+    wrap.appendChild(el('p', null, 'The change is merged. Approving runs the project\'s release steps up to the level "' + d.releaseLevel + '".'));
+    wrap.appendChild(el('p', null, d.releaseLevel === 'tag' ? 'At this level the factory runs the tests and creates a version tag. Nothing is deployed.' : 'At this level the factory deploys to ' + d.releaseLevel + '.'));
+    var pr = safeLink(d.ticket.pr, 'See what was merged'); if (pr) { var p1 = el('p'); p1.appendChild(pr); wrap.appendChild(p1); }
+    return sheet(wrap);
+  }
+
+  function renderReview(d) {
+    var t = d.ticket, ask = d.ask;
+    $('rtitle').textContent = ask ? ask.title : 'Nothing is waiting on this ticket';
+    var sub = $('rsub'); sub.textContent = '#' + t.id + ' · ' + (t.title || '') + ' · ' + money(t.costUsd) + ' so far' + (ask ? ' · waiting ' + ago(ask.since) : '');
+    var a1 = safeLink(t.url, 'Ticket'); if (a1) sub.appendChild(a1);
+    var a2 = safeLink(t.pr, 'Pull request'); if (a2) sub.appendChild(a2);
+
+    // Tabs: the thing to decide on first, everything else one click away.
+    var tabs = [];
+    if (ask && ask.kind === 'answer') tabs.push({ name: 'Questions (' + d.questions.length + ')', make: function () { return questionsView(d); } });
+    if (d.document) tabs.push({ name: d.document.name, make: function () { return sheet(md(d.document.text), d.document.path); } });
+    if (ask && ask.gate === 'merge') tabs.push({ name: 'Changed files (' + d.changes.length + ')', make: function () { return changesView(d); } });
+    if (d.independentReview) {
+      var ir = d.independentReview;
+      tabs.push({ name: 'Independent review (' + (ir.unresolved ? 'changes requested' : 'approved') + ')', make: function () { return independentView(ir); } });
+    }
+    if (ask && ask.gate === 'release') tabs.push({ name: 'What will be released', make: function () { return releaseView(d); } });
+    var count = 0; d.reports.forEach(function (r) { count += r.assumptions.length; });
+    if (d.reports.length) tabs.push({ name: "Agent's decisions (" + count + ')', make: function () { return decisionsView(d); } });
+    d.otherDocuments.forEach(function (doc) { tabs.push({ name: doc.name, make: function () { return sheet(md(doc.text), doc.path); } }); });
+    if (d.ticketText) tabs.push({ name: 'Ticket', make: function () { return sheet(md(d.ticketText)); } });
+    if (!tabs.length) tabs.push({ name: 'Details', make: function () { return sheet(el('p', null, 'There is nothing to review for this ticket right now.')); } });
+
+    var bar = $('rtabs'); bar.textContent = '';
+    function show(ix) {
+      Array.prototype.forEach.call(bar.children, function (b, j) { b.className = j === ix ? 'tab on' : 'tab'; });
+      var body = $('rbody'); body.textContent = ''; body.appendChild(tabs[ix].make()); body.scrollTop = 0;
+    }
+    tabs.forEach(function (tab, ix) { var b = el('button', 'tab', tab.name); b.type = 'button'; b.addEventListener('click', function () { show(ix); }); bar.appendChild(b); });
+    show(0);
+    renderFooter(d);
+  }
+
+  function renderFooter(d) {
+    var f = $('rfoot'); f.textContent = '';
+    var t = d.ticket, ask = d.ask;
+    if (!ask) { f.appendChild(el('div', 'note', 'Nothing is waiting for a decision on this ticket.')); return; }
+    if (decided[t.id] && decided[t.id] === ask.since) { f.appendChild(el('div', 'note ok', 'Your decision is recorded. The factory acts on it at its next pass, usually within a minute.')); return; }
+    if (!d.permission.can) {
+      var n = el('div', 'note', d.permission.why);
+      if (d.permission.signIn) {
+        var si = el('a', 'btn yes', 'Sign in with your name'); si.href = '/signin?ticket=' + encodeURIComponent(t.id);
+        si.style.marginLeft = '12px'; si.style.textDecoration = 'none'; si.style.display = 'inline-block';
+        n.appendChild(si);
+      }
+      if (ask.gate === 'merge') { var pr = safeLink(t.pr, ' Open the pull request'); if (pr) n.appendChild(pr); }
+      f.appendChild(n); return;
+    }
+    var msg = el('div'); f.appendChild(msg);
+    function send(kind, text, buttons) {
+      buttons.forEach(function (b) { b.disabled = true; });
+      fetch('/api/tickets/' + encodeURIComponent(t.id) + '/decision', {
+        method: 'POST', headers: { 'content-type': 'application/json', 'x-factory-action': 'decide' },
+        body: JSON.stringify({ kind: kind, text: text || '' }),
+      }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (res) {
+          if (!res.ok) { msg.textContent = ''; msg.appendChild(el('div', 'note bad', res.j.error || 'That did not work.')); buttons.forEach(function (b) { b.disabled = false; }); return; }
+          decided[t.id] = ask.since; renderFooter(d);
+        })
+        .catch(function () { msg.textContent = ''; msg.appendChild(el('div', 'note bad', 'The factory could not be reached. Try again.')); buttons.forEach(function (b) { b.disabled = false; }); });
+    }
+    var who = el('span', 'who', 'Deciding as ' + d.signedInAs + '. It will be written on the ticket.');
+    if (ask.kind === 'answer') {
+      var lab = el('label', null, 'Your answer'); lab.setAttribute('for', 'ans');
+      var ta = el('textarea'); ta.id = 'ans'; ta.placeholder = 'Answer every question in one reply.';
+      var row = el('div', 'row'); var go = el('button', 'btn yes', 'Send answer'); go.type = 'button';
+      go.addEventListener('click', function () { send('answer', ta.value, [go]); });
+      row.appendChild(who); row.appendChild(go);
+      f.appendChild(lab); f.appendChild(ta); f.appendChild(row); return;
+    }
+    var back = el('div'); back.style.display = 'none';
+    var lab2 = el('label', null, 'What should change?'); lab2.setAttribute('for', 'why');
+    var why = el('textarea'); why.id = 'why'; why.placeholder = 'Be specific. The agent redoes this step using exactly what you write.';
+    back.appendChild(lab2); back.appendChild(why);
+    var row2 = el('div', 'row');
+    var no = el('button', 'btn no', 'Send back…'); no.type = 'button';
+    var yes = el('button', 'btn yes', ask.gate === 'release' ? 'Approve release' : ask.gate === 'merge' ? 'Approve and merge' : 'Approve'); yes.type = 'button';
+    var cancel = el('button', 'btn', 'Cancel'); cancel.type = 'button'; cancel.style.display = 'none';
+    yes.addEventListener('click', function () { send('approve', '', [yes, no]); });
+    no.addEventListener('click', function () {
+      if (back.style.display === 'none') { back.style.display = ''; yes.style.display = 'none'; cancel.style.display = ''; no.textContent = 'Send back'; why.focus(); return; }
+      send('reject', why.value, [no, cancel]);
+    });
+    cancel.addEventListener('click', function () { back.style.display = 'none'; yes.style.display = ''; cancel.style.display = 'none'; no.textContent = 'Send back…'; });
+    row2.appendChild(who); row2.appendChild(cancel); row2.appendChild(no); row2.appendChild(yes);
+    f.appendChild(back); f.appendChild(row2);
+  }
+
+  function openReview(id) {
+    closePanel();
+    $('review').classList.add('open'); $('review').setAttribute('aria-hidden', 'false');
+    $('rtitle').textContent = 'Loading…'; $('rsub').textContent = ''; $('rtabs').textContent = ''; $('rbody').textContent = ''; $('rfoot').textContent = '';
+    fetch('/api/tickets/' + encodeURIComponent(id) + '/review', { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(renderReview)
+      .catch(function (err) { $('rtitle').textContent = 'This review could not be loaded (' + err.message + ')'; });
+  }
+  function closeReview() { $('review').classList.remove('open'); $('review').setAttribute('aria-hidden', 'true'); load(); }
+  $('rback').addEventListener('click', closeReview);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && $('review').classList.contains('open') && document.activeElement.tagName !== 'TEXTAREA') closeReview(); });
+
+  function load() {
+    fetch('/api/overview', { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (o) {
+        $('project').textContent = o.project;
+        var me = $('me'); me.textContent = o.signedInAs ? 'Signed in as ' + o.signedInAs + ' · ' : 'Looking only · ';
+        var sw = el('a', null, o.signedInAs ? 'switch' : 'sign in to decide'); sw.href = '/signin'; sw.style.color = 'var(--accent)'; me.appendChild(sw);
+        $('updated').textContent = 'Updated ' + new Date(o.generatedAt).toLocaleTimeString();
+        renderFacts(o); renderBanners(o); renderBoard(o);
+        loadTicket();
+      })
+      .catch(function (err) {
+        var b = $('banners'); b.textContent = '';
+        b.appendChild(el('div', 'banner error', 'Cannot reach the factory (' + err.message + '). Showing the last known state.'));
+      });
+  }
+  load();
+  setInterval(load, 5000);
+  // Coming back from sign-in: reopen the review the person was on.
+  var back = /^#review=(.+)$/.exec(location.hash);
+  if (back) { history.replaceState(null, '', '/'); openReview(decodeURIComponent(back[1])); }
+})();
+</script>
+</body>
+</html>

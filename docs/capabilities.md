@@ -338,3 +338,36 @@ Runs `ruff check` on any `.py` file after Edit/Write. Advisory only — never bl
 ### `lint-ts.sh` (PostToolUse, async)
 
 Runs `eslint --max-warnings 0` on any `.ts` or `.tsx` file after Edit/Write. Advisory only — never blocks. Fails open if eslint is not available.
+
+---
+
+## Agentic Factory
+
+The factory is not a mode, skill, agent or hook, and it is not part of the plugin. It is a separate
+service in `factory/` that runs the modes above with no person at the keyboard, on a server or in
+Docker. It is Claude Code only. Full guide: [`factory/README.md`](../factory/README.md).
+
+**Status:** first version, proposed. Proven on a local board with the real Claude CLI and with
+simulated agents; not yet run against GitHub. See
+[`docs/features/agentic-factory/test-plan.md`](features/agentic-factory/test-plan.md).
+
+**What it does:** picks up tickets labelled `factory-ready`, then runs `/groom`, `/design`, `/build`,
+`/test`, optionally `/playwright`, and `/review`, opens a pull request, merges after a person
+approves, and runs `/release` after a person approves. When a mode would ask a question, the factory
+posts it on the ticket and waits.
+
+**What it never does without a person:** merge, and release. These two gates cannot be switched
+off. Two more gates, after requirements and after design, are optional.
+
+**What it does not run:** `/ux`, `/domain`, `/arch`, `/setup`, `/incident`, `/data`, `/process-map`,
+`/epic`. A ticket that needs one of these is escalated as a question or declined.
+
+**How it reuses the modes:** it loads `plugins/pai-orbit/dist/claude-code/` unchanged and appends one
+instruction file, `factory/contract/unattended.md`. No mode text is copied.
+
+```
+node factory/bin/factory.js preflight     check the setup
+node factory/bin/factory.js run           start and keep polling
+node factory/bin/factory.js status        what every ticket is doing and what it has cost
+```
+

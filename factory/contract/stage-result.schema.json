@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Agentic Factory stage result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "summary"],
+  "properties": {
+    "status": { "type": "string", "enum": ["done", "needs_input", "declined", "failed"] },
+    "summary": { "type": "string" },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["question", "why"],
+        "properties": {
+          "question": { "type": "string" },
+          "why": { "type": "string" },
+          "options": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["decision", "basis"],
+        "properties": {
+          "decision": { "type": "string" },
+          "basis": { "type": "string" }
+        }
+      }
+    },
+    "artifacts": { "type": "array", "items": { "type": "string" } },
+    "reason": { "type": "string" },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict", "findings"],
+      "properties": {
+        "verdict": { "type": "string", "enum": ["approve", "request_changes"] },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["severity", "text"],
+            "properties": {
+              "severity": { "type": "string", "enum": ["blocking", "note"] },
+              "file": { "type": "string" },
+              "text": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "size": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "files": { "type": "integer" },
+        "changedLines": { "type": "integer" },
+        "services": { "type": "integer" },
+        "paths": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

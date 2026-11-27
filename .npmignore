@@ -1,0 +1,13 @@
+# What `npx github:the-psi/pai-orbit ...` leaves out of its download.
+# The installer needs only package.json and plugins/pai-orbit/.
+
+# The Agentic Factory is a separate service, run from a Docker image built from this repo.
+# It is never installed through the plugin installer, so plugin users do not download it.
+factory/
+
+# npm stops reading .gitignore once this file exists, so its entries are repeated here.
+.DS_Store
+*.swp
+*.swo
+.claude/settings.local.json
+website/
