@@ -223,9 +223,11 @@ Do **not** ask "Move issue #N?" — the move is the definition of done. Never cl
    - GitHub Projects: ticket not on the configured project → "#N is not on board `<name>` — add it, then re-run." Return. Never add it yourself — modes move tickets, they don't change board membership.
 5. **Never backwards.** Find the current and target columns in `## Agile Board → columns` (row order = board order, left → right).
    - Current column not in the table → "#N is in '`<current>`', not in config — re-run /setup." Return.
-   - Current position ≥ target position → "#N already in `<current>` (past `<target>`) — not moved." Return.
+   - Current position ≥ target position → "#N already in `<current>` (past `<target>`) — not moved." Return. Columns that share a position, or that map to the same state (Azure many-columns-to-one-state), count as the same position, so an equal position is a skip too.
 6. **Move.** Set the ticket to the target column ID (MCP → CLI). On failure, show the error and the fix: GitHub Projects `gh auth refresh -s project`; Linear an API token with write scope; Jira a user with the transition permission; GitLab a Reporter+ role. Return.
 7. **Report.** "#N → `<target>`".
+
+**Quote every interpolated value.** `<N>`, `<KEY>`, labels, state names and column names come from config or the board and go into shell commands: `<N>` must be digits only and `<KEY>` must match the project-key pattern (e.g. `[A-Z][A-Z0-9]+-[0-9]+`); wrap labels, state and column names in quotes and never paste a value containing shell metacharacters. If a value fails the check, stop and report it instead of running the command.
 
 **Per-board recipes.** IDs come from `## Mode transitions` (board-IDs header + Column ID). Use the configured board MCP first under **MCP vs shell** above; use the CLI when the MCP is absent or has no matching tool (e.g. a GitHub MCP server without a Projects v2 item-field update tool — then GitHub Projects moves always use `gh`).
 
